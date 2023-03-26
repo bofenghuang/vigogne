@@ -11,13 +11,13 @@
 
 This repository contains code for reproducing the [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca) in French 🇫🇷 using [low-rank adaptation (LoRA)](https://arxiv.org/abs/2106.09685) provided by 🤗 Hugging Face's [PEFT](https://github.com/huggingface/peft) library. In addition to the LoRA technique, we also use [LLM.int8()](https://arxiv.org/abs/2208.07339) provided by [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) to quantize pretrained language models (PLMs) to int8. Combining these two techniques allows us to fine-tune PLMs on a single consumer GPU such as RTX 4090.
 
-This project is based on [LLaMA](https://github.com/facebookresearch/llama), [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), [**Alpaca-Lora**](https://github.com/tloen/alpaca-lora), [Cabrita](https://github.com/22-hours/cabrita) and [Hugging Face](https://huggingface.co/docs/transformers/main_classes/trainer). In addition, we adapted the [training script](https://github.com/bofenghuang/vigogne/blob/main/finetune.py) to fine-tune on more models such as [BLOOM](https://huggingface.co/bigscience/bloom-7b1) and [mT5](https://huggingface.co/google/mt5-xxl). We also share the [translated dataset](https://github.com/bofenghuang/vigogne/blob/main/data/vigogne_data_cleaned.json) and the trained [vigogne-lora-7b](https://huggingface.co/bofenghuang/vigogne-lora-7b) weights.
+This project is based on [LLaMA](https://github.com/facebookresearch/llama), [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), [**Alpaca-Lora**](https://github.com/tloen/alpaca-lora), [Cabrita](https://github.com/22-hours/cabrita) and [Hugging Face](https://huggingface.co/docs/transformers/main_classes/trainer). In addition, we adapted the [training script](https://github.com/bofenghuang/vigogne/blob/main/finetune.py) to fine-tune on more models such as [BLOOM](https://huggingface.co/bigscience/bloom-7b1) and [mT5](https://huggingface.co/google/mt5-xxl). We also share the [translated dataset](https://github.com/bofenghuang/vigogne/blob/main/data/vigogne_data_cleaned.json) and the trained [vigogne-lora-7b](https://huggingface.co/bofenghuang/vigogne-lora-7b) and [vigogne-lora-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-lora-bloom-7b1) weights.
 
 **Usage and License Notices**: Same as [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), Vigogne is intended and licensed for research use only. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
 
 ## Play with 🦙 vigogne models
 
-You can infer with the fine-tuned vigogne model using the following Google Colab Notebook.
+You can infer the fine-tuned vigogne model model by using the following Google Colab Notebook.
 
 <a href="https://colab.research.google.com/github/bofenghuang/vigogne/blob/main/infer.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
@@ -170,9 +170,9 @@ python finetune.py \
     --report_to='["tensorboard", "wandb"]'
 ```
 
-## Ethical Considerations
+## Limitations
 
-**Risks and harms**: Vigogne is still under development, and there are many limitations that have to be addressed. Please note that it is possible that the model generates harmful or biased content, incorrect information or generally unhelpful answers.
+Vigogne is still under development, and there are many limitations that have to be addressed. Please note that it is possible that the model generates harmful or biased content, incorrect information or generally unhelpful answers.
 
 ## Next Steps
 
