@@ -8,3 +8,6 @@ git+https://github.com/huggingface/peft.git
 gradio
 appdirs
 fire
+openai
+tiktoken
+tenacity
