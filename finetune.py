@@ -1,4 +1,5 @@
-
+#! /usr/bin/env python
+# coding=utf-8
 
 import os
 import sys
@@ -10,10 +11,6 @@ import fire
 import torch
 import transformers
 from datasets import load_dataset
-
-assert (
-    "LlamaTokenizer" in transformers._import_structure["models.llama"]
-), "LLaMA is now in HuggingFace's main branch.\nPlease reinstall it: pip uninstall transformers && pip install git+https://github.com/huggingface/transformers.git"
 from peft import LoraConfig, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
 from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
 
@@ -46,7 +43,17 @@ PROMPT_DICT = {
     ),
 }
 
-# Modified from https://github.com/bofenghuang/stanford_alpaca/blob/eb5b171d9b103a12a8e14e0edca9cbc45fe1d512/train.py#L166-L182
+
+def generate_prompt(data_point):
+    return (
+        PROMPT_DICT["prompt_input"].format_map(data_point)
+        if data_point["input"]
+        else PROMPT_DICT["prompt_no_input"].format_map(data_point)
+    )
+
+
+# Modified from: https://github.com/bofenghuang/stanford_alpaca/blob/eb5b171d9b103a12a8e14e0edca9cbc45fe1d512/train.py#L166-L182
+# Almost same to transformers.DataCollatorForSeq2Seq
 @dataclass
 class DataCollatorForSupervisedDataset(object):
     """Collate examples for supervised fine-tuning."""
@@ -61,7 +68,7 @@ class DataCollatorForSupervisedDataset(object):
 
         if self.pad_to_multiple_of is not None:
             max_length_index, max_length = max(enumerate([len(input_ids_) for input_ids_ in input_ids]), key=lambda x: x[1])
-            # int(math.ceil ?
+            # int(math.ceil
             n_padding = ((max_length // self.pad_to_multiple_of) + 1) * self.pad_to_multiple_of - max_length
             # Pad the longest example to pad_to_multiple_of * N
             input_ids[max_length_index].extend([self.tokenizer.pad_token_id] * n_padding)
@@ -115,8 +122,8 @@ def train(
     target_modules: List[str] = ["q_proj", "v_proj"],
     num_train_epochs: int = 3,
     learning_rate: float = 3e-4,
-    per_device_train_batch_size: int = 16,
-    gradient_accumulation_steps: int = 8,
+    per_device_train_batch_size: int = 4,
+    gradient_accumulation_steps: int = 32,
     **kwargs,
 ):
 
@@ -176,11 +183,8 @@ def train(
 
     def generate_and_tokenize_prompt(data_point):
         # Format prompt
-        user_prompt = (
-            PROMPT_DICT["prompt_input"].format_map(data_point)
-            if data_point["input"]
-            else PROMPT_DICT["prompt_no_input"].format_map(data_point)
-        )
+        user_prompt = generate_prompt(data_point)
+
         # Get prompt length for masking
         len_user_prompt_tokens = len(tokenizer(user_prompt, truncation=True)["input_ids"])
 
@@ -237,8 +241,6 @@ def train(
     trainer.train()
 
     model.save_pretrained(output_dir)
-
-    print("\n If there's a warning about missing keys above, please disregard :)")
 
 
 if __name__ == "__main__":
