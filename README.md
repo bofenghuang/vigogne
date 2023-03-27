@@ -35,6 +35,8 @@ We translated the original [alpaca_data.json](https://github.com/tatsu-lab/stanf
 
 You can also translate it to other languages using the [translation script](https://github.com/bofenghuang/vigogne/blob/main/scripts/translate_data.py). Don't forget to modify your [translation prompt](https://github.com/bofenghuang/vigogne/blob/e6ae25fc0569ca85c25529a6d06122b35426aa2d/scripts/translate_data.py#L47-L57).
 
+The translation may have compromised the accuracy of certain tasks, such as generating rhyming words or correcting grammar (discussed [here](https://github.com/tloen/alpaca-lora/pull/127)). We warmly welcome PRs to help clean up this dataset!
+
 The following command shows how to estimate the price for translating the full dataset.
 
 ```bash
