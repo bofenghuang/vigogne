@@ -15,7 +15,7 @@ This project is based on [LLaMA](https://github.com/facebookresearch/llama), [St
 
 **Usage and License Notices**: Same as [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), Vigogne is intended and licensed for research use only. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
 
-## Play with 🦙 vigogne models
+## Play with 🦙 Vigogne models
 
 The fine-tuned vigogne models are available on 🤗 Hugging Face:
 
@@ -179,7 +179,41 @@ python finetune.py \
     --report_to='["tensorboard", "wandb"]'
 ```
 
-## Limitations
+### Fine-tuning OPT-6.7B model
+
+The following command shows how to fine-tune [facebook/opt-6.7b](https://huggingface.co/facebook/opt-6.7b) model using a single GPU.
+
+```bash
+python finetune.py \
+    --model_name_or_path "facebook/opt-6.7b" \
+    --data_path "data/vigogne_data_cleaned.json" \
+    --val_set_size 2000 \
+    --model_max_length 424 \
+    --output_dir "outputs/opt-6b7-ft-vigogne" \
+    --run_name "opt-6b7-ft-vigogne" \
+    --overwrite_output_dir \
+    --lora_r 16 \
+    --lora_alpha 32 \
+    --lora_dropout 0.05 \
+    --target_modules '["q_proj", "v_proj"]' \
+    --num_train_epochs 3 \
+    --optim "adamw_torch" \
+    --learning_rate 3e-4 \
+    --warmup_steps 100 \
+    --per_device_train_batch_size 16 \
+    --per_device_eval_batch_size 8 \
+    --gradient_accumulation_steps 8 \
+    --dataloader_num_workers="1" \
+    --logging_steps 25 \
+    --save_total_limit 3 \
+    --save_strategy "steps" \
+    --save_steps 200 \
+    --evaluation_strategy "steps" \
+    --eval_steps 200 \
+    --report_to='["tensorboard", "wandb"]'
+```
+
+## Bias, Risks, and Limitations
 
 Vigogne is still under development, and there are many limitations that have to be addressed. Please note that it is possible that the model generates harmful or biased content, incorrect information or generally unhelpful answers.
 
