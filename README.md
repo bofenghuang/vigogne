@@ -17,6 +17,13 @@ This project is based on [LLaMA](https://github.com/facebookresearch/llama), [St
 
 ## Play with 🦙 vigogne models
 
+The fine-tuned vigogne models are available on 🤗 Hugging Face:
+
+- Fine-tuned LLaMA-7B model: [bofenghuang/vigogne-lora-7b](https://huggingface.co/bofenghuang/vigogne-lora-7b)
+- Fine-tuned LLaMA-13B model: [bofenghuang/vigogne-lora-13b](https://huggingface.co/bofenghuang/vigogne-lora-13b)
+- Fine-tuned LLaMA-30B model: [bofenghuang/vigogne-lora-30b](https://huggingface.co/bofenghuang/vigogne-lora-30b)
+- Fine-tuned BLOOM-7B1 model: [bofenghuang/vigogne-lora-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-lora-bloom-7b1)
+
 You can infer the fine-tuned vigogne model model by using the following Google Colab Notebook.
 
 <a href="https://colab.research.google.com/github/bofenghuang/vigogne/blob/main/infer.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
