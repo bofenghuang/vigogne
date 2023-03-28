@@ -23,6 +23,7 @@ The fine-tuned vigogne models are available on 🤗 Hugging Face:
 - Fine-tuned LLaMA-13B model: [bofenghuang/vigogne-lora-13b](https://huggingface.co/bofenghuang/vigogne-lora-13b)
 - Fine-tuned LLaMA-30B model: [bofenghuang/vigogne-lora-30b](https://huggingface.co/bofenghuang/vigogne-lora-30b)
 - Fine-tuned BLOOM-7B1 model: [bofenghuang/vigogne-lora-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-lora-bloom-7b1)
+- Fine-tuned OPT-6.7B model: [bofenghuang/vigogne-lora-opt-6.7b](https://huggingface.co/bofenghuang/vigogne-lora-opt-6.7b)
 
 You can infer the fine-tuned vigogne model model by using the following Google Colab Notebook.
 
