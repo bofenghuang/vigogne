@@ -1,7 +1,9 @@
 #! /usr/bin/env python
 # coding=utf-8
 
-"""Modified from: https://github.com/tloen/alpaca-lora/blob/main/generate.py"""
+"""
+Modified from: https://github.com/tloen/alpaca-lora/blob/main/generate.py
+"""
 
 import sys
 

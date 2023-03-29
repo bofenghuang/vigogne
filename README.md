@@ -1,5 +1,5 @@
 <p align="center" width="100%">
-<img src="assets/vigogne_logo.png" alt="Vigogne" style="width: 40%; min-width: 300px; display: block; margin: auto;">
+<img src="./assets/vigogne_logo.png" alt="Vigogne" style="width: 40%; min-width: 300px; display: block; margin: auto;">
 </p>
 
 # Vigogne: French Instruction-following Models
@@ -15,9 +15,32 @@ This project is based on [LLaMA](https://github.com/facebookresearch/llama), [St
 
 **Usage and License Notices**: Same as [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), Vigogne is intended and licensed for research use only. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
 
+💡 *The screencast below shows the current 🦙 Vigogne-LoRA-7B model running on Apple M1 Pro using 4GB of weights (no sped up).*
+
+![](./assets/screencast.gif)
+
+## Table of Contents
+
+- [Setup](#setup)
+- [Play with 🦙 Vigogne models](#play-with--vigogne-models)
+- [Try it out on your own PC](#try-it-out-on-your-own-pc)
+- [Data](#data)
+- [Training](#training)
+- [Example outputs](#example-outputs)
+- [Bias, Risks, and Limitations](#bias-risks-and-limitations)
+- [Next steps](#next-steps)
+
+## Setup
+
+Install dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Play with 🦙 Vigogne models
 
-The fine-tuned vigogne models are available on 🤗 Hugging Face:
+The fine-tuned instruction-following vigogne models are available on 🤗 Hugging Face:
 
 - Fine-tuned LLaMA-7B model: [bofenghuang/vigogne-lora-7b](https://huggingface.co/bofenghuang/vigogne-lora-7b)
 - Fine-tuned LLaMA-13B model: [bofenghuang/vigogne-lora-13b](https://huggingface.co/bofenghuang/vigogne-lora-13b)
@@ -25,16 +48,73 @@ The fine-tuned vigogne models are available on 🤗 Hugging Face:
 - Fine-tuned BLOOM-7B1 model: [bofenghuang/vigogne-lora-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-lora-bloom-7b1)
 - Fine-tuned OPT-6.7B model: [bofenghuang/vigogne-lora-opt-6.7b](https://huggingface.co/bofenghuang/vigogne-lora-opt-6.7b)
 
-You can infer the fine-tuned vigogne model model by using the following Google Colab Notebook.
+You can infer these models by using the following Google Colab Notebook.
 
 <a href="https://colab.research.google.com/github/bofenghuang/vigogne/blob/main/infer.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-You can also run with a Gradio demo using the following command:
+You can also run a Gradio demo using the following command:
 
 ```bash
 ./demo.py \
     --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
     --lora_model_name_or_path bofenghuang/vigogne-lora-7b
+```
+
+## Try it out on your own PC
+
+The Vigogne models can now be easily deployed on PCs, thanks to the excellent tools created by the community. The following steps provide detailed instructions on how to combine Vigogne-LoRA weights with the original LLaMA model, quantize the resulting model to 4-bit, and finally deploy it on your own PC using [llama.cpp](https://github.com/ggerganov/llama.cpp).
+
+**Note: the models will be quantized into 4-bit, so the performance might be worse than the non-quantized version. The responses are random due to the generation hyperparameters.**
+
+Please ensure that the following requirements are met prior to running:
+
+- As the models are currently fully loaded into memory, you will need adequate disk space to save them and sufficient RAM to load them. You will need at least 13GB of RAM to quantize the 7B model. For more information, refer to this [link](https://github.com/ggerganov/llama.cpp#memorydisk-requirements).
+- It's best to use Python 3.9 or Python 3.10, as sentencepiece has not yet published a wheel for Python 3.11.
+
+### 1. Clone and build llama.cpp repo
+
+```bash
+git clone https://github.com/ggerganov/llama.cpp
+cd llama.cpp
+make
+```
+
+### 2. Combine Vigogne-LoRA weights with the corresponding original LLaMA model
+
+```bash
+# combine
+python ../scripts/export_state_dict_checkpoint.py \
+    --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
+    --lora_model_name_or_path "bofenghuang/vigogne-lora-7b" \
+    --output_dir ./models/7B
+
+# download the tokenizer.model file
+wget -P ./models https://huggingface.co/bofenghuang/vigogne-lora-7b/resolve/main/tokenizer.model
+
+# check the files
+tree models
+# models
+# ├── 7B
+# │   ├── consolidated.00.pth
+# │   └── params.json
+# └── tokenizer.model
+```
+
+### 3. Quantize the combined model
+
+```bash
+# convert the 7B model to ggml FP16 format
+python convert-pth-to-ggml.py ./models/7B/ 1
+
+# further quantize the model to 4-bit
+python quantize.py 7B
+```
+
+### 4. Run the inference
+
+```bash
+# ./main -h for more information
+./main -m ./models/7B/ggml-model-q4_0.bin --color -ins -c 2048 --temp 0.1 -n 256
 ```
 
 ## Data
@@ -68,15 +148,7 @@ export OPENAI_API_KEY=xx
     --max_parallel_requests 32
 ```
 
-## Fine-tuning
-
-### Setup
-
-Install dependencies
-
-```bash
-pip install -r requirements.txt
-```
+## Training
 
 ### Fine-tuning LLaMA-7B model
 
@@ -214,7 +286,7 @@ python finetune.py \
     --report_to='["tensorboard", "wandb"]'
 ```
 
-## Example Outputs
+## Example outputs
 
 Répondez à la question suivante : Les pratiques artistiques transforment-elles le monde ?
 
@@ -307,6 +379,6 @@ print(remove_duplicates(liste)) # ['a', 'b', 'c', 'd', 'e', 'f']
 
 Vigogne is still under development, and there are many limitations that have to be addressed. Please note that it is possible that the model generates harmful or biased content, incorrect information or generally unhelpful answers.
 
-## Next Steps
+## Next steps
 
 - Collect more and cleaner French instruction-following data
