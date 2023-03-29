@@ -44,13 +44,10 @@ def generate_prompt(instruction, input=None):
 
 
 def main(
-    base_model_name_or_path: str = "decapoda-research/llama-7b-hf",
+    base_model_name_or_path: str,
     lora_model_name_or_path: str = "bofenghuang/vigogne-lora-7b",
     load_8bit: bool = False,
 ):
-    assert (
-        base_model_name_or_path
-    ), "Please specify a --base_model_name_or_path, e.g. --base_model_name_or_path='decapoda-research/llama-7b-hf'"
 
     tokenizer_class = LlamaTokenizer if "llama" in base_model_name_or_path else AutoTokenizer
     tokenizer = tokenizer_class.from_pretrained(base_model_name_or_path)
@@ -131,7 +128,7 @@ def main(
         outputs=[gr.outputs.Textbox(label="Output")],
         title="🦙 Vigogne-LoRA",
         description="Vigogne-LoRA is a 7B-parameter LLaMA model finetuned to follow the instructions in French. For more information, please visit [the project's website](https://github.com/bofenghuang/vigogne).",
-    ).launch(enable_queue=True)
+    ).launch(enable_queue=True, share=True)
 
 
 if __name__ == "__main__":

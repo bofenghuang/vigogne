@@ -11,7 +11,7 @@ import fire
 import torch
 import transformers
 from datasets import load_dataset
-from peft import LoraConfig, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
+from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
 from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
 
 IGNORE_INDEX = -100
@@ -20,7 +20,7 @@ DEFAULT_EOS_TOKEN = "</s>"
 DEFAULT_BOS_TOKEN = "</s>"
 DEFAULT_UNK_TOKEN = "</s>"
 
-# Original English instruct format
+# Original English prompt
 # PROMPT_DICT = {
 #     "prompt_input": (
 #         "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n"
@@ -31,7 +31,7 @@ DEFAULT_UNK_TOKEN = "</s>"
 #         "### Instruction:\n{instruction}\n\n### Response:\n"
 #     ),
 # }
-# French instruct translated by chatgpt
+# French prompt translated by chatgpt
 PROMPT_DICT = {
     "prompt_input": (
         "Ci-dessous se trouve une instruction qui décrit une tâche, associée à une entrée qui fournit un contexte supplémentaire. Écrivez une réponse qui complète correctement la demande.\n\n"
@@ -44,11 +44,11 @@ PROMPT_DICT = {
 }
 
 
-def generate_prompt(data_point):
+def generate_prompt(example):
     return (
-        PROMPT_DICT["prompt_input"].format_map(data_point)
-        if data_point["input"]
-        else PROMPT_DICT["prompt_no_input"].format_map(data_point)
+        PROMPT_DICT["prompt_input"].format_map(example)
+        if example["input"]
+        else PROMPT_DICT["prompt_no_input"].format_map(example)
     )
 
 
@@ -122,8 +122,8 @@ def train(
     target_modules: List[str] = ["q_proj", "v_proj"],
     num_train_epochs: int = 3,
     learning_rate: float = 3e-4,
-    per_device_train_batch_size: int = 4,
-    gradient_accumulation_steps: int = 32,
+    per_device_train_batch_size: int = 8,
+    gradient_accumulation_steps: int = 16,
     **kwargs,
 ):
 
@@ -149,6 +149,7 @@ def train(
     )
 
     if tokenizer.pad_token is None:
+        # llama has no pad token
         smart_tokenizer_and_embedding_resize(
             special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
             tokenizer=tokenizer,
@@ -167,35 +168,35 @@ def train(
     # Cast the small parameters (e.g. layernorm) to fp32 for stability
     model = prepare_model_for_int8_training(model)
 
-    config = LoraConfig(
+    lora_config = LoraConfig(
         r=lora_r,
         lora_alpha=lora_alpha,
         target_modules=target_modules,
         lora_dropout=lora_dropout,
         bias="none",
-        task_type="CAUSAL_LM",
+        task_type=TaskType.CAUSAL_LM,
     )
-    model = get_peft_model(model, config)
+    model = get_peft_model(model, lora_config)
     model.print_trainable_parameters()
 
     # Load data
     data = load_dataset("json", data_files=data_path)
 
-    def generate_and_tokenize_prompt(data_point):
+    def preprocess_function(example):
         # Format prompt
-        user_prompt = generate_prompt(data_point)
+        user_prompt = generate_prompt(example)
 
         # Get prompt length for masking
         len_user_prompt_tokens = len(tokenizer(user_prompt, truncation=True)["input_ids"])
 
         # Tokenize
         # todo: need eos?
-        input_ids = tokenizer(user_prompt + data_point["output"] + tokenizer.eos_token, truncation=True)["input_ids"]
+        input_ids = tokenizer(user_prompt + example["output"] + tokenizer.eos_token, truncation=True)["input_ids"]
         # Mask prompt
         labels = [IGNORE_INDEX] * len_user_prompt_tokens + input_ids[len_user_prompt_tokens:]
 
         # Tokenize
-        # input_ids = tokenizer(user_prompt + data_point["output"] + tokenizer.eos_token, truncation=True, return_tensors="pt")["input_ids"][0]
+        # input_ids = tokenizer(user_prompt + example["output"] + tokenizer.eos_token, truncation=True, return_tensors="pt")["input_ids"][0]
         # labels = input_ids.clone()
         # Mask prompt
         # labels[:len_user_prompt_tokens] = IGNORE_INDEX
@@ -204,10 +205,10 @@ def train(
 
     if val_set_size > 0:
         train_val = data["train"].train_test_split(test_size=val_set_size, shuffle=True, seed=42)
-        train_data = train_val["train"].shuffle().map(generate_and_tokenize_prompt, remove_columns=data["train"].column_names)
-        val_data = train_val["test"].map(generate_and_tokenize_prompt, remove_columns=data["train"].column_names)
+        train_data = train_val["train"].shuffle().map(preprocess_function, remove_columns=data["train"].column_names)
+        val_data = train_val["test"].map(preprocess_function, remove_columns=data["train"].column_names)
     else:
-        train_data = data["train"].shuffle().map(generate_and_tokenize_prompt, remove_columns=data["train"].column_names)
+        train_data = data["train"].shuffle().map(preprocess_function, remove_columns=data["train"].column_names)
         val_data = None
 
     trainer = transformers.Trainer(
@@ -245,29 +246,3 @@ def train(
 
 if __name__ == "__main__":
     fire.Fire(train)
-
-    # debug
-    # train(
-    #     model_name_or_path="decapoda-research/llama-7b-hf",
-    #     data_path="data/tmp_vigogne_data_cleaned_head10.json",
-    #     val_set_size=2,
-    #     model_max_length=256,
-    #     output_dir="outputs/tmp",
-    #     lora_r=8,
-    #     lora_alpha=16,
-    #     lora_dropout=0.05,
-    #     target_modules=["q_proj", "v_proj"],
-    #     num_train_epochs=3,
-    #     optim="adamw_torch",
-    #     learning_rate=3e-4,
-    #     per_device_train_batch_size=4,
-    #     per_device_eval_batch_size=2,
-    #     gradient_accumulation_steps=1,
-    #     warmup_steps=100,
-    #     logging_steps=1,
-    #     save_total_limit=3,
-    #     save_strategy="steps",
-    #     save_steps=200,
-    #     evaluation_strategy="steps",
-    #     eval_steps=200
-    # )
