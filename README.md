@@ -33,7 +33,7 @@ You can also run with a Gradio demo using the following command:
 
 ```bash
 ./demo.py \
-    --base_model_name_or_path decapoda-research/llama-7b-hf \
+    --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
     --lora_model_name_or_path bofenghuang/vigogne-lora-7b
 ```
 
@@ -80,11 +80,11 @@ pip install -r requirements.txt
 
 ### Fine-tuning LLaMA-7B model
 
-The following command shows how to fine-tune [LLaMA-7B](https://huggingface.co/decapoda-research/llama-7b-hf) model using a single GPU.
+The following command shows how to fine-tune LLaMA-7B model using a single GPU.
 
 ```bash
 python finetune.py \
-    --model_name_or_path "decapoda-research/llama-7b-hf" \
+    --model_name_or_path <name/or/path/to/hf/llama/7b/model> \
     --data_path "data/vigogne_data_cleaned.json" \
     --val_set_size 2000 \
     --model_max_length 368 \
@@ -114,11 +114,11 @@ python finetune.py \
 
 ### Fine-tuning LLaMA-30B model
 
-The following command shows how to fine-tune [LLaMA-30B](https://huggingface.co/decapoda-research/llama-30b-hf) model using multi GPUs.
+The following command shows how to fine-tune LLaMA-30B model using multi GPUs.
 
 ```bash
 WORLD_SIZE=2 torchrun --nproc_per_node=2 --master_port=29001 finetune.py \
-    --model_name_or_path "decapoda-research/llama-30b-hf" \
+    --model_name_or_path <name/or/path/to/hf/llama/30b/model> \
     --data_path "data/vigogne_data_cleaned.json" \
     --val_set_size 2000 \
     --model_max_length 368 \
@@ -213,6 +213,95 @@ python finetune.py \
     --eval_steps 200 \
     --report_to='["tensorboard", "wandb"]'
 ```
+
+## Example Outputs
+
+Répondez à la question suivante : Les pratiques artistiques transforment-elles le monde ?
+
+- **Vigogne-LoRA-7B**: Les pratiques d'art peuvent transformer le monde en créant des œuvres qui évoquent des sentiments, des idées et des émotions. Elles peuvent également être utilisées pour créer des Œuvres d'Art Vivant qui sont des œuvre vivantes qui peuvent être utilisés pour créé des expériences et des conversations. Les praticiens d'arts peuvent également utiliser leurs pratiques pour créerer des œufs d'âme, des êtres vivants créés à partir de matériaux naturels, qui peuvent avoir un impact sur la façon dont les gens pensent et ressentent le monde.
+
+<details><summary>Other models</summary>
+
+- **Alpaca-LoRA**: Yes, artistic practices can transform the world. Art can be used to express ideas, explore new perspectives, and create dialogue. Art can also be used to inspire and motivate people to take action, and to create positive change in their communities.
+
+- **text-davinci-003**: Oui, les pratiques artistiques peuvent transformer le monde. Les artistes peuvent utiliser leur art pour exprimer leurs opinions et leurs idées, et ces idées peuvent avoir un impact sur la société et le monde. Les artistes peuvent également utiliser leur art pour sensibiliser le public à des sujets importants et pour encourager le changement. Les pratiques artistiques peuvent donc être un puissant outil pour transformer le monde.
+
+</details>
+
+---
+
+Expliquez la différence entre DoS et phishing en français.
+
+- **Vigogne-LoRA-7B**: Le DoS (Denial of Service) est une attaque informatique qui consiste à bloquer ou à interrompre l'accès à un service ou à un système informatique. Le phishing est une technique de fraude qui consisterait à obtenir des informations sensibles d'un utilisateur en lui demandant de fournir des renseignements, tels que des mots de passe ou des numéros de carte de crédit.
+
+<details><summary>Other models</summary>
+
+- **Alpaca-LoRA**: In French, the difference between a DDoS attack and phishing is that a DDoS attack is an attempt to overwhelm a system with a large amount of traffic, while phishing is an attempt to steal personal information by posing as a trusted source.
+
+- **text-davinci-003**:
+
+DoS (Denial of Service) est une attaque qui vise à rendre indisponible des services web ou réseau en saturant un serveur ou un réseau avec des requêtes. Elle peut aussi être utilisée pour perturber un réseau en envoyant des paquets mal formés ou en le surchargant.
+
+Phishing est une forme d'escroquerie en ligne visant à voler des informations personnelles telles que des mots de passe et des numéros de carte de crédit en incitant les victimes à fournir leurs informations sur des faux sites Web ou des emails frauduleux.
+
+</details>
+
+---
+
+Résumez le texte suivant en une seule phrase.
+
+La science des données est l'étude des données afin d'en extraire des informations significatives pour les entreprises. Il s'agit d'une approche pluridisciplinaire qui combine des principes et des pratiques issus des domaines des mathématiques, des statistiques, de l'intelligence artificielle et du génie informatique, en vue d'analyser de grands volumes de données. Cette analyse aide les scientifiques des données à poser des questions et à y répondre, comme Que s'est-il passé, Pourquoi cela s'est-il passé, Que va-t-il se passer et Que peut-on faire avec des résultats.
+
+- **Vigogne-LoRA-7B**: Le scientifique des données utilise des données pour analyser et extraire de l’information pour aider les entrepreneurs à posent des questions, répondre à des questions existantes et prendre des décisions.
+
+<details><summary>Other models</summary>
+
+- **Alpaca-LoRA**: La science des données est l'étude des données afin d'en extraire des informations significatives pour les entreprises.
+
+- **text-davinci-003**: La science des données combine des principes et des pratiques issus des domaines des mathématiques, des statistiques, de l'intelligence artificielle et du génie informatique pour analyser de grands volumes de données afin d'en extraire des informations significatives pour les entreprises.
+
+</details>
+
+---
+
+Écrivez une fonction qui prend une liste de chaînes de caractères et renvoie une liste sans doublons.
+
+- **Vigogne-LoRA-7B**:
+
+```python
+def remove_duplicates(lst):
+    result = []
+    for item in lst:
+        if item not in result:
+            result.append(item)
+    return result
+```
+
+<details><summary>Other models</summary>
+
+- **Alpaca-LoRA**:
+
+```python
+def remove_duplicates(list):
+    seen = set()
+    return [x for x in list if x not in seen]
+```
+
+- **text-davinci-003**:
+
+```python
+def remove_duplicates(liste):
+  new_list = []
+  for item in liste:
+    if item not in new_list:
+      new_list.append(item)
+  return new_list
+
+liste = ["a", "b", "c", "a", "d", "e", "f", "c"]
+print(remove_duplicates(liste)) # ['a', 'b', 'c', 'd', 'e', 'f']
+```
+
+</details>
 
 ## Bias, Risks, and Limitations
 
