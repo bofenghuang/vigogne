@@ -2,7 +2,7 @@
 <img src="./assets/vigogne_logo.png" alt="Vigogne" style="width: 40%; min-width: 300px; display: block; margin: auto;">
 </p>
 
-# Vigogne: French Instruction-following Models
+# Vigogne 🦙: French Instruction-following Models
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/bofenghuang/vigogne/blob/main/LICENSE)
 [![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/bofenghuang/vigogne/blob/main/DATA_LICENSE)
@@ -157,31 +157,28 @@ The following command shows how to fine-tune LLaMA-7B model using a single GPU.
 ```bash
 python finetune.py \
     --model_name_or_path <name/or/path/to/hf/llama/7b/model> \
-    --data_path "data/vigogne_data_cleaned.json" \
-    --val_set_size 2000 \
-    --model_max_length 368 \
+    --train_file "data/vigogne_data_cleaned.json" \
     --output_dir "outputs/llama-7b-ft-vigogne-lora" \
     --run_name "llama-7b-ft-vigogne-lora" \
     --overwrite_output_dir \
+    --model_max_length_percentile 95 \
+    --preprocessing_num_workers 4 \
+    --dataloader_num_workers 1 \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \
-    --target_modules '["q_proj", "v_proj"]' \
-    --num_train_epochs 3 \
-    --optim "adamw_torch" \
-    --learning_rate 3e-4 \
-    --warmup_steps 100 \
+    --target_modules "q_proj" "v_proj" \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 8 \
     --gradient_accumulation_steps 8 \
-    --dataloader_num_workers="1" \
+    --num_train_epochs 3 \
+    --learning_rate 3e-4 \
+    --warmup_steps 100 \
     --logging_steps 25 \
-    --save_total_limit 3 \
     --save_strategy "steps" \
     --save_steps 200 \
-    --evaluation_strategy "steps" \
-    --eval_steps 200 \
-    --report_to='["tensorboard", "wandb"]'
+    --save_total_limit 3 \
+    --report_to "tensorboard" "wandb"
 ```
 
 ### Fine-tuning LLaMA-30B model
@@ -191,31 +188,28 @@ The following command shows how to fine-tune LLaMA-30B model using multi GPUs.
 ```bash
 WORLD_SIZE=2 torchrun --nproc_per_node=2 --master_port=29001 finetune.py \
     --model_name_or_path <name/or/path/to/hf/llama/30b/model> \
-    --data_path "data/vigogne_data_cleaned.json" \
-    --val_set_size 2000 \
-    --model_max_length 368 \
+    --train_file "data/vigogne_data_cleaned.json" \
     --output_dir "outputs/llama-30b-ft-vigogne-lora" \
     --run_name "llama-30b-ft-vigogne-lora" \
     --overwrite_output_dir \
+    --model_max_length_percentile 95 \
+    --preprocessing_num_workers 4 \
+    --dataloader_num_workers 1 \
     --lora_r 8 \
     --lora_alpha 16 \
     --lora_dropout 0.05 \
-    --target_modules '["q_proj", "v_proj"]' \
-    --num_train_epochs 3 \
-    --optim "adamw_torch" \
-    --learning_rate 3e-4 \
-    --warmup_steps 100 \
+    --target_modules "q_proj" "v_proj" \
     --per_device_train_batch_size 4 \
     --per_device_eval_batch_size 2 \
     --gradient_accumulation_steps 16 \
-    --dataloader_num_workers="1" \
+    --num_train_epochs 3 \
+    --learning_rate 3e-4 \
+    --warmup_steps 100 \
     --logging_steps 25 \
-    --save_total_limit 3 \
     --save_strategy "steps" \
     --save_steps 200 \
-    --evaluation_strategy "steps" \
-    --eval_steps 200 \
-    --report_to='["tensorboard", "wandb"]'
+    --save_total_limit 3 \
+    --report_to "tensorboard" "wandb"
 ```
 
 ### Fine-tuning BLOOM-7B1 model
@@ -225,31 +219,28 @@ The following command shows how to fine-tune [bigscience/bloom-7b1](https://hugg
 ```bash
 python finetune.py \
     --model_name_or_path "bigscience/bloom-7b1" \
-    --data_path "data/vigogne_data_cleaned.json" \
-    --val_set_size 2000 \
-    --model_max_length 256 \
+    --train_file "data/vigogne_data_cleaned.json" \
     --output_dir "outputs/bloom-7b1-ft-vigogne" \
     --run_name "bloom-7b1-ft-vigogne" \
     --overwrite_output_dir \
+    --model_max_length_percentile 95 \
+    --preprocessing_num_workers 4 \
+    --dataloader_num_workers 1 \
     --lora_r 16 \
     --lora_alpha 32 \
     --lora_dropout 0.05 \
-    --target_modules '["query_key_value"]' \
-    --num_train_epochs 3 \
-    --optim "adamw_torch" \
-    --learning_rate 3e-4 \
-    --warmup_steps 100 \
+    --target_modules "query_key_value" \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 8 \
     --gradient_accumulation_steps 8 \
-    --dataloader_num_workers="1" \
+    --num_train_epochs 3 \
+    --learning_rate 3e-4 \
+    --warmup_steps 100 \
     --logging_steps 25 \
-    --save_total_limit 3 \
     --save_strategy "steps" \
     --save_steps 200 \
-    --evaluation_strategy "steps" \
-    --eval_steps 200 \
-    --report_to='["tensorboard", "wandb"]'
+    --save_total_limit 3 \
+    --report_to "tensorboard" "wandb"
 ```
 
 ### Fine-tuning OPT-6.7B model
@@ -259,31 +250,28 @@ The following command shows how to fine-tune [facebook/opt-6.7b](https://hugging
 ```bash
 python finetune.py \
     --model_name_or_path "facebook/opt-6.7b" \
-    --data_path "data/vigogne_data_cleaned.json" \
-    --val_set_size 2000 \
-    --model_max_length 424 \
+    --train_file "data/vigogne_data_cleaned.json" \
     --output_dir "outputs/opt-6b7-ft-vigogne" \
     --run_name "opt-6b7-ft-vigogne" \
     --overwrite_output_dir \
+    --model_max_length_percentile 95 \
+    --preprocessing_num_workers 4 \
+    --dataloader_num_workers 1 \
     --lora_r 16 \
     --lora_alpha 32 \
     --lora_dropout 0.05 \
-    --target_modules '["q_proj", "v_proj"]' \
-    --num_train_epochs 3 \
-    --optim "adamw_torch" \
-    --learning_rate 3e-4 \
-    --warmup_steps 100 \
+    --target_modules "q_proj" "v_proj" \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 8 \
     --gradient_accumulation_steps 8 \
-    --dataloader_num_workers="1" \
+    --num_train_epochs 3 \
+    --learning_rate 3e-4 \
+    --warmup_steps 100 \
     --logging_steps 25 \
-    --save_total_limit 3 \
     --save_strategy "steps" \
     --save_steps 200 \
-    --evaluation_strategy "steps" \
-    --eval_steps 200 \
-    --report_to='["tensorboard", "wandb"]'
+    --save_total_limit 3 \
+    --report_to "tensorboard" "wandb"
 ```
 
 ## Example outputs

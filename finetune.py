@@ -1,18 +1,25 @@
 #! /usr/bin/env python
 # coding=utf-8
 
+import logging
+import math
 import os
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Sequence
 
 import bitsandbytes as bnb
-import fire
+import datasets
+import numpy as np
 import torch
 import transformers
-from datasets import load_dataset
+from datasets import DatasetDict, load_dataset
 from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
-from transformers import AutoModelForCausalLM, AutoTokenizer, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, LlamaTokenizer, Trainer, TrainingArguments
+
+from utils import print_trainable_parameters
+
+logger = logging.getLogger(__name__)
 
 IGNORE_INDEX = -100
 DEFAULT_PAD_TOKEN = "[PAD]"
@@ -52,6 +59,42 @@ def generate_prompt(example):
     )
 
 
+@dataclass
+class ModelArguments:
+    # Base model parameters
+    model_name_or_path: Optional[str] = field(default=None)
+    # LoRA parameters
+    lora_r: int = field(default=8, metadata={"help": "Lora rank."})
+    lora_alpha: int = field(default=16, metadata={"help": "Lora alpha."})
+    lora_dropout: float = field(default=0.05, metadata={"help": "Lora dropout."})
+    target_modules: List[str] = field(
+        default_factory=lambda: ["q_proj", "v_proj"], metadata={"help": "Names of the modules to apply Lora to."}
+    )
+
+
+@dataclass
+class DataArguments:
+    train_file: Optional[str] = field(default=None, metadata={"help": "Path to the training file."})
+    eval_file: Optional[str] = field(default=None, metadata={"help": "Path to the evaluation file."})
+    model_max_length: Optional[int] = field(
+        default=None, metadata={"help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."}
+    )
+    model_max_length_percentile: Optional[int] = field(
+        default=95, metadata={"help": "Percentile of the example length. Used to determin `model_max_length`."}
+    )
+    preprocessing_num_workers: Optional[int] = field(
+        default=None, metadata={"help": "The number of processes to use for the preprocessing."}
+    )
+
+
+@dataclass
+class VigogneTrainingArguments(TrainingArguments):
+    optim: str = field(default="adamw_torch", metadata={"help": "Optimizer to use."})
+    fp16: bool = field(
+        default=True, metadata={"help": "Whether to use fp16 16-bit (mixed) precision training instead of 32-bit training."}
+    )
+
+
 # Modified from: https://github.com/bofenghuang/stanford_alpaca/blob/eb5b171d9b103a12a8e14e0edca9cbc45fe1d512/train.py#L166-L182
 # Almost same to transformers.DataCollatorForSeq2Seq
 @dataclass
@@ -68,8 +111,8 @@ class DataCollatorForSupervisedDataset(object):
 
         if self.pad_to_multiple_of is not None:
             max_length_index, max_length = max(enumerate([len(input_ids_) for input_ids_ in input_ids]), key=lambda x: x[1])
-            # int(math.ceil
-            n_padding = ((max_length // self.pad_to_multiple_of) + 1) * self.pad_to_multiple_of - max_length
+            # n_padding = ((max_length // self.pad_to_multiple_of) + 1) * self.pad_to_multiple_of - max_length
+            n_padding = math.ceil(max_length / self.pad_to_multiple_of) * self.pad_to_multiple_of - max_length
             # Pad the longest example to pad_to_multiple_of * N
             input_ids[max_length_index].extend([self.tokenizer.pad_token_id] * n_padding)
             labels[max_length_index].extend([IGNORE_INDEX] * n_padding)
@@ -110,40 +153,56 @@ def smart_tokenizer_and_embedding_resize(
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
 
-def train(
-    model_name_or_path: str,
-    output_dir: str,
-    data_path: str,
-    val_set_size: int = 2000,
-    model_max_length: int = 256,
-    lora_r: int = 8,
-    lora_alpha: int = 16,
-    lora_dropout: float = 0.05,
-    target_modules: List[str] = ["q_proj", "v_proj"],
-    num_train_epochs: int = 3,
-    learning_rate: float = 3e-4,
-    per_device_train_batch_size: int = 8,
-    gradient_accumulation_steps: int = 16,
-    **kwargs,
-):
+def train():
+    # HF parser
+    parser = HfArgumentParser((ModelArguments, DataArguments, VigogneTrainingArguments))
+    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
+    # Setup logging
+    logging.basicConfig(
+        format="%(asctime)s - %(levelname)s - %(name)s - %(message)s",
+        datefmt="%m/%d/%Y %H:%M:%S",
+        handlers=[logging.StreamHandler(sys.stdout)],
+    )
+
+    if training_args.should_log:
+        # The default of training_args.log_level is passive, so we set log level at info here to have that default.
+        transformers.utils.logging.set_verbosity_info()
+
+    log_level = training_args.get_process_log_level()
+    logger.setLevel(log_level)
+    datasets.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.set_verbosity(log_level)
+    transformers.utils.logging.enable_default_handler()
+    transformers.utils.logging.enable_explicit_format()
+
+    # Log on each process the small summary:
+    logger.warning(
+        f"Process rank: {training_args.local_rank}, device: {training_args.device}, n_gpu: {training_args.n_gpu}"
+        + f"distributed training: {bool(training_args.local_rank != -1)}, 16-bits training: {training_args.fp16}"
+    )
+    # Set the verbosity to info of the Transformers logger (on main process only):
+    logger.info(f"Model parameters {model_args}")
+    logger.info(f"Training/evaluation parameters {training_args}")
+
+    # todo: better handle
     device_map = "auto"
     world_size = int(os.environ.get("WORLD_SIZE", 1))
     ddp = world_size != 1
     if ddp:
         device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
 
+    # Load model and tokenizer
     model = AutoModelForCausalLM.from_pretrained(
-        model_name_or_path,
+        model_args.model_name_or_path,
         load_in_8bit=True,
         device_map=device_map,
     )
 
     # todo: better handle
-    tokenizer_class = LlamaTokenizer if "llama" in model_name_or_path else AutoTokenizer
+    tokenizer_class = LlamaTokenizer if "llama" in model_args.model_name_or_path else AutoTokenizer
     tokenizer = tokenizer_class.from_pretrained(
-        model_name_or_path,
-        model_max_length=model_max_length,
+        model_args.model_name_or_path,
         padding_side="right",
         use_fast=False,
     )
@@ -155,7 +214,7 @@ def train(
             tokenizer=tokenizer,
             model=model,
         )
-    if "llama" in model_name_or_path:
+    if "llama" in model_args.model_name_or_path:
         tokenizer.add_special_tokens(
             {
                 "eos_token": DEFAULT_EOS_TOKEN,
@@ -169,29 +228,63 @@ def train(
     model = prepare_model_for_int8_training(model)
 
     lora_config = LoraConfig(
-        r=lora_r,
-        lora_alpha=lora_alpha,
-        target_modules=target_modules,
-        lora_dropout=lora_dropout,
+        r=model_args.lora_r,
+        lora_alpha=model_args.lora_alpha,
+        target_modules=model_args.target_modules,
+        lora_dropout=model_args.lora_dropout,
         bias="none",
         task_type=TaskType.CAUSAL_LM,
     )
     model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
+    print_trainable_parameters(model)
 
     # Load data
-    data = load_dataset("json", data_files=data_path)
+    raw_datasets = DatasetDict()
+    if data_args.train_file is not None:
+        ext = data_args.train_file.rsplit(".", 1)[-1]
+        raw_datasets["train"] = load_dataset(ext, data_files=data_args.train_file)["train"]
+    else:
+        raise ValueError("You have not specified any train file")
+    if data_args.eval_file is not None:
+        ext = data_args.eval_file.rsplit(".", 1)[-1]
+        raw_datasets["eval"] = load_dataset(ext, data_files=data_args.eval_file)["train"]
+    # logger.info(raw_datasets)
 
+    # Determine model_max_length for truncation
+    model_max_length = data_args.model_max_length
+
+    def get_example_length(example):
+        user_prompt = generate_prompt(example)
+        example["example_length"] = len(tokenizer(user_prompt + example["output"] + tokenizer.eos_token)["input_ids"])
+        return example
+
+    if model_max_length is None:
+        with training_args.main_process_first(desc="dataset map tokenization"):
+            train_example_lengths = raw_datasets["train"].map(
+                get_example_length,
+                num_proc=data_args.preprocessing_num_workers,
+                remove_columns=next(iter(raw_datasets.values())).column_names,
+                desc="get example lengths",
+            )["example_length"]
+        # Take percentile of max length
+        model_max_length = math.ceil(np.percentile(train_example_lengths, data_args.model_max_length_percentile))
+        logger.info(
+            f"`model_max_length` has been set to the {data_args.model_max_length_percentile}th percentile of training example lengths: {model_max_length}"
+        )
+
+    # Tokenize data
     def preprocess_function(example):
         # Format prompt
         user_prompt = generate_prompt(example)
 
         # Get prompt length for masking
-        len_user_prompt_tokens = len(tokenizer(user_prompt, truncation=True)["input_ids"])
+        len_user_prompt_tokens = len(tokenizer(user_prompt, truncation=True, max_length=model_max_length)["input_ids"])
 
         # Tokenize
         # todo: need eos?
-        input_ids = tokenizer(user_prompt + example["output"] + tokenizer.eos_token, truncation=True)["input_ids"]
+        input_ids = tokenizer(
+            user_prompt + example["output"] + tokenizer.eos_token, truncation=True, max_length=model_max_length
+        )["input_ids"]
         # Mask prompt
         labels = [IGNORE_INDEX] * len_user_prompt_tokens + input_ids[len_user_prompt_tokens:]
 
@@ -203,32 +296,24 @@ def train(
 
         return {"input_ids": input_ids, "labels": labels}
 
-    if val_set_size > 0:
-        train_val = data["train"].train_test_split(test_size=val_set_size, shuffle=True, seed=42)
-        train_data = train_val["train"].shuffle().map(preprocess_function, remove_columns=data["train"].column_names)
-        val_data = train_val["test"].map(preprocess_function, remove_columns=data["train"].column_names)
-    else:
-        train_data = data["train"].shuffle().map(preprocess_function, remove_columns=data["train"].column_names)
-        val_data = None
+    with training_args.main_process_first(desc="dataset map tokenization"):
+        preprocessed_dataset = raw_datasets.map(
+            preprocess_function,
+            num_proc=data_args.preprocessing_num_workers,
+            remove_columns=next(iter(raw_datasets.values())).column_names,
+            desc="preprocess data set",
+        )
 
-    trainer = transformers.Trainer(
+    # Init trainer
+    trainer = Trainer(
         model=model,
-        train_dataset=train_data,
-        eval_dataset=val_data,
-        args=transformers.TrainingArguments(
-            per_device_train_batch_size=per_device_train_batch_size,
-            gradient_accumulation_steps=gradient_accumulation_steps,
-            num_train_epochs=num_train_epochs,
-            learning_rate=learning_rate,
-            fp16=True,
-            output_dir=output_dir,
-            load_best_model_at_end=True if val_set_size > 0 else False,
-            ddp_find_unused_parameters=False if ddp else None,
-            **kwargs,
+        train_dataset=preprocessed_dataset["train"],
+        eval_dataset=preprocessed_dataset["eval"] if data_args.eval_file is not None else None,
+        args=training_args,
+        data_collator=DataCollatorForSupervisedDataset(
+            tokenizer=tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
         ),
-        data_collator=DataCollatorForSupervisedDataset(tokenizer=tokenizer, pad_to_multiple_of=8),
     )
-    print(trainer.args)
 
     # Silence the warnings. Please re-enable for inference!
     model.config.use_cache = False
@@ -241,8 +326,8 @@ def train(
 
     trainer.train()
 
-    model.save_pretrained(output_dir)
+    model.save_pretrained(training_args.output_dir)
 
 
 if __name__ == "__main__":
-    fire.Fire(train)
+    train()
