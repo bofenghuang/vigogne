@@ -22,6 +22,7 @@ This project is based on [LLaMA](https://github.com/facebookresearch/llama), [St
 ## Table of Contents
 
 - [Setup](#setup)
+- [Updates](#updates)
 - [Play with 🦙 Vigogne models](#play-with--vigogne-models)
 - [Try it out on your own PC](#try-it-out-on-your-own-pc)
 - [Data](#data)
@@ -29,6 +30,10 @@ This project is based on [LLaMA](https://github.com/facebookresearch/llama), [St
 - [Example outputs](#example-outputs)
 - [Bias, Risks, and Limitations](#bias-risks-and-limitations)
 - [Next steps](#next-steps)
+
+## Updates
+
+- 2023/3/29: Add instructions for deploying using [llama.cpp](https://github.com/ggerganov/llama.cpp)
 
 ## Setup
 
@@ -81,10 +86,21 @@ cd llama.cpp
 make
 ```
 
-### 2. Combine Vigogne-LoRA weights with the corresponding original LLaMA model
+### 2. Convert the original LLaMA model to the format used by Hugging Face
+
+If you only have the weight of Facebook's original LLaMA model, you will need to convert it to the format used by Hugging Face. Please ignore this step if you already have the LLaMA model in Hugging Face's format.
 
 ```bash
-# combine
+python ../scripts/convert_llama_weights_to_hf.py \
+    --input_dir <path/to/facebook/downloaded/llama/weights> \
+    --model_size 7B \
+    --output_dir <name/or/path/to/hf/llama/7b/model>
+```
+
+### 3. Combine the LLaMA model with the Vigogne-LoRA weights
+
+```bash
+# combine the LLaMA model in Hugging Face's format and the LoRA weights to get the full fine-tuned model
 python ../scripts/export_state_dict_checkpoint.py \
     --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
     --lora_model_name_or_path "bofenghuang/vigogne-lora-7b" \
@@ -102,7 +118,7 @@ tree models
 # └── tokenizer.model
 ```
 
-### 3. Quantize the combined model
+### 4. Quantize the combined model
 
 ```bash
 # convert the 7B model to ggml FP16 format
@@ -112,7 +128,7 @@ python convert-pth-to-ggml.py ./models/7B/ 1
 python quantize.py 7B
 ```
 
-### 4. Run the inference
+### 5. Run the inference
 
 ```bash
 # ./main -h for more information
