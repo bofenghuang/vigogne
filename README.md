@@ -45,7 +45,7 @@ pip install -r requirements.txt
 
 ## Play with 🦙 Vigogne models
 
-**User Notice**: Facebook has not made the official LLaMA model weights open source, although various third-party download links are available online, such as `decapoda-research/llama-7b-hf` in the HuggingFace model library. It should be noted that the use of these links may not comply with Facebook's policies. Due to the reasons mentioned above, the project cannot release the complete weights of fine-tuned models. However, only the LoRA weights can be provided, which can be considered as a "patch" for the original LLaMA model.
+**User Notice**: Facebook has not made the official LLaMA model weights open source, although various third-party download links are available online, such as `decapoda-research/llama-7b-hf` in the Hugging Face model library. It should be noted that the use of these links may not comply with Facebook's policies. Due to the reasons mentioned above, the project cannot release the complete weights of fine-tuned models. However, only the LoRA weights can be provided, which can be considered as a "patch" for the original LLaMA model.
 
 The fine-tuned instruction-following vigogne models are available on 🤗 Hugging Face:
 
@@ -88,7 +88,7 @@ make
 
 ### 2. Convert the original LLaMA model to the format used by Hugging Face
 
-If you only have the weight of Facebook's original LLaMA model, you will need to convert it to the format used by Hugging Face. Please ignore this step if you already have the LLaMA model in Hugging Face's format.
+If you only have the weights of Facebook's original LLaMA model, you will need to convert it to the format used by Hugging Face. Please skip this step if you have already converted the LLaMA model to Hugging Face's format or if you are using a third-party converted model from the Hugging Face model library, such as `decapoda-research/llama-7b-hf`. Please note that this project is not responsible for ensuring the compliance and correctness of using third-party weights that are not Facebook official.
 
 ```bash
 python ../scripts/convert_llama_weights_to_hf.py \
