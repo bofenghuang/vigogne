@@ -105,7 +105,8 @@ python ../scripts/convert_llama_weights_to_hf.py \
 python ../scripts/export_state_dict_checkpoint.py \
     --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
     --lora_model_name_or_path "bofenghuang/vigogne-lora-7b" \
-    --output_dir ./models/7B
+    --output_dir ./models/7B \
+    --checkpoint_size "7b"
 
 # download the tokenizer.model file
 wget -P ./models https://huggingface.co/bofenghuang/vigogne-lora-7b/resolve/main/tokenizer.model

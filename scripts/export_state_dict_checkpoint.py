@@ -1,3 +1,6 @@
+#! /usr/bin/env python
+# coding=utf-8
+
 """
 Modified from: https://github.com/tloen/alpaca-lora
 """
@@ -7,12 +10,27 @@ import os
 
 import fire
 import torch
-from peft import LoraConfig, PeftModel
+from peft import PeftModel
 from transformers import LlamaForCausalLM, LlamaTokenizer
 
+CHECKPOINT_PARAMS = {
+    "7b": {"dim": 4096, "multiple_of": 256, "n_heads": 32, "n_layers": 32, "norm_eps": 1e-06, "vocab_size": -1},
+    "13b": {"dim": 5120, "multiple_of": 256, "n_heads": 40, "n_layers": 40, "norm_eps": 1e-06, "vocab_size": -1},
+    "30b": {"dim": 6656, "multiple_of": 256, "n_heads": 52, "n_layers": 60, "norm_eps": 1e-06, "vocab_size": -1},
+    "65b": {"dim": 8192, "multiple_of": 256, "n_heads": 64, "n_layers": 80, "norm_eps": 1e-06, "vocab_size": -1},
+}
 
-def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir: str):
-    tokenizer = LlamaTokenizer.from_pretrained(base_model_name_or_path)
+
+def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir: str, checkpoint_size: str = "7b"):
+
+    # Retrieve the model parameters
+    params = CHECKPOINT_PARAMS.get(checkpoint_size)
+    if params is None:
+        raise ValueError(
+            f"Cannot find the right model parameters for {checkpoint_size}. Please choose between {list(CHECKPOINT_PARAMS.keys())}."
+        )
+
+    # tokenizer = LlamaTokenizer.from_pretrained(base_model_name_or_path)
 
     base_model = LlamaForCausalLM.from_pretrained(
         base_model_name_or_path,
@@ -49,14 +67,14 @@ def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir:
 
     lora_model_sd = lora_model.state_dict()
 
-    params = {
-        "dim": 4096,
-        "multiple_of": 256,
-        "n_heads": 32,
-        "n_layers": 32,
-        "norm_eps": 1e-06,
-        "vocab_size": -1,
-    }
+    # params = {
+    #     "dim": 4096,
+    #     "multiple_of": 256,
+    #     "n_heads": 32,
+    #     "n_layers": 32,
+    #     "norm_eps": 1e-06,
+    #     "vocab_size": -1,
+    # }
     n_layers = params["n_layers"]
     n_heads = params["n_heads"]
     dim = params["dim"]
