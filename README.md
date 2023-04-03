@@ -11,7 +11,7 @@
 
 This repository contains code for reproducing the [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca) in French 🇫🇷 using [low-rank adaptation (LoRA)](https://arxiv.org/abs/2106.09685) provided by 🤗 Hugging Face's [PEFT](https://github.com/huggingface/peft) library. In addition to the LoRA technique, we also use [LLM.int8()](https://arxiv.org/abs/2208.07339) provided by [bitsandbytes](https://github.com/TimDettmers/bitsandbytes) to quantize pretrained language models (PLMs) to int8. Combining these two techniques allows us to fine-tune PLMs on a single consumer GPU such as RTX 4090.
 
-This project is based on [LLaMA](https://github.com/facebookresearch/llama), [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), [**Alpaca-Lora**](https://github.com/tloen/alpaca-lora), [Cabrita](https://github.com/22-hours/cabrita) and [Hugging Face](https://huggingface.co/docs/transformers/main_classes/trainer). In addition, we adapted the [training script](https://github.com/bofenghuang/vigogne/blob/main/finetune.py) to fine-tune on more models such as [BLOOM](https://huggingface.co/bigscience/bloom-7b1) and [mT5](https://huggingface.co/google/mt5-xxl). We also share the [translated dataset](https://github.com/bofenghuang/vigogne/blob/main/data/vigogne_data_cleaned.json) and the trained [vigogne-lora-7b](https://huggingface.co/bofenghuang/vigogne-lora-7b) and [vigogne-lora-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-lora-bloom-7b1) weights.
+This project is based on [LLaMA](https://github.com/facebookresearch/llama), [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), [**Alpaca-Lora**](https://github.com/tloen/alpaca-lora), [Cabrita](https://github.com/22-hours/cabrita) and [Hugging Face](https://huggingface.co/docs/transformers/main_classes/trainer). In addition, we adapted the [training script](https://github.com/bofenghuang/vigogne/blob/main/finetune.py) to fine-tune on more models such as [BLOOM](https://huggingface.co/bigscience/bloom-7b1) and [mT5](https://huggingface.co/google/mt5-xxl). We also share the [translated Alpaca dataset](https://github.com/bofenghuang/vigogne/blob/main/data/vigogne_data_cleaned.json) and the trained LoRA weights such as [vigogne-lora-7b](https://huggingface.co/bofenghuang/vigogne-lora-7b) and [vigogne-lora-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-lora-bloom-7b1).
 
 **Usage and License Notices**: Same as [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), Vigogne is intended and licensed for research use only. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
 
@@ -34,6 +34,7 @@ This project is based on [LLaMA](https://github.com/facebookresearch/llama), [St
 ## Updates
 
 - 2023/3/29: Add instructions for deploying using [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- 2023/4/3: Add fine-tuning scripts for seq2seq models
 
 ## Setup
 
@@ -88,7 +89,7 @@ make
 
 ### 2. Convert the original LLaMA model to the format used by Hugging Face
 
-If you only have the weights of Facebook's original LLaMA model, you will need to convert it to the format used by Hugging Face. Please skip this step if you have already converted the LLaMA model to Hugging Face's format or if you are using a third-party converted model from the Hugging Face model library, such as `decapoda-research/llama-7b-hf`. Please note that this project is not responsible for ensuring the compliance and correctness of using third-party weights that are not Facebook official.
+If you only have the weights of Facebook's original LLaMA model, you will need to convert it to the format used by Hugging Face. *Please skip this step if you have already converted the LLaMA model to Hugging Face's format or if you are using a third-party converted model from the Hugging Face model library, such as `decapoda-research/llama-7b-hf`. Please note that this project is not responsible for ensuring the compliance and correctness of using third-party weights that are not Facebook official.*
 
 ```bash
 python ../scripts/convert_llama_weights_to_hf.py \
@@ -281,6 +282,38 @@ python finetune.py \
     --target_modules "q_proj" "v_proj" \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 8 \
+    --gradient_accumulation_steps 8 \
+    --num_train_epochs 3 \
+    --learning_rate 3e-4 \
+    --warmup_steps 100 \
+    --logging_steps 25 \
+    --save_strategy "steps" \
+    --save_steps 200 \
+    --save_total_limit 3 \
+    --report_to "tensorboard" "wandb"
+```
+
+### Fine-tuning MT5-XXL model
+
+The following command shows how to fine-tune a seq2seq model such as [google/mt5-xxl](https://huggingface.co/google/mt5-xxl) using a single GPU.
+
+```bash
+python finetune_seq2seq.py \
+    --model_name_or_path "google/mt5-xxl" \
+    --train_file "data/vigogne_data_cleaned.json" \
+    --output_dir "outputs/google-mt5_xxl-ft-vigogne" \
+    --run_name "google-mt5_xxl-ft-vigogne" \
+    --overwrite_output_dir \
+    --model_max_source_length_percentile 95 \
+    --model_max_target_length_percentile 95 \
+    --preprocessing_num_workers 4 \
+    --dataloader_num_workers 1 \
+    --lora_r 16 \
+    --lora_alpha 32 \
+    --lora_dropout 0.05 \
+    --target_modules "q" "v" \
+    --per_device_train_batch_size 8 \
+    --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 8 \
     --num_train_epochs 3 \
     --learning_rate 3e-4 \
