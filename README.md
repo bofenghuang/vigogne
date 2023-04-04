@@ -127,7 +127,7 @@ tree models
 python convert-pth-to-ggml.py ./models/7B/ 1
 
 # further quantize the model to 4-bit
-python quantize.py 7B
+./quantize ./models/7B/ggml-model-f16.bin ./models/7B/ggml-model-q4_0.bin 2
 ```
 
 ### 5. Run the inference
