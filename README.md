@@ -106,7 +106,7 @@ python ../scripts/export_state_dict_checkpoint.py \
     --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
     --lora_model_name_or_path "bofenghuang/vigogne-lora-7b" \
     --output_dir ./models/7B \
-    --checkpoint_size "7b"
+    --base_model_size "7B"
 
 # download the tokenizer.model file
 wget -P ./models https://huggingface.co/bofenghuang/vigogne-lora-7b/resolve/main/tokenizer.model
@@ -139,33 +139,22 @@ python quantize.py 7B
 
 ## Data
 
-We translated the original [alpaca_data.json](https://github.com/tatsu-lab/stanford_alpaca/blob/main/alpaca_data.json) to French using `gpt-3.5-turbo` by the chat completion API.
+We used the [cleaned version](https://github.com/gururise/AlpacaDataCleaned) of the Stanford Alpaca dataset and translated it into French using `gpt-3.5-turbo` through the chat completion API. The entire translation process cost about $40.
 
-You can also translate it to other languages using the [translation script](https://github.com/bofenghuang/vigogne/blob/main/scripts/translate_data.py). Don't forget to modify your [translation prompt](https://github.com/bofenghuang/vigogne/blob/e6ae25fc0569ca85c25529a6d06122b35426aa2d/scripts/translate_data.py#L47-L57).
+However, it's important to note that the translation may have affected the accuracy of certain tasks, such as generating rhyming words or correcting grammar (discussed [here](https://github.com/tloen/alpaca-lora/pull/127)). We welcome PRs to help improve the quality of this dataset!
 
-The translation may have compromised the accuracy of certain tasks, such as generating rhyming words or correcting grammar (discussed [here](https://github.com/tloen/alpaca-lora/pull/127)). We warmly welcome PRs to help clean up this dataset!
-
-The following command shows how to estimate the price for translating the full dataset.
-
-```bash
-./scripts/translate_data.py estimate_price \
-    --input_json_file data/alpaca_data_cleaned.json \
-    --ratio_output_input 1.0 \
-    --model gpt-3.5-turbo-0301 \
-    --price_per_thousand_tokens 0.002
-```
-
-You can translate the dataset using the following command.
+To translate the dataset, you can use the following command:
 
 ```bash
 # Specify your OpenAI API key
-export OPENAI_API_KEY=xx
+export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-./scripts/translate_data.py process_data \
+python scripts/translate_alpaca.py \
     --input_json_file data/alpaca_data_cleaned.json \
     --output_json_file data/vigogne_data_cleaned.json \
+    --failed_output_json_file data/vigogne_data_cleaned_failed.json \
     --model gpt-3.5-turbo \
-    --max_parallel_requests 32
+    --max_parallel_requests 16
 ```
 
 ## Training
