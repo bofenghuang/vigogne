@@ -14,20 +14,20 @@ from peft import PeftModel
 from transformers import LlamaForCausalLM, LlamaTokenizer
 
 CHECKPOINT_PARAMS = {
-    "7b": {"dim": 4096, "multiple_of": 256, "n_heads": 32, "n_layers": 32, "norm_eps": 1e-06, "vocab_size": -1},
-    "13b": {"dim": 5120, "multiple_of": 256, "n_heads": 40, "n_layers": 40, "norm_eps": 1e-06, "vocab_size": -1},
-    "30b": {"dim": 6656, "multiple_of": 256, "n_heads": 52, "n_layers": 60, "norm_eps": 1e-06, "vocab_size": -1},
-    "65b": {"dim": 8192, "multiple_of": 256, "n_heads": 64, "n_layers": 80, "norm_eps": 1e-06, "vocab_size": -1},
+    "7B": {"dim": 4096, "multiple_of": 256, "n_heads": 32, "n_layers": 32, "norm_eps": 1e-06, "vocab_size": -1},
+    "13B": {"dim": 5120, "multiple_of": 256, "n_heads": 40, "n_layers": 40, "norm_eps": 1e-06, "vocab_size": -1},
+    "30B": {"dim": 6656, "multiple_of": 256, "n_heads": 52, "n_layers": 60, "norm_eps": 1e-06, "vocab_size": -1},
+    "65B": {"dim": 8192, "multiple_of": 256, "n_heads": 64, "n_layers": 80, "norm_eps": 1e-06, "vocab_size": -1},
 }
 
 
-def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir: str, checkpoint_size: str = "7b"):
+def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir: str, base_model_size: str = "7B"):
 
     # Retrieve the model parameters
-    params = CHECKPOINT_PARAMS.get(checkpoint_size)
+    params = CHECKPOINT_PARAMS.get(base_model_size)
     if params is None:
         raise ValueError(
-            f"Cannot find the right model parameters for {checkpoint_size}. Please choose between {list(CHECKPOINT_PARAMS.keys())}."
+            f"Cannot find the right model parameters for {base_model_size}. Please choose between {list(CHECKPOINT_PARAMS.keys())}."
         )
 
     # tokenizer = LlamaTokenizer.from_pretrained(base_model_name_or_path)
