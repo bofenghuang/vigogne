@@ -5,13 +5,22 @@
 Modified from: https://github.com/tloen/alpaca-lora/blob/main/generate.py
 """
 
+import logging
 import sys
+from threading import Thread
 
 import fire
 import gradio as gr
 import torch
 from peft import PeftModel
-from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer, GenerationConfig, LlamaTokenizer, TextIteratorStreamer
+
+logging.basicConfig(
+    format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
+    datefmt="%Y-%m-%dT%H:%M:%SZ",
+)
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 if torch.cuda.is_available():
     device = "cuda"
@@ -23,6 +32,8 @@ try:
         device = "mps"
 except:
     pass
+
+logger.info(f"Model will be loaded on device `{device}`")
 
 
 PROMPT_DICT = {
@@ -96,40 +107,68 @@ def main(
     def instruct(
         instruction,
         input=None,
+        streaming=True,
         temperature=0.1,
         no_repeat_ngram_size=3,
         max_new_tokens=512,
         **kwargs,
     ):
         prompt = generate_prompt(instruction, input)
-        tokenized_inputs = tokenizer(prompt, return_tensors="pt")
-        input_ids = tokenized_inputs["input_ids"].to(device)
+        input_ids = tokenizer(prompt, return_tensors="pt")["input_ids"].to(device)
+
         generation_config = GenerationConfig(
             temperature=temperature,
             no_repeat_ngram_size=no_repeat_ngram_size,
             **kwargs,
         )
-        with torch.inference_mode():
-            generation_output = model.generate(
+
+        if streaming:
+            # Start generation on a separate thread, so that we don't block the UI. The text is pulled from the streamer
+            # in the main thread. Adds timeout to the streamer to handle exceptions in the generation thread.
+            streamer = TextIteratorStreamer(tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True)
+            generate_kwargs = dict(
                 input_ids=input_ids,
+                streamer=streamer,
                 generation_config=generation_config,
-                return_dict_in_generate=True,
+                # return_dict_in_generate=True,
                 # output_scores=True,
                 max_new_tokens=max_new_tokens,
             )
-        s = generation_output.sequences[0]
-        output = tokenizer.decode(s, skip_special_tokens=True)
-        return output.split("### Réponse:")[1].strip()
+            t = Thread(target=model.generate, kwargs=generate_kwargs)
+            t.start()
+
+            # Pull the generated text from the streamer, and update the model output.
+            output_text = ""
+            for new_text in streamer:
+                output_text += new_text
+                yield output_text
+            logger.info(output_text)
+            return output_text
+
+        else:
+            generation_output = model.generate(
+                input_ids=input_ids,
+                generation_config=generation_config,
+                # return_dict_in_generate=True,
+                # output_scores=True,
+                max_new_tokens=max_new_tokens,
+            )
+
+            output_text = tokenizer.decode(generation_output[0], skip_special_tokens=True)
+            logger.info(output_text)
+            output_text = output_text.rsplit("### Réponse:", 1)[-1].strip()
+            return output_text
 
     gr.Interface(
         fn=instruct,
         inputs=[
-            gr.inputs.Textbox(label="Instruction", default="Parlez-moi des alpacas."),
+            gr.inputs.Textbox(label="Instruction", default="Parlez-moi des vigognes."),
             gr.inputs.Textbox(label="Input"),
+            gr.Checkbox(label="Streaming mode?", value=True),
         ],
-        outputs=[gr.outputs.Textbox(label="Output")],
+        outputs=[gr.Textbox(label="Output", interactive=False)],
         title="🦙 Vigogne-LoRA",
-        description="Vigogne-LoRA is a 7B-parameter LLaMA model finetuned to follow the instructions in French. For more information, please visit [the project's website](https://github.com/bofenghuang/vigogne).",
+        description="Vigogne-LoRA is a 7B-parameter LLaMA model finetuned to follow the French 🇫🇷 instructions. For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne).",
     ).launch(enable_queue=True, share=True)
 
 

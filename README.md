@@ -35,6 +35,8 @@ This project is based on [LLaMA](https://github.com/facebookresearch/llama), [St
 
 - 2023/3/29: Add instructions for deploying using [llama.cpp](https://github.com/ggerganov/llama.cpp)
 - 2023/4/3: Add fine-tuning scripts for seq2seq models
+- 2023/4/6: Improve the quality of the translated Alpaca dataset
+- 2023/4/6: Update Gradio demo to streaming mode
 
 ## Setup
 
@@ -54,13 +56,12 @@ The fine-tuned instruction-following vigogne models are available on 🤗 Huggin
 - Fine-tuned LLaMA-13B model: [bofenghuang/vigogne-lora-13b](https://huggingface.co/bofenghuang/vigogne-lora-13b)
 - Fine-tuned LLaMA-30B model: [bofenghuang/vigogne-lora-30b](https://huggingface.co/bofenghuang/vigogne-lora-30b)
 - Fine-tuned BLOOM-7B1 model: [bofenghuang/vigogne-lora-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-lora-bloom-7b1)
-- Fine-tuned OPT-6.7B model: [bofenghuang/vigogne-lora-opt-6.7b](https://huggingface.co/bofenghuang/vigogne-lora-opt-6.7b)
 
 You can infer these models by using the following Google Colab Notebook.
 
 <a href="https://colab.research.google.com/github/bofenghuang/vigogne/blob/main/infer.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
-You can also run a Gradio demo using the following command:
+You can also run a Gradio demo in streaming mode by using the following command:
 
 ```bash
 ./demo.py \
