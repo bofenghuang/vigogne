@@ -64,7 +64,7 @@ You can also run a Gradio demo using the following command:
 
 ```bash
 ./demo.py \
-    --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
+    --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
     --lora_model_name_or_path bofenghuang/vigogne-lora-7b
 ```
 
@@ -93,9 +93,9 @@ If you only have the weights of Facebook's original LLaMA model, you will need t
 
 ```bash
 python ../scripts/convert_llama_weights_to_hf.py \
-    --input_dir <path/to/facebook/downloaded/llama/weights> \
+    --input_dir path/to/facebook/downloaded/llama/weights \
     --model_size 7B \
-    --output_dir <name/or/path/to/hf/llama/7b/model>
+    --output_dir name/or/path/to/hf/llama/7b/model
 ```
 
 ### 3. Combine the LLaMA model with the Vigogne-LoRA weights
@@ -103,7 +103,7 @@ python ../scripts/convert_llama_weights_to_hf.py \
 ```bash
 # combine the LLaMA model in Hugging Face's format and the LoRA weights to get the full fine-tuned model
 python ../scripts/export_state_dict_checkpoint.py \
-    --base_model_name_or_path <name/or/path/to/hf/llama/7b/model> \
+    --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
     --lora_model_name_or_path "bofenghuang/vigogne-lora-7b" \
     --output_dir ./models/7B \
     --base_model_size "7B"
@@ -165,7 +165,7 @@ The following command shows how to fine-tune LLaMA-7B model using a single GPU.
 
 ```bash
 python finetune.py \
-    --model_name_or_path <name/or/path/to/hf/llama/7b/model> \
+    --model_name_or_path name/or/path/to/hf/llama/7b/model \
     --train_file "data/vigogne_data_cleaned.json" \
     --output_dir "outputs/llama-7b-ft-vigogne-lora" \
     --run_name "llama-7b-ft-vigogne-lora" \
@@ -196,7 +196,7 @@ The following command shows how to fine-tune LLaMA-30B model using multi GPUs.
 
 ```bash
 WORLD_SIZE=2 torchrun --nproc_per_node=2 --master_port=29001 finetune.py \
-    --model_name_or_path <name/or/path/to/hf/llama/30b/model> \
+    --model_name_or_path name/or/path/to/hf/llama/30b/model \
     --train_file "data/vigogne_data_cleaned.json" \
     --output_dir "outputs/llama-30b-ft-vigogne-lora" \
     --run_name "llama-30b-ft-vigogne-lora" \
