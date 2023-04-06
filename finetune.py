@@ -196,6 +196,7 @@ def train():
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         load_in_8bit=True,
+        torch_dtype=torch.float16,
         device_map=device_map,
     )
 
@@ -237,6 +238,14 @@ def train():
     )
     model = get_peft_model(model, lora_config)
     print_trainable_parameters(model)
+
+    # Enable MP, now will be force-set
+    # See: https://github.com/tloen/alpaca-lora/pull/131
+    # See: https://github.com/huggingface/transformers/pull/22628
+    # if not ddp and torch.cuda.device_count() > 1:
+    #     # keeps Trainer from trying its own DataParallelism when more than 1 gpu is available
+    #     model.is_parallelizable = True
+    #     model.model_parallel = True
 
     # Load data
     raw_datasets = DatasetDict()
