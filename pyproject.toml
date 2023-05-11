@@ -1,0 +1,65 @@
+[tool.black]
+line-length = 119
+target-version = ['py38']
+
+[tool.isort]
+profile = "black"
+line_length = 119
+include_trailing_comma = true
+multi_line_output = 3
+
+[build-system]
+requires = ["setuptools", "setuptools-scm"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "vigogne"
+authors = [
+    {name = "Bofeng Huanng"},
+]
+version = "0.2.0"
+description = "Vigogne: A toolkit for training, serving, and evaluating French instruction-following models."
+readme = "README.md"
+requires-python = ">=3.8"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+dependencies = [
+    "accelerate",
+    "appdirs",
+    "bitsandbytes",
+    "datasets",
+    "fire",
+    "loralib",
+    "nltk",
+    "peft@git+https://github.com/huggingface/peft.git",
+    "gradio",
+    "openai",
+    "rouge-score",
+    "sentencepiece",
+    "tenacity",
+    "tiktoken",
+    "torch",
+    "transformers>=4.28.0,<4.29.0",
+    "wandb",
+]
+
+[project.optional-dependencies]
+dev = ["black==23.3.0", "pylint==2.8.2"]
+
+[project.urls]
+"Homepage" = "https://github.com/bofenghuang/vigogne"
+"Bug Tracker" = "https://github.com/bofenghuang/vigogne/issues"
+
+[tool.setuptools.packages.find]
+exclude = ["assets*", "wandb", "dist*", "scripts*", "tests*", "tmp*"]
+
+[tool.wheel]
+exclude = ["assets*", "wandb", "dist*", "scripts*", "tests*", "tmp*"]
