@@ -1,4 +1,4 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # coding=utf-8
 
 """
@@ -11,7 +11,7 @@ import os
 import fire
 import torch
 from peft import PeftModel
-from transformers import LlamaForCausalLM, LlamaTokenizer
+from transformers import LlamaForCausalLM
 
 CHECKPOINT_PARAMS = {
     "7B": {"dim": 4096, "multiple_of": 256, "n_heads": 32, "n_layers": 32, "norm_eps": 1e-06, "vocab_size": -1},
@@ -62,6 +62,9 @@ def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir:
             layer.mlp.down_proj.merge_weights = True
         if hasattr(layer.mlp.up_proj, "merge_weights"):
             layer.mlp.up_proj.merge_weights = True
+
+    # todo
+    # lora_model = lora_model.merge_and_unload()
 
     lora_model.train(False)
 
