@@ -1,11 +1,13 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # coding=utf-8
+# Copyright 2023  Bofeng Huang
 
 import logging
 import math
 import os
 import sys
 from dataclasses import dataclass, field
+from functools import partial
 from typing import Dict, List, Optional, Sequence
 
 import bitsandbytes as bnb
@@ -13,57 +15,47 @@ import datasets
 import numpy as np
 import torch
 import transformers
+from accelerate import Accelerator
 from datasets import DatasetDict, load_dataset
 from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, LlamaTokenizer, Trainer, TrainingArguments
+from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, Trainer, TrainingArguments
 
-from utils import print_trainable_parameters
+from vigogne.constants import (
+    CHAT,
+    DEFAULT_BOS_TOKEN,
+    DEFAULT_EOS_TOKEN,
+    DEFAULT_PAD_TOKEN,
+    DEFAULT_UNK_TOKEN,
+    IGNORE_INDEX,
+    INSTRUCT,
+    VALID_MODES,
+)
+from vigogne.preprocess import (
+    get_chat_example_length,
+    get_instruct_example_length,
+    preprocess_chat_example,
+    preprocess_instruct_example,
+)
+from vigogne.train.training_utils import LoadBestPeftModelCallback, SavePeftModelCallback, print_trainable_parameters
 
 logger = logging.getLogger(__name__)
-
-IGNORE_INDEX = -100
-DEFAULT_PAD_TOKEN = "[PAD]"
-DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
-DEFAULT_UNK_TOKEN = "</s>"
-
-# Original English prompt
-# PROMPT_DICT = {
-#     "prompt_input": (
-#         "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n"
-#         "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
-#     ),
-#     "prompt_no_input": (
-#         "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n"
-#         "### Instruction:\n{instruction}\n\n### Response:\n"
-#     ),
-# }
-# French prompt translated by chatgpt
-PROMPT_DICT = {
-    "prompt_input": (
-        "Ci-dessous se trouve une instruction qui décrit une tâche, associée à une entrée qui fournit un contexte supplémentaire. Écrivez une réponse qui complète correctement la demande.\n\n"
-        "### Instruction:\n{instruction}\n\n### Entrée:\n{input}\n\n### Réponse:\n"
-    ),
-    "prompt_no_input": (
-        "Ci-dessous se trouve une instruction qui décrit une tâche. Écrivez une réponse qui complète correctement la demande.\n\n"
-        "### Instruction:\n{instruction}\n\n### Réponse:\n"
-    ),
-}
-
-
-def generate_prompt(example):
-    return (
-        PROMPT_DICT["prompt_input"].format_map(example)
-        if example["input"]
-        else PROMPT_DICT["prompt_no_input"].format_map(example)
-    )
 
 
 @dataclass
 class ModelArguments:
-    # Base model parameters
+    """Base model parameters."""
+
     model_name_or_path: Optional[str] = field(default=None)
-    # LoRA parameters
+    load_in_8bit: bool = field(
+        default=False, metadata={"help": "Whether to convert the loaded model into mixed-8bit quantized model."}
+    )
+
+
+@dataclass
+class LoraArguments:
+    """LoRA parameters."""
+
+    # todo: add modules_to_save
     lora_r: int = field(default=8, metadata={"help": "Lora rank."})
     lora_alpha: int = field(default=16, metadata={"help": "Lora alpha."})
     lora_dropout: float = field(default=0.05, metadata={"help": "Lora dropout."})
@@ -74,6 +66,8 @@ class ModelArguments:
 
 @dataclass
 class DataArguments:
+    """Data parameters."""
+
     train_file: Optional[str] = field(default=None, metadata={"help": "Path to the training file."})
     eval_file: Optional[str] = field(default=None, metadata={"help": "Path to the evaluation file."})
     model_max_length: Optional[int] = field(
@@ -82,9 +76,31 @@ class DataArguments:
     model_max_length_percentile: Optional[int] = field(
         default=95, metadata={"help": "Percentile of the example length. Used to determin `model_max_length`."}
     )
+    max_train_samples: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": (
+                "For debugging purposes or quicker training, truncate the number of training examples to this " "value if set."
+            )
+        },
+    )
+    max_eval_samples: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": (
+                "For debugging purposes or quicker training, truncate the number of evaluation examples to this "
+                "value if set."
+            )
+        },
+    )
+    overwrite_cache: bool = field(default=False, metadata={"help": "Overwrite the cached training and evaluation sets"})
     preprocessing_num_workers: Optional[int] = field(
         default=None, metadata={"help": "The number of processes to use for the preprocessing."}
     )
+    mode: str = field(default=INSTRUCT, metadata={"help": "The mode to preprocess and format the data."})
+
+    def __post_init__(self):
+        assert self.mode in VALID_MODES, f"`mode` should be chosen in {VALID_MODES}"
 
 
 @dataclass
@@ -155,8 +171,10 @@ def smart_tokenizer_and_embedding_resize(
 
 def train():
     # HF parser
-    parser = HfArgumentParser((ModelArguments, DataArguments, VigogneTrainingArguments))
-    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    parser = HfArgumentParser((ModelArguments, LoraArguments, DataArguments, VigogneTrainingArguments))
+    model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    # debug
+    # model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses(args)
 
     # Setup logging
     logging.basicConfig(
@@ -183,56 +201,56 @@ def train():
     )
     # Set the verbosity to info of the Transformers logger (on main process only):
     logger.info(f"Model parameters {model_args}")
+    logger.info(f"LoRA parameters {lora_args}")
+    logger.info(f"Data parameters {data_args}")
     logger.info(f"Training/evaluation parameters {training_args}")
-
-    # todo: better handle
-    device_map = "auto"
-    world_size = int(os.environ.get("WORLD_SIZE", 1))
-    ddp = world_size != 1
-    if ddp:
-        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
 
     # Load model and tokenizer
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
-        load_in_8bit=True,
         torch_dtype=torch.float16,
-        device_map=device_map,
+        load_in_8bit=model_args.load_in_8bit,
+        device_map={"": Accelerator().process_index},
+        use_cache=not training_args.gradient_checkpointing,
     )
 
-    # todo: better handle
-    tokenizer_class = LlamaTokenizer if "llama" in model_args.model_name_or_path else AutoTokenizer
-    tokenizer = tokenizer_class.from_pretrained(
+    # fast version llama for "with you.</s>"
+    tokenizer = AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         padding_side="right",
         use_fast=False,
     )
+    # llama has no pad token, like gpt2
+    # Some special tokens can be "" or None depending on releases
+    special_tokens_dict = dict()
+    if tokenizer.pad_token is None or not tokenizer.pad_token:
+        special_tokens_dict["pad_token"] = DEFAULT_PAD_TOKEN
+    if tokenizer.eos_token is None or not tokenizer.eos_token:
+        special_tokens_dict["eos_token"] = DEFAULT_EOS_TOKEN
+    if tokenizer.bos_token is None or not tokenizer.bos_token:
+        special_tokens_dict["bos_token"] = DEFAULT_BOS_TOKEN
+    if tokenizer.unk_token is None or not tokenizer.unk_token:
+        special_tokens_dict["unk_token"] = DEFAULT_UNK_TOKEN
 
-    if tokenizer.pad_token is None:
-        # llama has no pad token
-        smart_tokenizer_and_embedding_resize(
-            special_tokens_dict=dict(pad_token=DEFAULT_PAD_TOKEN),
-            tokenizer=tokenizer,
-            model=model,
-        )
-    if "llama" in model_args.model_name_or_path:
-        tokenizer.add_special_tokens(
-            {
-                "eos_token": DEFAULT_EOS_TOKEN,
-                "bos_token": DEFAULT_BOS_TOKEN,
-                "unk_token": DEFAULT_UNK_TOKEN,
-            }
-        )
+    smart_tokenizer_and_embedding_resize(
+        special_tokens_dict=special_tokens_dict,
+        tokenizer=tokenizer,
+        model=model,
+    )
 
-    # Freeze the model parameters
-    # Cast the small parameters (e.g. layernorm) to fp32 for stability
-    model = prepare_model_for_int8_training(model)
+    if model_args.load_in_8bit:
+        # Cast the small parameters (e.g. layernorm) to fp32 for stability
+        model = prepare_model_for_int8_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
+    elif training_args.gradient_checkpointing:
+        # For backward compatibility
+        # See https://github.com/huggingface/peft/issues/137
+        model.enable_input_require_grads()
 
     lora_config = LoraConfig(
-        r=model_args.lora_r,
-        lora_alpha=model_args.lora_alpha,
-        target_modules=model_args.target_modules,
-        lora_dropout=model_args.lora_dropout,
+        r=lora_args.lora_r,
+        lora_alpha=lora_args.lora_alpha,
+        target_modules=lora_args.target_modules,
+        lora_dropout=lora_args.lora_dropout,
         bias="none",
         task_type=TaskType.CAUSAL_LM,
     )
@@ -251,28 +269,28 @@ def train():
     raw_datasets = DatasetDict()
     if data_args.train_file is not None:
         ext = data_args.train_file.rsplit(".", 1)[-1]
+        ext = "json" if ext == "jsonl" else ext
         raw_datasets["train"] = load_dataset(ext, data_files=data_args.train_file)["train"]
     else:
         raise ValueError("You have not specified any train file")
     if data_args.eval_file is not None:
         ext = data_args.eval_file.rsplit(".", 1)[-1]
+        ext = "json" if ext == "jsonl" else ext
         raw_datasets["eval"] = load_dataset(ext, data_files=data_args.eval_file)["train"]
     # logger.info(raw_datasets)
 
     # Determine model_max_length for truncation
     model_max_length = data_args.model_max_length
-
-    def get_example_length(example):
-        user_prompt = generate_prompt(example)
-        example["example_length"] = len(tokenizer(user_prompt + example["output"] + tokenizer.eos_token)["input_ids"])
-        return example
+    get_example_length_function = get_chat_example_length if data_args.mode == CHAT else get_instruct_example_length
+    get_example_length_function_p = partial(get_example_length_function, tokenizer=tokenizer)
 
     if model_max_length is None:
         with training_args.main_process_first(desc="dataset map tokenization"):
             train_example_lengths = raw_datasets["train"].map(
-                get_example_length,
+                get_example_length_function_p,
                 num_proc=data_args.preprocessing_num_workers,
                 remove_columns=next(iter(raw_datasets.values())).column_names,
+                load_from_cache_file=not data_args.overwrite_cache,
                 desc="get example lengths",
             )["example_length"]
         # Take percentile of max length
@@ -282,60 +300,79 @@ def train():
         )
 
     # Tokenize data
-    def preprocess_function(example):
-        # Format prompt
-        user_prompt = generate_prompt(example)
-
-        # Get prompt length for masking
-        len_user_prompt_tokens = len(tokenizer(user_prompt, truncation=True, max_length=model_max_length)["input_ids"])
-
-        # Tokenize
-        # todo: need eos?
-        input_ids = tokenizer(
-            user_prompt + example["output"] + tokenizer.eos_token, truncation=True, max_length=model_max_length
-        )["input_ids"]
-        # Mask prompt
-        labels = [IGNORE_INDEX] * len_user_prompt_tokens + input_ids[len_user_prompt_tokens:]
-
-        # Tokenize
-        # input_ids = tokenizer(user_prompt + example["output"] + tokenizer.eos_token, truncation=True, return_tensors="pt")["input_ids"][0]
-        # labels = input_ids.clone()
-        # Mask prompt
-        # labels[:len_user_prompt_tokens] = IGNORE_INDEX
-
-        return {"input_ids": input_ids, "labels": labels}
+    preprocess_function = preprocess_chat_example if data_args.mode == CHAT else preprocess_instruct_example
+    preprocess_function_p = partial(preprocess_function, tokenizer=tokenizer, model_max_length=data_args.model_max_length)
 
     with training_args.main_process_first(desc="dataset map tokenization"):
         preprocessed_dataset = raw_datasets.map(
-            preprocess_function,
+            preprocess_function_p,
             num_proc=data_args.preprocessing_num_workers,
             remove_columns=next(iter(raw_datasets.values())).column_names,
-            desc="preprocess data set",
+            load_from_cache_file=not data_args.overwrite_cache,
+            desc="preprocess dataset",
         )
+
+    train_dataset = preprocessed_dataset["train"]
+    if data_args.max_train_samples is not None:
+        max_train_samples = min(len(train_dataset), data_args.max_train_samples)
+        train_dataset = train_dataset.select(range(max_train_samples))
+
+    if data_args.eval_file is not None:
+        eval_dataset = preprocessed_dataset["eval"]
+        if data_args.max_eval_samples is not None:
+            max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
+            eval_dataset = eval_dataset.select(range(max_eval_samples))
 
     # Init trainer
     trainer = Trainer(
         model=model,
-        train_dataset=preprocessed_dataset["train"],
-        eval_dataset=preprocessed_dataset["eval"] if data_args.eval_file is not None else None,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset if data_args.eval_file is not None else None,
         args=training_args,
         data_collator=DataCollatorForSupervisedDataset(
             tokenizer=tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
         ),
+        callbacks=[SavePeftModelCallback, LoadBestPeftModelCallback],
     )
 
-    # Silence the warnings. Please re-enable for inference!
-    model.config.use_cache = False
-
-    old_state_dict = model.state_dict
-    model.state_dict = (lambda self, *_, **__: get_peft_model_state_dict(self, old_state_dict())).__get__(model, type(model))
+    # Comment to stay with new version of PEFT
+    # old_state_dict = model.state_dict
+    # model.state_dict = (lambda self, *_, **__: get_peft_model_state_dict(self, old_state_dict())).__get__(model, type(model))
 
     if torch.__version__ >= "2" and sys.platform != "win32":
         model = torch.compile(model)
 
-    trainer.train()
+    # Training
+    if training_args.do_train:
 
-    model.save_pretrained(training_args.output_dir)
+        train_result = trainer.train()
+
+        # Saves the tokenizer too for easy upload
+        # trainer.save_model()
+        model.save_pretrained(training_args.output_dir)
+
+        metrics = train_result.metrics
+        metrics["train_samples"] = len(train_dataset)
+        trainer.log_metrics("train", metrics)
+        trainer.save_metrics("train", metrics)
+        # trainer.save_state()
+
+    # Evaluation
+    if training_args.do_eval:
+        logger.info("*** Evaluate ***")
+
+        metrics = trainer.evaluate()
+        metrics["eval_samples"] = len(eval_dataset)
+        trainer.log_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics)
+
+    # Create model card or push to hf hub
+    kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "text-generation"}
+
+    if training_args.push_to_hub:
+        trainer.push_to_hub(**kwargs)
+    else:
+        trainer.create_model_card(**kwargs)
 
 
 if __name__ == "__main__":

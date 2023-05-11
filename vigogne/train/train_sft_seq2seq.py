@@ -1,5 +1,6 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # coding=utf-8
+# Copyright 2023  Bofeng Huang
 
 import logging
 import math
@@ -13,49 +14,65 @@ import datasets
 import numpy as np
 import torch
 import transformers
+from accelerate import Accelerator
 from datasets import DatasetDict, load_dataset
 from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
-from transformers import AutoModelForSeq2SeqLM, AutoTokenizer, HfArgumentParser, Seq2SeqTrainer, Seq2SeqTrainingArguments
+from transformers import (
+    AutoModelForSeq2SeqLM,
+    AutoTokenizer,
+    HfArgumentParser,
+    Seq2SeqTrainer,
+    Seq2SeqTrainingArguments,
+)
 
-from utils import print_trainable_parameters
+from vigogne.constants import IGNORE_INDEX
+from vigogne.train.training_utils import LoadBestPeftModelCallback, SavePeftModelCallback, print_trainable_parameters
+from vigogne.preprocess import merge_instruction_and_input
 
 logger = logging.getLogger(__name__)
-
-IGNORE_INDEX = -100
-DEFAULT_PAD_TOKEN = "[PAD]"
-DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "</s>"
-DEFAULT_UNK_TOKEN = "</s>"
 
 
 # PROMPT_DICT = {"prompt_input": "Instruction: {instruction} Input: {input}", "prompt_no_input": "Instruction: {instruction}"}
 # French prompt for seq2seq
-PROMPT_DICT = {"prompt_input": "Instruction: {instruction} Entrée: {input}", "prompt_no_input": "Instruction: {instruction}"}
+# PROMPT_DICT = {"prompt_input": "Instruction: {instruction} Entrée: {input}", "prompt_no_input": "Instruction: {instruction}"}
+INSTRUCT_PROMPT_SEQ2SEQ = """Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière précise à la demande. Instruction: {instruction}"""
 
 
 def generate_prompt(example):
-    return (
-        PROMPT_DICT["prompt_input"].format_map(example)
-        if example["input"]
-        else PROMPT_DICT["prompt_no_input"].format_map(example)
-    )
+    # return (
+    #     PROMPT_DICT["prompt_input"].format_map(example)
+    #     if example["input"]
+    #     else PROMPT_DICT["prompt_no_input"].format_map(example)
+    # )
+    return INSTRUCT_PROMPT_SEQ2SEQ.format(instruction=merge_instruction_and_input(example["instruction"], example["input"]))
 
 
 @dataclass
 class ModelArguments:
-    # Base model parameters
+    """Base model parameters."""
+
     model_name_or_path: Optional[str] = field(default=None)
-    # LoRA parameters
+    load_in_8bit: bool = field(
+        default=False, metadata={"help": "Whether to convert the loaded model into mixed-8bit quantized model."}
+    )
+
+
+@dataclass
+class LoraArguments:
+    """LoRA parameters."""
+
     lora_r: int = field(default=8, metadata={"help": "Lora rank."})
     lora_alpha: int = field(default=16, metadata={"help": "Lora alpha."})
     lora_dropout: float = field(default=0.05, metadata={"help": "Lora dropout."})
     target_modules: List[str] = field(
-        default_factory=lambda: ["q_proj", "v_proj"], metadata={"help": "Names of the modules to apply Lora to."}
+        default_factory=lambda: ["q", "v"], metadata={"help": "Names of the modules to apply Lora to."}
     )
 
 
 @dataclass
 class DataArguments:
+    """Data parameters."""
+
     train_file: Optional[str] = field(default=None, metadata={"help": "Path to the training file."})
     eval_file: Optional[str] = field(default=None, metadata={"help": "Path to the evaluation file."})
     max_source_length: Optional[int] = field(
@@ -70,6 +87,24 @@ class DataArguments:
     model_max_target_length_percentile: Optional[int] = field(
         default=95, metadata={"help": "Percentile of the target length. Used to determin `max_target_length`."}
     )
+    max_train_samples: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": (
+                "For debugging purposes or quicker training, truncate the number of training examples to this " "value if set."
+            )
+        },
+    )
+    max_eval_samples: Optional[int] = field(
+        default=None,
+        metadata={
+            "help": (
+                "For debugging purposes or quicker training, truncate the number of evaluation examples to this "
+                "value if set."
+            )
+        },
+    )
+    overwrite_cache: bool = field(default=False, metadata={"help": "Overwrite the cached training and evaluation sets"})
     preprocessing_num_workers: Optional[int] = field(
         default=None, metadata={"help": "The number of processes to use for the preprocessing."}
     )
@@ -151,8 +186,8 @@ def smart_tokenizer_and_embedding_resize(
 
 def train():
     # HF parser
-    parser = HfArgumentParser((ModelArguments, DataArguments, VigogneSeq2SeqTrainingArguments))
-    model_args, data_args, training_args = parser.parse_args_into_dataclasses()
+    parser = HfArgumentParser((ModelArguments, LoraArguments, DataArguments, VigogneSeq2SeqTrainingArguments))
+    model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses()
 
     # Setup logging
     logging.basicConfig(
@@ -179,20 +214,17 @@ def train():
     )
     # Set the verbosity to info of the Transformers logger (on main process only):
     logger.info(f"Model parameters {model_args}")
+    logger.info(f"LoRA parameters {lora_args}")
+    logger.info(f"Data parameters {data_args}")
     logger.info(f"Training/evaluation parameters {training_args}")
-
-    # todo: better handle
-    device_map = "auto"
-    world_size = int(os.environ.get("WORLD_SIZE", 1))
-    ddp = world_size != 1
-    if ddp:
-        device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
 
     # Load model and tokenizer
     model = AutoModelForSeq2SeqLM.from_pretrained(
         model_args.model_name_or_path,
-        load_in_8bit=True,
-        device_map=device_map,
+        # torch_dtype=torch.float16,  # fp16 not stable
+        load_in_8bit=model_args.load_in_8bit,
+        device_map={"": Accelerator().process_index},
+        use_cache=not training_args.gradient_checkpointing,
     )
 
     tokenizer = AutoTokenizer.from_pretrained(
@@ -201,15 +233,19 @@ def train():
         use_fast=True,
     )
 
-    # Freeze the model parameters
-    # Cast the small parameters (e.g. layernorm) to fp32 for stability
-    model = prepare_model_for_int8_training(model)
+    if model_args.load_in_8bit:
+        # Cast the small parameters (e.g. layernorm) to fp32 for stability
+        model = prepare_model_for_int8_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
+    elif training_args.gradient_checkpointing:
+        # For backward compatibility
+        # See https://github.com/huggingface/peft/issues/137
+        model.enable_input_require_grads()
 
     lora_config = LoraConfig(
-        r=model_args.lora_r,
-        lora_alpha=model_args.lora_alpha,
-        target_modules=model_args.target_modules,
-        lora_dropout=model_args.lora_dropout,
+        r=lora_args.lora_r,
+        lora_alpha=lora_args.lora_alpha,
+        target_modules=lora_args.target_modules,
+        lora_dropout=lora_args.lora_dropout,
         bias="none",
         task_type=TaskType.SEQ_2_SEQ_LM,
     )
@@ -220,14 +256,17 @@ def train():
     raw_datasets = DatasetDict()
     if data_args.train_file is not None:
         ext = data_args.train_file.rsplit(".", 1)[-1]
+        ext = "json" if ext == "jsonl" else ext
         raw_datasets["train"] = load_dataset(ext, data_files=data_args.train_file)["train"]
     else:
         raise ValueError("You have not specified any train file")
     if data_args.eval_file is not None:
         ext = data_args.eval_file.rsplit(".", 1)[-1]
+        ext = "json" if ext == "jsonl" else ext
         raw_datasets["eval"] = load_dataset(ext, data_files=data_args.eval_file)["train"]
     # logger.info(raw_datasets)
 
+    # Determine model_max_length for truncation
     max_source_length = data_args.max_source_length
     max_target_length = data_args.max_target_length
 
@@ -264,6 +303,7 @@ def train():
                 f"`max_target_length` has been set to the {data_args.model_max_target_length_percentile}th percentile of training example lengths: {max_target_length}"
             )
 
+    # Tokenize data
     def preprocess_function(example):
         # Format prompt
         user_prompt = generate_prompt(example)
@@ -293,32 +333,72 @@ def train():
             preprocess_function,
             num_proc=data_args.preprocessing_num_workers,
             remove_columns=next(iter(raw_datasets.values())).column_names,
-            desc="preprocess data set",
+            load_from_cache_file=not data_args.overwrite_cache,
+            desc="preprocess dataset",
         )
 
+    train_dataset = preprocessed_dataset["train"]
+    if data_args.max_train_samples is not None:
+        max_train_samples = min(len(train_dataset), data_args.max_train_samples)
+        train_dataset = train_dataset.select(range(max_train_samples))
+
+    if data_args.eval_file is not None:
+        eval_dataset = preprocessed_dataset["eval"]
+        if data_args.max_eval_samples is not None:
+            max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
+            eval_dataset = eval_dataset.select(range(max_eval_samples))
+
+    # Init trainer
     trainer = Seq2SeqTrainer(
         model=model,
-        train_dataset=preprocessed_dataset["train"],
-        eval_dataset=preprocessed_dataset["eval"] if data_args.eval_file is not None else None,
+        train_dataset=train_dataset,
+        eval_dataset=eval_dataset if data_args.eval_file is not None else None,
         args=training_args,
         data_collator=DataCollatorForSupervisedDataset(
             tokenizer=tokenizer, pad_to_multiple_of=8 if training_args.fp16 else None
         ),
         # data_collator=DataCollatorForSeq2Seq(tokenizer, model=model, label_pad_token_id=IGNORE_INDEX, pad_to_multiple_of=8),
+        callbacks=[SavePeftModelCallback, LoadBestPeftModelCallback],
     )
 
-    # Silence the warnings. Please re-enable for inference!
-    model.config.use_cache = False
-
-    old_state_dict = model.state_dict
-    model.state_dict = (lambda self, *_, **__: get_peft_model_state_dict(self, old_state_dict())).__get__(model, type(model))
+    # Comment to stay with new version of PEFT
+    # old_state_dict = model.state_dict
+    # model.state_dict = (lambda self, *_, **__: get_peft_model_state_dict(self, old_state_dict())).__get__(model, type(model))
 
     if torch.__version__ >= "2" and sys.platform != "win32":
         model = torch.compile(model)
 
-    trainer.train()
+    # Training
+    if training_args.do_train:
 
-    model.save_pretrained(training_args.output_dir)
+        train_result = trainer.train()
+
+        # Saves the tokenizer too for easy upload
+        # trainer.save_model()
+        model.save_pretrained(training_args.output_dir)
+
+        metrics = train_result.metrics
+        metrics["train_samples"] = len(train_dataset)
+        trainer.log_metrics("train", metrics)
+        trainer.save_metrics("train", metrics)
+        # trainer.save_state()
+
+    # Evaluation
+    if training_args.do_eval:
+        logger.info("*** Evaluate ***")
+
+        metrics = trainer.evaluate()
+        metrics["eval_samples"] = len(eval_dataset)
+        trainer.log_metrics("eval", metrics)
+        trainer.save_metrics("eval", metrics)
+
+    # Create model card or push to hf hub
+    kwargs = {"finetuned_from": model_args.model_name_or_path, "tasks": "text-generation"}
+
+    if training_args.push_to_hub:
+        trainer.push_to_hub(**kwargs)
+    else:
+        trainer.create_model_card(**kwargs)
 
 
 if __name__ == "__main__":
