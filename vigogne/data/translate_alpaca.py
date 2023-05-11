@@ -1,5 +1,6 @@
-#! /usr/bin/env python
+#!/usr/bin/env python
 # coding=utf-8
+# Copyright 2023  Bofeng Huang
 
 """
 Translate Stanford Alpaca data by the API of OpenAI.
@@ -7,19 +8,18 @@ Translate Stanford Alpaca data by the API of OpenAI.
 Usage:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python scripts/translate_alpaca.py \
-    --input_json_file data/alpaca_data_cleaned.json \
-    --output_json_file data/vigogne_data_cleaned.json \
-    --failed_output_json_file data/vigogne_data_cleaned_failed.json \
+python vigogne/data/translate_alpaca.py \
+    --input_file data/alpaca_data_cleaned.jsonl \
+    --output_file data/alpaca_data_cleaned_fr.jsonl \
+    --failed_output_file data/alpaca_data_cleaned_fr_failed.jsonl \
     --model gpt-3.5-turbo \
     --max_parallel_requests 16
 """
 
-import json
 import os
 import re
 import sys
-import threading
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Optional
 
@@ -29,17 +29,11 @@ import tiktoken
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from tqdm import tqdm
 
+from vigogne.data.utils import thread_safe_jsonl_dump, jsonl_load
+
 # Replace 'your_api_key' with your actual API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
 # openai.organization = os.getenv("OPENAI_ORG")
-
-lck = threading.Lock()
-
-
-def safe_write(item, output_file, mode="a", ensure_ascii=False):
-    with open(output_file, mode) as outf:
-        with lck:
-            outf.write(json.dumps(item, ensure_ascii=ensure_ascii) + "\n")
 
 
 TRANSLATION_PROMPT = """Please translate the following text from English into French without providing any explanation, while maintaining the format and ensuring faithful translation. It is crucial that the translation work is done accurately. The imperative sentence should be translated using the informal address.
@@ -183,7 +177,7 @@ def process_item(item, output_file, failed_output_file=None, model="gpt-3.5-turb
         if "instruction" not in translated_item:
             failed_item = {"id": item["id"], "original_instruction": item["instruction"], **translated_item}
             if failed_output_file is not None:
-                safe_write(failed_item, failed_output_file)
+                thread_safe_jsonl_dump(failed_item, failed_output_file)
             return failed_item
     else:
         translated_item = {}
@@ -201,21 +195,19 @@ def process_item(item, output_file, failed_output_file=None, model="gpt-3.5-turb
     final_item = {"id": item["id"], "original_instruction": item["instruction"]}
     final_item.update(translated_item)
 
-    safe_write(final_item, output_file)
+    thread_safe_jsonl_dump(final_item, output_file)
 
     return final_item
 
 
 def process_data(
-    input_json_file: str,
-    output_json_file: str,
-    failed_output_json_file: Optional[str] = None,
+    input_file: str,
+    output_file: str,
+    failed_output_file: Optional[str] = None,
     model="gpt-3.5-turbo",
     max_parallel_requests: int = 16,
 ):
-    # Assuming the input JSON is in a file named 'input.json'
-    with open(input_json_file, "r") as f:
-        data = json.load(f)
+    data = jsonl_load(input_file)
 
     # debug
     # start = 0
@@ -223,11 +215,11 @@ def process_data(
     # data = data[start:end]
     # data = data[end:]
 
+    start_time = time.perf_counter()
+
     translated_data = []
     with ThreadPoolExecutor(max_workers=max_parallel_requests) as executor:
-        futures = {
-            executor.submit(process_item, item, output_json_file, failed_output_json_file, model): item for item in data
-        }
+        futures = {executor.submit(process_item, item, output_file, failed_output_file, model): item for item in data}
 
         for future in tqdm(as_completed(futures), total=len(futures), desc="Translating"):
             translated_data.append(future.result())
@@ -235,10 +227,12 @@ def process_data(
     # translated_data = [x for x in translated_data if x is not None]
 
     # Save the translated data to a new JSON file named 'translated_data.json'
-    # with open(output_json_file, "w") as f:
+    # with open(output_file, "w") as f:
     #     json.dump(translated_data, f, ensure_ascii=False, indent=4)
 
-    print(f"Translation complete. The translated data is saved in {output_json_file}")
+    print(
+        f"Translation completed in {time.strftime('%Hh%Mm%Ss', time.gmtime(time.perf_counter() - start_time))}. The translated data is saved in {output_file}"
+    )
 
 
 if __name__ == "__main__":
