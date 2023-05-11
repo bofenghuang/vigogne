@@ -87,7 +87,7 @@ python convert.py ./models/7B
 ./main -m ./models/7B/ggml-model-q4_0.bin --color -f VIGOGNE_ROOT/prompts/instruct.txt -ins -c 2048 -n 256 --temp 0.1 --repeat_penalty 1.1
 ```
 
-## Text generation web UI
+<!-- ## Text generation web UI
 
 https://github.com/oobabooga/text-generation-webui
 
@@ -120,5 +120,5 @@ python server.py --model huggyllama_llama-7b --lora vigogne-instruct-7b
 
 ## LlamaChat
 
-https://github.com/alexrozanski/LlamaChat
+https://github.com/alexrozanski/LlamaChat -->
 
