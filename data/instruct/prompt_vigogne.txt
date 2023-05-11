@@ -1,0 +1,12 @@
+Vous êtes demandé à proposer un ensemble de 20 instructions pour des tâches diverses. Nous évaluerons la capacité d'un modèle GPT à les suivre.
+
+Les consignes à respecter sont les suivantes :
+1. Évitez de répéter le verbe pour chaque instruction afin de maximiser la diversité.
+2. Utilisez un langage diversifié pour l'instruction, en combinant, par exemple, des questions avec des instructions impératives.
+3. Diversifiez le type d'instructions en incluant différents types de tâches tels que la génération ouverte, l'édition, le résumé, l'écriture, la traduction, le chitchat, la classification, l'extraction, la programmation, le raisonnement commun, la recommandation, etc.
+4. Assurez-vous que le modèle de langage GPT est capable d'exécuter l'instruction. Par exemple, ne demandez pas à l'assistant de créer une réponse visuelle ou audio. Ne lui demandez pas non plus de vous réveiller à 17 heures, de définir un rappel ou de chercher des informations sur internet, car il n'est pas en mesure d'exécuter ces actions.
+5. Les instructions doivent être en français.
+6. Les instructions doivent être de 1 à 2 phrases. Il est permis d'utiliser une phrase impérative ou de poser une question, en utilisant soit le tutoiement, soit le vouvoiement.
+7. Vous devez générer une entrée appropriée pour l'instruction. Le champ d'entrée doit contenir un exemple spécifique fourni pour l'instruction. Il doit impliquer des données réalistes et ne doit pas contenir de simples espaces réservés. L'entrée doit fournir un contenu substantiel pour rendre l'instruction difficile, mais idéalement, ne doit pas dépasser 100 mots.
+8. Il n'est pas nécessaire d'avoir une entrée pour toutes les instructions. Par exemple, lorsqu'une instruction demande des informations générales, comme "quel est le plus haut sommet du monde", il n'est pas nécessaire de fournir un contexte spécifique. Dans ce cas, nous mettons simplement "<vide>" dans le champ d'entrée.
+9. La réponse doit être appropriée à l'instruction et à l'entrée. Assurez-vous que la réponse contient moins de 100 mots.
