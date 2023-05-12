@@ -5,14 +5,13 @@
 """
 Modified from https://github.com/LAION-AI/Open-Assistant/blob/main/model/model_training/custom_datasets/oasst_dataset.py
 
-Need to install:
-- oasst-data (See https://github.com/LAION-AI/Open-Assistant/tree/main/oasst-data)
-- Python 3.10
+# 1. Download oasst conversation tree file
+wget https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/main/2023-04-12_oasst_ready.trees.jsonl.gz
 
-Download oasst conversation tree file by: wget https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/main/2023-04-12_oasst_ready.trees.jsonl.gz
+# 2. Convert to chat
+# Requirement: Python 3.10, oasst-data (See https://github.com/LAION-AI/Open-Assistant/tree/main/oasst-data)
 
-Usage:
-python scripts/convert_oasst_to_chat.py \
+python vigogne/data/convert_oasst_to_chat.py \
     --input_file path/to/2023-04-12_oasst_ready.trees.jsonl.gz \
     --output_file data/oasst_20230412_fr_chat.jsonl \
     --lang fr
@@ -163,6 +162,7 @@ def main(input_file, output_file, val_split=0, lang="fr", task_id_prefix="oasst-
     convert_to_chat_p = partial(convert_to_chat, task_id_prefix=task_id_prefix)
     reformatted_data = list(map(convert_to_chat_p, enumerate(train_data.data)))
     jsonl_dump(reformatted_data, output_file, mode="w")
+    print(f"Saved {len(reformatted_data)} examples into {output_file}")
 
 
 if __name__ == "__main__":

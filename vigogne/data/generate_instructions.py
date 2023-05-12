@@ -8,7 +8,7 @@ Usage:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
 # num_instructions_to_generate is by worker
-python scripts/generate_instruction.py \
+python vigogne/data/generate_instruction.py \
     --seed_tasks_path data/instruct/seed_tasks_vigogne.jsonl \
     --prompt_path data/instruct/prompt_vigogne.txt \
     --output_file data/instruct/self_instruct_data.jsonl \
