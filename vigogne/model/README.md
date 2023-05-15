@@ -21,13 +21,13 @@ The graph below illustrates the loss curve for the fine-tuning process, based on
 
 <img src="../../assets/sft_instruct_eval_loss.png" style="width: 60%;">
 
-<!-- ### Chat Models
+### Chat Models
 
 The Vigogne-Chat models were fine-tuned using approximately 273k dialogue examples. Additional details regarding the data are available in the [vigogne/data](../data/README.md).
 
 The LoRA weights for the Vigogne-Instruct models can be found on the 🤗 Hugging Face Hub:
 
-| Model |            Description             |
-| :---: | :--------------------------------: |
-| TODO  | LLaMA-7B model fine-tuned for chat |
- -->
+|                                       Model                                       |            Description             |
+| :-------------------------------------------------------------------------------: | :--------------------------------: |
+| [bofenghuang/vigogne-chat-7b](https://huggingface.co/bofenghuang/vigogne-chat-7b) | LLaMA-7B model fine-tuned for chat |
+
