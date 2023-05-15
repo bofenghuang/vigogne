@@ -285,7 +285,7 @@ def main(
                         with gr.Row():
                             repetition_penalty = gr.Slider(
                                 label="Repetition Penalty",
-                                value=1.1,
+                                value=1.0,
                                 minimum=1.0,
                                 maximum=2.0,
                                 step=0.1,
