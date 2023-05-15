@@ -146,7 +146,7 @@ def main(
     processed_dataset.to_json(output_file, orient="records", lines=True, force_ascii=False)
 
     print(
-        f"Translation completed in {time.strftime('%Hh%Mm%Ss', time.gmtime(time.perf_counter() - start_time))}. The translated data is saved in {output_file}"
+        f"Translation completed in {time.strftime('%Hh%Mm%Ss', time.gmtime(time.perf_counter() - start_time))}. The translated data is saved into {output_file}"
     )
 
 

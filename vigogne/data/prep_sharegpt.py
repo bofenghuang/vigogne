@@ -23,20 +23,21 @@ python vigogne/data/prep_sharegpt.py data/sg_90k_all_cleaned_splitted.json
 
 """
 
+import collections
 import re
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
+
 import fire
 import polyglot
 import pycld2
 from datasets import Dataset, load_dataset
 from polyglot.detect import Detector
+from polyglot.detect.base import logger as polyglot_logger
 from tqdm import tqdm
 
 from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ROLE, USER
-from vigogne.data.utils import jload, jsonl_dump, jdump
-
-from polyglot.detect.base import logger as polyglot_logger
+from vigogne.data.utils import jdump, jload, jsonl_dump
 
 polyglot_logger.setLevel("ERROR")
 
@@ -120,7 +121,7 @@ def main(input_file, validated_languages=["en", "fr"]):
     ]
     print(f"Filtered to {len(processed_data)} examples")
 
-    processed_data_by_lang = {lang: [] for lang in validated_languages}
+    processed_data_by_lang = collections.defaultdict(list)
     for example in processed_data:
         processed_data_by_lang[example["lang"]].append(example)
 

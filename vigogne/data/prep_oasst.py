@@ -11,7 +11,7 @@ wget https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/main/2023-04-1
 # 2. Convert to chat
 # Requirement: Python 3.10, oasst-data (See https://github.com/LAION-AI/Open-Assistant/tree/main/oasst-data)
 
-python vigogne/data/convert_oasst_to_chat.py \
+python vigogne/data/prep_oasst.py \
     --input_file path/to/2023-04-12_oasst_ready.trees.jsonl.gz \
     --output_file data/oasst_20230412_fr_chat.jsonl \
     --lang fr
