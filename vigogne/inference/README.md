@@ -14,13 +14,21 @@ You can launch a Gradio demo in streaming mode by using the following command to
 
 ```bash
 python vigogne/demo/demo_instruct.py \
-    --base_model_name_or_path huggyllama/llama-7b \
+    --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
     --lora_model_name_or_path bofenghuang/vigogne-instruct-7b
+```
+
+For the Vigogne chat model, you can use the following command.
+
+```bash
+python vigogne/demo/demo_chat.py \
+    --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
+    --lora_model_name_or_path bofenghuang/vigogne-chat-7b
 ```
 
 ## llama.cpp
 
-The Vigogne models can now be easily deployed on PCs with the help of tools created by the community. The following steps provide detailed instructions on how to combine Vigogne LoRA weights with the original LLaMA model, quantize the resulting model to 4-bit, and finally deploy it on your own PC using [llama.cpp](https://github.com/ggerganov/llama.cpp). For French-speaking users, you can refer to this excellent [tutorial](https://www.youtube.com/watch?v=BBf5h0HCFMY&t=292s&ab_channel=PereConteur) provided by @pereconteur.
+The Vigogne models can now be easily deployed on PCs with the help of tools created by the community. The following instructions provide a detailed guide on how to combine Vigogne LoRA weights with the original LLaMA model, using [Vigogne-Instruct-7B](https://huggingface.co/bofenghuang/vigogne-instruct-7b) as an example. Additionally, you will learn how to quantize the resulting model to 4-bit and deploy it on your own PC using [llama.cpp](https://github.com/ggerganov/llama.cpp). For French-speaking users, you can refer to this excellent [tutorial](https://www.youtube.com/watch?v=BBf5h0HCFMY&t=292s&ab_channel=PereConteur) provided by @pereconteur.
 
 **Note: the models will be quantized into 4-bit, so the performance might be worse than the non-quantized version. The responses are random due to the generation hyperparameters.**
 
@@ -47,7 +55,7 @@ python scripts/convert_llama_weights_to_hf.py \
 python scripts/export_state_dict_checkpoint.py \
     --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
     --lora_model_name_or_path bofenghuang/vigogne-instruct-7b \
-    --output_dir ./models/7B \
+    --output_dir ./models/7B_instruct \
     --base_model_size 7B
 
 # download the tokenizer.model file
@@ -56,7 +64,7 @@ wget -P ./models https://huggingface.co/bofenghuang/vigogne-instruct-7b/resolve/
 # check the files
 tree models
 # models
-# ├── 7B
+# ├── 7B_instruct
 # │   ├── consolidated.00.pth
 # │   └── params.json
 # └── tokenizer.model
@@ -74,17 +82,23 @@ make
 
 ```bash
 # convert the 7B model to ggml FP16 format
-python convert.py ./models/7B
+python convert.py ./models/7B_instruct
 
 # quantize the model to 4-bits (using q4_0 method)
-./quantize ./models/7B/ggml-model-f16.bin ./models/7B/ggml-model-q4_0.bin q4_0
+./quantize ./models/7B_instruct/ggml-model-f16.bin ./models/7B_instruct/ggml-model-q4_0.bin q4_0
 ```
 
 ### 5. Run the inference
 
 ```bash
 # ./main -h for more information
-./main -m ./models/7B/ggml-model-q4_0.bin --color -f VIGOGNE_ROOT/prompts/instruct.txt -ins -c 2048 -n 256 --temp 0.1 --repeat_penalty 1.1
+./main -m ./models/7B_instruct/ggml-model-q4_0.bin --color -f VIGOGNE_ROOT/prompts/instruct.txt -ins -c 2048 -n 256 --temp 0.1 --repeat_penalty 1.1
+```
+
+For the Vigogne chat models, the previous steps for combining and quantizing remain the same. However, the final step requires a different command to run the inference.
+
+```bash
+./main -m ./models/7B_chat/ggml-model-q4_0.bin --color -f VIGOGNE_ROOT/prompts/chat.txt --reverse-prompt "<|UTILISATEUR|>:" --in-prefix " " --in-suffix "<|ASSISTANT|>:" --interactive-first -c 2048 -n -1 --temp 0.1
 ```
 
 <!-- ## Text generation web UI

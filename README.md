@@ -20,10 +20,9 @@ The main contributions of this project include:
 
 **Usage and License Notices**: Same as [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), Vigogne is intended and licensed for research use only. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
 
-<!-- todo: chat -->
-💡 *The screencast below shows the current 🦙 Vigogne-Instruct-7B model running on Apple M1 Pro using 4GB of weights (no sped up).*
+💡 *The screencast below shows the current 🦙 Vigogne-Chat-7B model running on Apple M1 Pro using 4GB of weights (no sped up).*
 
-![](./assets/screencast.gif)
+![](./assets/screencast_llamacpp_chat.gif)
 
 ## Table of Contents
 
@@ -45,6 +44,7 @@ The main contributions of this project include:
 - 2023/4/6: Improve the quality of the translated Alpaca dataset
 - 2023/5/11: Add data generation scripts for self-instruct, self-chatting, and translation
 - 2023/5/11: Release Vigogne-Instruct v2 models trained on a more extensive dataset
+- 2023/5/15: Release Vigogne Chat models
 
 ## Installation
 
