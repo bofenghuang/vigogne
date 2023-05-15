@@ -20,7 +20,8 @@ VALID_MODES = {CHAT, INSTRUCT}
 
 # keyword for chat json
 # Role name
-USER = "UTILISATEUR"
+# USER = "UTILISATEUR"
+USER = "USER"
 ASSISTANT = "ASSISTANT"
 # Data field
 ID = "id"
