@@ -27,8 +27,15 @@ The Vigogne-Chat models were fine-tuned using approximately 213k dialogue exampl
 
 The LoRA weights for the Vigogne-Instruct models can be found on the 🤗 Hugging Face Hub:
 
-|                                       Model                                       |            Description             |
-| :-------------------------------------------------------------------------------: | :--------------------------------: |
-| [bofenghuang/vigogne-chat-7b](https://huggingface.co/bofenghuang/vigogne-chat-7b) | LLaMA-7B model fine-tuned for chat |
-| [bofenghuang/vigogne-chat-13b](https://huggingface.co/bofenghuang/vigogne-chat-13b) | TODO |
+|                                        Model                                        |            Description             |
+| :---------------------------------------------------------------------------------: | :--------------------------------: |
+|  [bofenghuang/vigogne-chat-7b](https://huggingface.co/bofenghuang/vigogne-chat-7b)  | LLaMA-7B model fine-tuned for chat |
+| [bofenghuang/vigogne-chat-13b](https://huggingface.co/bofenghuang/vigogne-chat-13b) |                TODO                |
 
+### Pretrained Models
+
+The majority of the training corpus used to train the original LLaMA model is in English. In this case, we have gathered a substantial amount of French corpus and used it to continue the pretraining process. This language adaptive pretraining will improve the model's performance when processing French data.
+
+The training process is still ongoing since it is a computationally expensive task that requires significant resources.
+
+<img src="../../assets/pretrain_llama_7b_20230515.png" style="width: 60%;">
