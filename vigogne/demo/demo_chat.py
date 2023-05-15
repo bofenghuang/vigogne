@@ -7,6 +7,7 @@ Modified from: https://huggingface.co/spaces/mosaicml/mpt-7b-chat/raw/main/app.p
 
 Usage:
 CUDA_VISIBLE_DEVICES=0
+
 python vigogne/demo/demo_chat.py \
     --base_model_name_or_path huggyllama/llama-7b \
     --lora_model_name_or_path bofenghuang/vigogne-chat-7b
@@ -28,7 +29,6 @@ import gradio as gr
 
 # import requests
 import torch
-import transformers
 from peft import PeftModel
 from transformers import (
     AutoModelForCausalLM,
@@ -38,7 +38,8 @@ from transformers import (
     TextIteratorStreamer,
 )
 
-from vigogne.constants import ASSISTANT, INFERENCE_SYSTEM_MESSAGE, USER
+from vigogne.constants import ASSISTANT, USER
+from vigogne.preprocess import generate_inference_chat_prompt
 from vigogne.inference.inference_utils import StopWordsCriteria
 
 logging.basicConfig(
@@ -57,19 +58,6 @@ except:
     pass
 
 logger.info(f"Model will be loaded on device `{device}`")
-
-
-def convert_history_to_text(history: List[List[str]], tokenizer: transformers.PreTrainedTokenizer, max_length: int = 2048):
-    history = [f"\n<|{USER}|>: {x[0]}\n<|{ASSISTANT}|>: {x[1]}" for x in history]
-
-    history_text = ""
-    for x in history[::-1]:
-        if len(tokenizer(INFERENCE_SYSTEM_MESSAGE + x + history_text)["input_ids"]) <= max_length:
-            history_text = x + history_text
-        else:
-            break
-
-    return INFERENCE_SYSTEM_MESSAGE + history_text if history_text else None
 
 
 # def log_conversation(conversation_id, history, messages, generate_kwargs):
@@ -110,7 +98,6 @@ def main(
     server_port: Optional[str] = None,
     share: bool = True,
 ):
-
     tokenizer = AutoTokenizer.from_pretrained(base_model_name_or_path, padding_side="right", use_fast=False)
 
     if device == "cuda":
@@ -150,6 +137,7 @@ def main(
 
     model.eval()
 
+    # NB
     stop_words = [f"<|{ASSISTANT}|>", f"<|{USER}|>"]
     stop_words_criteria = StopWordsCriteria(stop_words=stop_words, tokenizer=tokenizer)
     pattern_trailing_stop_words = re.compile(rf'(?:{"|".join([re.escape(stop_word) for stop_word in stop_words])})\W*$')
@@ -158,7 +146,8 @@ def main(
         logger.info(f"History: {json.dumps(history, indent=4, ensure_ascii=False)}")
 
         # Construct the input message string for the model by concatenating the current system message and conversation history
-        messages = convert_history_to_text(history, tokenizer)
+        messages = generate_inference_chat_prompt(history, tokenizer)
+        # logger.info(messages)
         assert messages is not None, "User input is too long!"
 
         # Tokenize the messages string
@@ -310,11 +299,16 @@ def main(
             )
         with gr.Row():
             gr.Markdown(
-                "Acknowledgements: This demo is built on top of [MPT-7B-Chat](https://huggingface.co/mosaicml/mpt-7b-chat). Thanks for their contribution!",
+                "Acknowledgements: This demo is built on top of [MPT-7B-Chat](https://huggingface.co/spaces/mosaicml/mpt-7b-chat). Thanks for their contribution!",
                 elem_classes=["disclaimer"],
             )
 
-        submit_event = msg.submit(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False,).then(
+        submit_event = msg.submit(
+            fn=user,
+            inputs=[msg, chatbot],
+            outputs=[msg, chatbot],
+            queue=False,
+        ).then(
             fn=bot,
             inputs=[
                 chatbot,
@@ -328,7 +322,12 @@ def main(
             outputs=chatbot,
             queue=True,
         )
-        submit_click_event = submit.click(fn=user, inputs=[msg, chatbot], outputs=[msg, chatbot], queue=False,).then(
+        submit_click_event = submit.click(
+            fn=user,
+            inputs=[msg, chatbot],
+            outputs=[msg, chatbot],
+            queue=False,
+        ).then(
             fn=bot,
             inputs=[
                 chatbot,

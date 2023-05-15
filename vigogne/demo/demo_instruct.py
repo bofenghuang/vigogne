@@ -41,6 +41,12 @@ except:
 
 logger.info(f"Model will be loaded on device `{device}`")
 
+examples = [
+    "Répondez à la question suivante : Les pratiques artistiques transforment-elles le monde ?",
+    "Expliquez la différence entre DoS et phishing en français.",
+    "Écrivez une fonction qui prend une liste de chaînes de caractères et renvoie une liste sans doublons.",
+]
+
 
 def main(
     base_model_name_or_path: str = "huggyllama/llama-7b",
@@ -50,7 +56,6 @@ def main(
     server_port: Optional[str] = None,
     share: bool = True,
 ):
-
     tokenizer = AutoTokenizer.from_pretrained(base_model_name_or_path, padding_side="right", use_fast=False)
 
     if device == "cuda":
@@ -95,11 +100,13 @@ def main(
 
     def instruct(
         instruction,
+        max_new_tokens,
+        temperature,
+        top_p,
+        top_k,
+        repetition_penalty,
+        # no_repeat_ngram_size=3,
         streaming=True,
-        temperature=0.1,
-        do_sample=True,
-        no_repeat_ngram_size=3,
-        max_new_tokens=512,
         **kwargs,
     ):
         prompt = generate_instruct_prompt(instruction=instruction)
@@ -110,8 +117,11 @@ def main(
 
         generation_config = GenerationConfig(
             temperature=temperature,
-            do_sample=do_sample,
-            no_repeat_ngram_size=no_repeat_ngram_size,
+            do_sample=temperature > 0.0,
+            top_p=top_p,
+            top_k=top_k,
+            repetition_penalty=repetition_penalty,
+            # no_repeat_ngram_size=no_repeat_ngram_size,
             max_new_tokens=max_new_tokens,
             **kwargs,
         )
@@ -150,16 +160,137 @@ def main(
             logger.info(f"Response: {generated_text}")
             return generated_text
 
-    gr.Interface(
-        fn=instruct,
-        inputs=[
-            gr.inputs.Textbox(label="Instruction", default="Expliquez la différence entre DoS et phishing en français."),
-            gr.Checkbox(label="Streaming mode?", value=True),
-        ],
-        outputs=[gr.Textbox(label="Output", interactive=False)],
-        title="🦙 Vigogne Instruction-following",
-        description="This demo is of [Vigogne-Instruct-7B](https://huggingface.co/bofenghuang/vigogne-instruct-7b). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned finetuned to follow the French 🇫🇷 instructions. For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.",
-    ).launch(enable_queue=True, share=share, server_name=server_name, server_port=server_port)
+    with gr.Blocks(
+        theme=gr.themes.Soft(),
+        css=".disclaimer {font-variant-caps: all-small-caps;}",
+    ) as demo:
+        # session_id = gr.State(lambda: str(uuid4()))
+        gr.Markdown(
+            """<h1><center>🦙 Vigogne Instruction-following</center></h1>
+
+            This demo is of [Vigogne instruct models](https://huggingface.co/bofenghuang/vigogne-instruct-7b). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned to follow the French 🇫🇷 instructions.
+
+            For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.
+    """
+        )
+        with gr.Row():
+            with gr.Column():
+                with gr.Row():
+                    instruction = gr.Textbox(
+                        placeholder="Enter your instruction here",
+                        label="Question/Instruction",
+                        elem_id="q-input",
+                    )
+                with gr.Accordion("Advanced Options:", open=False):
+                    with gr.Row():
+                        with gr.Column():
+                            with gr.Row():
+                                max_new_tokens = gr.Slider(
+                                    label="Max New Tokens",
+                                    value=512,
+                                    minimum=0,
+                                    maximum=1024,
+                                    step=1,
+                                    interactive=True,
+                                    info="The Max number of new tokens to generate.",
+                                )
+                        with gr.Column():
+                            with gr.Row():
+                                temperature = gr.Slider(
+                                    label="Temperature",
+                                    value=0.1,
+                                    minimum=0.0,
+                                    maximum=1.0,
+                                    step=0.1,
+                                    interactive=True,
+                                    info="Higher values produce more diverse outputs.",
+                                )
+                        with gr.Column():
+                            with gr.Row():
+                                top_p = gr.Slider(
+                                    label="Top-p (nucleus sampling)",
+                                    value=1.0,
+                                    minimum=0.0,
+                                    maximum=1,
+                                    step=0.01,
+                                    interactive=True,
+                                    info=(
+                                        "Sample from the smallest possible set of tokens whose cumulative probability "
+                                        "exceeds top_p. Set to 1 to disable and sample from all tokens."
+                                    ),
+                                )
+                        with gr.Column():
+                            with gr.Row():
+                                top_k = gr.Slider(
+                                    label="Top-k",
+                                    value=0,
+                                    minimum=0.0,
+                                    maximum=200,
+                                    step=1,
+                                    interactive=True,
+                                    info="Sample from a shortlist of top-k tokens — 0 to disable and sample from all tokens.",
+                                )
+                        with gr.Column():
+                            with gr.Row():
+                                repetition_penalty = gr.Slider(
+                                    label="Repetition Penalty",
+                                    value=1.0,
+                                    minimum=1.0,
+                                    maximum=2.0,
+                                    step=0.1,
+                                    interactive=True,
+                                    info="Penalize repetition — 1.0 to disable.",
+                                )
+        with gr.Row():
+            submit = gr.Button("Submit")
+        with gr.Row():
+            with gr.Box():
+                gr.Markdown("**Response**")
+                instruct_output = gr.Markdown()
+
+        with gr.Row():
+            gr.Examples(
+                examples=examples,
+                inputs=[instruction],
+                cache_examples=False,
+                fn=instruct,
+                outputs=instruct_output,
+            )
+        with gr.Row():
+            gr.Markdown(
+                "Disclaimer: Vigogne is still under development, and there are many limitations that have to be addressed. Please note that it is possible that the model generates harmful or biased content, incorrect information or generally unhelpful answers.",
+                elem_classes=["disclaimer"],
+            )
+        with gr.Row():
+            gr.Markdown(
+                "Acknowledgements: This demo's UI follows the style of [MPT-7B-Instruct](https://huggingface.co/spaces/mosaicml/mpt-7b-instruct). Thanks for their contribution!",
+                elem_classes=["disclaimer"],
+            )
+
+        submit.click(
+            instruct,
+            inputs=[instruction, max_new_tokens, temperature, top_p, top_k, repetition_penalty],
+            outputs=instruct_output,
+        )
+        instruction.submit(
+            instruct,
+            inputs=[instruction, max_new_tokens, temperature, top_p, top_k, repetition_penalty],
+            outputs=instruct_output,
+        )
+
+    demo.queue(max_size=128, concurrency_count=2)
+    demo.launch(enable_queue=True, share=share, server_name=server_name, server_port=server_port)
+
+    # gr.Interface(
+    #     fn=instruct,
+    #     inputs=[
+    #         gr.inputs.Textbox(label="Instruction", default="Expliquez la différence entre DoS et phishing en français."),
+    #         gr.Checkbox(label="Streaming mode?", value=True),
+    #     ],
+    #     outputs=[gr.Textbox(label="Output", interactive=False)],
+    #     title="🦙 Vigogne Instruction-following",
+    #     description="This demo is of [Vigogne-Instruct-7B](https://huggingface.co/bofenghuang/vigogne-instruct-7b). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned finetuned to follow the French 🇫🇷 instructions. For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.",
+    # ).launch(enable_queue=True, share=share, server_name=server_name, server_port=server_port)
 
 
 if __name__ == "__main__":
