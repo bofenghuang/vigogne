@@ -143,11 +143,11 @@ def main(
     pattern_trailing_stop_words = re.compile(rf'(?:{"|".join([re.escape(stop_word) for stop_word in stop_words])})\W*$')
 
     def bot(history, max_new_tokens, temperature, top_p, top_k, repetition_penalty, conversation_id=None):
-        logger.info(f"History: {json.dumps(history, indent=4, ensure_ascii=False)}")
+        # logger.info(f"History: {json.dumps(history, indent=4, ensure_ascii=False)}")
 
         # Construct the input message string for the model by concatenating the current system message and conversation history
         messages = generate_inference_chat_prompt(history, tokenizer)
-        # logger.info(messages)
+        logger.info(messages)
         assert messages is not None, "User input is too long!"
 
         # Tokenize the messages string
