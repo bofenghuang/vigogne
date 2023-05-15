@@ -89,8 +89,7 @@ class LoadBestPeftModelCallback(TrainerCallback):
         **kwargs,
     ):
         logger.info(f"Loading best peft model from {state.best_model_checkpoint} (score: {state.best_metric}).")
-        best_model_path = os.path.join(state.best_model_checkpoint, PEFT_WEIGHTS_NAME)
-        adapters_weights = torch.load(best_model_path)
-        model = kwargs["model"]
-        set_peft_model_state_dict(model, adapters_weights)
+        best_adapter_model_path = os.path.join(state.best_model_checkpoint, PEFT_WEIGHTS_NAME)
+        adapters_weights = torch.load(best_adapter_model_path)
+        set_peft_model_state_dict(kwargs["model"], adapters_weights)
         return control
