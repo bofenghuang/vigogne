@@ -44,7 +44,7 @@ The main contributions of this project include:
 - 2023/4/6: Improve the quality of the translated Alpaca dataset
 - 2023/5/11: Add data generation scripts for self-instruct, self-chatting, and translation
 - 2023/5/11: Release Vigogne-Instruct v2 models trained on a more extensive dataset
-- 2023/5/15: Release Vigogne Chat models
+- 2023/5/15: Release Vigogne-Chat models
 
 ## Installation
 

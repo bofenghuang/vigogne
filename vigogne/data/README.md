@@ -6,7 +6,7 @@ These datasets cover different purposes such as instruction-following and human-
 
 ## Instruction-following Data
 
-Here are the instruction-following data used to fine-tune the Vigogne models:
+Here are the instruction-following data used to fine-tune the Vigogne-Instruct models:
 
 |                    Dataset                    | Size  |                                                                                  Link                                                                                   |                                                                                                             Description                                                                                                             |
 | :-------------------------------------------: | :---: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
@@ -17,6 +17,8 @@ Here are the instruction-following data used to fine-tune the Vigogne models:
 |          Translated Logic Inference           |  54k  |            [logic_inference_oa_fr_nllb3b3_54k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/logic_inference_oa_fr_nllb3b3_54k.jsonl)            |                  [`KK04/LogicInference_OA`](https://huggingface.co/datasets/KK04/LogicInference_OA) dataset translated into French using [`facebook/nllb-200-3.3B`](https://huggingface.co/facebook/nllb-200-3.3B)                  |
 
 ## Chat Data
+
+Here are the human-assistant chat used to fine-tune the Vigogne-Chat models:
 
 |                          Dataset                          | Size  |                                                                        Link                                                                         |                                                     Description                                                      |
 | :-------------------------------------------------------: | :---: | :-------------------------------------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------: |

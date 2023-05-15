@@ -18,7 +18,7 @@ python vigogne/demo/demo_instruct.py \
     --lora_model_name_or_path bofenghuang/vigogne-instruct-7b
 ```
 
-For the Vigogne chat model, you can use the following command.
+For the Vigogne-Chat model, you can use the following command.
 
 ```bash
 python vigogne/demo/demo_chat.py \
@@ -95,7 +95,7 @@ python convert.py ./models/7B_instruct
 ./main -m ./models/7B_instruct/ggml-model-q4_0.bin --color -f VIGOGNE_ROOT/prompts/instruct.txt -ins -c 2048 -n 256 --temp 0.1 --repeat_penalty 1.1
 ```
 
-For the Vigogne chat models, the previous steps for combining and quantizing remain the same. However, the final step requires a different command to run the inference.
+For the Vigogne-Chat models, the previous steps for combining and quantizing remain the same. However, the final step requires a different command to run the inference.
 
 ```bash
 ./main -m ./models/7B_chat/ggml-model-q4_0.bin --color -f VIGOGNE_ROOT/prompts/chat.txt --reverse-prompt "<|UTILISATEUR|>:" --in-prefix " " --in-suffix "<|ASSISTANT|>:" --interactive-first -c 2048 -n -1 --temp 0.1
