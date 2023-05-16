@@ -39,12 +39,13 @@ The main contributions of this project include:
 
 ## Updates
 
-- 2023/3/29: Add instructions for deploying using [llama.cpp](https://github.com/ggerganov/llama.cpp)
-- 2023/4/3: Add fine-tuning script for seq2seq models
-- 2023/4/6: Improve the quality of the translated Alpaca dataset
-- 2023/5/11: Add data generation scripts for self-instruct, self-chatting, and translation
+- 2023/3/29: Include deployment instructions using [llama.cpp](https://github.com/ggerganov/llama.cpp)
+- 2023/4/3: Add training script for seq2seq models
+- 2023/4/6: Enhance the translation quality of the Stanford Alpaca dataset
+- 2023/5/11: Integrate data generation scripts for self-instruct, self-chatting, and translation
+- 2023/5/11: Expand the training scripts to include chat-optimized models, and incorporate DeepSpeed support for more efficient training
 - 2023/5/11: Release Vigogne-Instruct v2 models trained on a more extensive dataset
-- 2023/5/15: Release Vigogne-Chat models
+- 2023/5/15: Release Vigogne-Chat models and introduce the Gradio Demo for them
 
 ## Installation
 
