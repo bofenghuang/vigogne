@@ -136,6 +136,8 @@ def generate_inference_chat_prompt(
     history: List[List[str]], tokenizer: transformers.PreTrainedTokenizer, max_length: int = 2048
 ):
     history = [f"\n<|{USER}|>: {x[0]}\n<|{ASSISTANT}|>: {x[1]}" for x in history]
+    # tmp fix
+    history[-1] = history[-1].rstrip()
 
     history_text = ""
     for x in history[::-1]:
