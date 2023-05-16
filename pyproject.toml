@@ -49,6 +49,7 @@ dependencies = [
     "torch",
     "transformers>=4.28.0,<4.29.0",
     "wandb",
+    "tensorboardX",
 ]
 
 [project.optional-dependencies]
