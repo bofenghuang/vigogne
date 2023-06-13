@@ -16,7 +16,7 @@ import torch
 import transformers
 from accelerate import Accelerator
 from datasets import DatasetDict, load_dataset
-from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_int8_training
+from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_kbit_training
 from transformers import (
     AutoModelForSeq2SeqLM,
     AutoTokenizer,
@@ -235,7 +235,7 @@ def train():
 
     if model_args.load_in_8bit:
         # Cast the small parameters (e.g. layernorm) to fp32 for stability
-        model = prepare_model_for_int8_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
+        model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
     elif training_args.gradient_checkpointing:
         # For backward compatibility
         # See https://github.com/huggingface/peft/issues/137
