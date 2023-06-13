@@ -17,7 +17,13 @@ import torch
 import transformers
 from accelerate import Accelerator
 from datasets import DatasetDict, load_dataset
-from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_kbit_training
+from peft import (
+    LoraConfig, 
+    TaskType, 
+    get_peft_model, 
+    get_peft_model_state_dict, 
+    prepare_model_for_kbit_training
+)
 from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, Trainer, TrainingArguments
 
 from vigogne.constants import (
