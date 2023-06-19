@@ -32,10 +32,11 @@ classifiers = [
     "Topic :: Software Development :: Libraries :: Python Modules",
 ]
 dependencies = [
-    "accelerate",
+    "accelerate@git+https://github.com/huggingface/accelerate.git",
     "appdirs",
     "bitsandbytes",
     "datasets",
+    "einops",
     "fire",
     "loralib",
     "nltk",
@@ -44,10 +45,11 @@ dependencies = [
     "openai",
     "rouge-score",
     "sentencepiece",
+    "scipy",
     "tenacity",
     "tiktoken",
     "torch",
-    "transformers>=4.28.0,<4.29.0",
+    "transformers@git+https://github.com/huggingface/transformers.git",
     "wandb",
     "tensorboardX",
 ]
