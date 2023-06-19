@@ -5,6 +5,7 @@
 import contextlib
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
 
 import torch
@@ -41,6 +42,8 @@ def print_trainable_parameters(model):
     """
     trainable_params = 0
     all_param = 0
+    param_by_dtype = defaultdict(int)
+
     for _, param in model.named_parameters():
         num_params = param.numel()
         # if using DS Zero 3 and the weights are initialized empty
@@ -50,9 +53,14 @@ def print_trainable_parameters(model):
         all_param += num_params
         if param.requires_grad:
             trainable_params += num_params
+
+        param_by_dtype[param.dtype] += num_params
+
     logger.info(
-        f"trainable params: {trainable_params} || all params: {all_param} || trainable%: {100 * trainable_params / all_param:.4f}"
+        f"trainable params: {trainable_params:,d} || all params: {all_param:,d} || trainable%: {100 * trainable_params / all_param:.4f}"
     )
+    for k, v in param_by_dtype.items():
+        logger.info(f"dtype: {k} || num: {v:,d} || percentage: {100 * v / all_param:.4f}%")
 
 
 # See https://github.com/tloen/alpaca-lora/pull/359
