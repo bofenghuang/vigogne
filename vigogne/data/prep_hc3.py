@@ -2,8 +2,6 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-import re
-
 import fire
 from datasets import load_dataset
 
@@ -23,17 +21,30 @@ def main(output_file):
     data_df = data_df.explode("answer")
     # data_df = data_df[["question", "answer", "source"]]
     # print(data_df.head())
-    print(data_df.info())
+    # print(data_df.info())
+    print(data_df.shape[0])
 
-    data_df[CONVERSATION] = data_df.apply(
-        lambda row: [
-            {ROLE: USER, CONTENT: row["question"]},
-            {ROLE: ASSISTANT, CONTENT: row["answer"]},
-        ],
-        axis=1,
-    )
-    data_df = data_df[["source", CONVERSATION]]
+    # dedup by idx
+    data_df = data_df.sample(frac=1)
+    data_df.drop_duplicates(subset="id", keep="first", inplace=True)
+    print(data_df.shape[0])
+
+    # instruct format
+    data_df.rename(columns={"question": "instruction", "answer": "output"}, inplace=True)
+    data_df["input"] = ""
+    data_df = data_df[["instruction", "input", "output"]]
     print(data_df.head())
+
+    # conversation format
+    # data_df[CONVERSATION] = data_df.apply(
+    #     lambda row: [
+    #         {ROLE: USER, CONTENT: row["question"]},
+    #         {ROLE: ASSISTANT, CONTENT: row["answer"]},
+    #     ],
+    #     axis=1,
+    # )
+    # data_df = data_df[["source", CONVERSATION]]
+    # print(data_df.head())
 
     data_df.to_json(output_file, orient="records", lines=True, force_ascii=False)
     print(f"The processed data is saved into {output_file}")
