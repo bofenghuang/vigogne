@@ -1,3 +1,4 @@
+<p>Version pour Enno Ai</p>
 <p align="center" width="100%">
 <img src="./assets/vigogne_logo.png" alt="Vigogne" style="width: 40%; min-width: 300px; display: block; margin: auto;">
 </p>
