@@ -15,7 +15,7 @@ You can launch a Gradio demo in streaming mode by using the following command to
 ```bash
 python vigogne/demo/demo_instruct.py \
     --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
-    --lora_model_name_or_path bofenghuang/vigogne-instruct-7b
+    --lora_model_name_or_path bofenghuang/vigogne-7b-instruct
 ```
 
 For the Vigogne-Chat model, you can use the following command.
@@ -28,7 +28,7 @@ python vigogne/demo/demo_chat.py \
 
 ## llama.cpp
 
-The Vigogne models can now be easily deployed on PCs with the help of tools created by the community. The following instructions provide a detailed guide on how to combine Vigogne LoRA weights with the original LLaMA model, using [Vigogne-Instruct-7B](https://huggingface.co/bofenghuang/vigogne-instruct-7b) as an example. Additionally, you will learn how to quantize the resulting model to 4-bit and deploy it on your own PC using [llama.cpp](https://github.com/ggerganov/llama.cpp). For French-speaking users, you can refer to this excellent [tutorial](https://www.youtube.com/watch?v=BBf5h0HCFMY&t=292s&ab_channel=PereConteur) provided by @pereconteur.
+The Vigogne models can now be easily deployed on PCs with the help of tools created by the community. The following instructions provide a detailed guide on how to combine Vigogne LoRA weights with the original LLaMA model, using [Vigogne-7B-Instruct](https://huggingface.co/bofenghuang/vigogne-7b-instruct) as an example. Additionally, you will learn how to quantize the resulting model to 4-bit and deploy it on your own PC using [llama.cpp](https://github.com/ggerganov/llama.cpp). For French-speaking users, you can refer to this excellent [tutorial](https://www.youtube.com/watch?v=BBf5h0HCFMY&t=292s&ab_channel=PereConteur) provided by @pereconteur.
 
 **Note: the models will be quantized into 4-bit, so the performance might be worse than the non-quantized version. The responses are random due to the generation hyperparameters.**
 
@@ -54,12 +54,12 @@ python scripts/convert_llama_weights_to_hf.py \
 # combine the LLaMA model in Hugging Face's format and the LoRA weights to get the full fine-tuned model
 python scripts/export_state_dict_checkpoint.py \
     --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
-    --lora_model_name_or_path bofenghuang/vigogne-instruct-7b \
+    --lora_model_name_or_path bofenghuang/vigogne-7b-instruct \
     --output_dir ./models/7B_instruct \
     --base_model_size 7B
 
 # download the tokenizer.model file
-wget -P ./models https://huggingface.co/bofenghuang/vigogne-instruct-7b/resolve/main/tokenizer.model
+wget -P ./models https://huggingface.co/bofenghuang/vigogne-7b-instruct/resolve/main/tokenizer.model
 
 # check the files
 tree models
@@ -119,17 +119,17 @@ pip install -r requirements.txt
 python download-model.py huggyllama/llama-7b
 ```
 
-3. Put the Vigogne-Instruct-7B LoRA weights in the `lora` folder
+3. Put the Vigogne-7b-Instruct LoRA weights in the `lora` folder
 
 ```bash
-git clone https://huggingface.co/bofenghuang/vigogne-instruct-7b .
+git clone https://huggingface.co/bofenghuang/vigogne-7b-instruct .
 ```
 
 4. Launch the web UI
 
 ```bash
 # See https://github.com/oobabooga/text-generation-webui#starting-the-web-ui for more settings
-python server.py --model huggyllama_llama-7b --lora vigogne-instruct-7b
+python server.py --model huggyllama_llama-7b --lora vigogne-7b-instruct
 ```
 
 ## LlamaChat
