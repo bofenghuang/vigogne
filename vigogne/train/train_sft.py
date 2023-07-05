@@ -17,14 +17,15 @@ import torch
 import transformers
 from accelerate import Accelerator
 from datasets import DatasetDict, load_dataset
-from peft import (
-    LoraConfig, 
-    TaskType, 
-    get_peft_model, 
-    get_peft_model_state_dict, 
-    prepare_model_for_kbit_training
+from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_kbit_training
+from transformers import (
+    AutoModelForCausalLM,
+    AutoTokenizer,
+    BitsAndBytesConfig,
+    HfArgumentParser,
+    Trainer,
+    TrainingArguments,
 )
-from transformers import AutoModelForCausalLM, AutoTokenizer, HfArgumentParser, Trainer, TrainingArguments
 
 from vigogne.constants import (
     CHAT,
@@ -55,6 +56,24 @@ class ModelArguments:
     load_in_8bit: bool = field(
         default=False, metadata={"help": "Whether to convert the loaded model into mixed-8bit quantized model."}
     )
+    load_in_4bit: bool = field(
+        default=False, metadata={"help": "Whether to convert the loaded model into mixed-4bit quantized model."}
+    )
+    trust_remote_code: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Whether or not to allow for custom models defined on the Hub in their own modeling files. This option"
+                " should only be set to `True` for repositories you trust and in which you have read the code, as it will"
+                " execute code present on the Hub on your local machine."
+            )
+        },
+    )
+
+    def __post_init__(self):
+        assert not (
+            self.load_in_8bit and self.load_in_4bit
+        ), "You can't pass both `load_in_8bit=True` and `load_in_4bit=True`"
 
 
 @dataclass
@@ -76,17 +95,22 @@ class DataArguments:
 
     train_file: Optional[str] = field(default=None, metadata={"help": "Path to the training file."})
     eval_file: Optional[str] = field(default=None, metadata={"help": "Path to the evaluation file."})
+    model_min_length: Optional[int] = field(
+        default=None, metadata={"help": "Filter examples that have fewer than `model_min_length` tokens"}
+    )
     model_max_length: Optional[int] = field(
-        default=None, metadata={"help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."}
+        default=None,
+        metadata={"help": "Maximum sequence length. Sequences will be right padded (and possibly truncated)."},
     )
-    model_max_length_percentile: Optional[int] = field(
-        default=95, metadata={"help": "Percentile of the example length. Used to determin `model_max_length`."}
-    )
+    # model_max_length_percentile: Optional[int] = field(
+    #     default=95, metadata={"help": "Percentile of the example length. Used to determin `model_max_length`."}
+    # )
     max_train_samples: Optional[int] = field(
         default=None,
         metadata={
             "help": (
-                "For debugging purposes or quicker training, truncate the number of training examples to this " "value if set."
+                "For debugging purposes or quicker training, truncate the number of training examples to this "
+                "value if set."
             )
         },
     )
@@ -99,9 +123,22 @@ class DataArguments:
             )
         },
     )
-    overwrite_cache: bool = field(default=False, metadata={"help": "Overwrite the cached training and evaluation sets"})
+    overwrite_cache: bool = field(
+        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
+    )
     preprocessing_num_workers: Optional[int] = field(
         default=None, metadata={"help": "The number of processes to use for the preprocessing."}
+    )
+    preprocessing_only: bool = field(
+        default=False,
+        metadata={
+            "help": (
+                "Whether to only do data preprocessing and skip training. This is especially useful when data"
+                " preprocessing errors out in distributed training due to timeout. In this case, one should run the"
+                " preprocessing in a non-distributed setup with `preprocessing_only=True` so that the cached datasets"
+                " can consequently be loaded in distributed training"
+            )
+        },
     )
     mode: str = field(default=INSTRUCT, metadata={"help": "The mode to preprocess and format the data."})
 
@@ -113,7 +150,12 @@ class DataArguments:
 class VigogneTrainingArguments(TrainingArguments):
     optim: str = field(default="adamw_torch", metadata={"help": "Optimizer to use."})
     fp16: bool = field(
-        default=True, metadata={"help": "Whether to use fp16 16-bit (mixed) precision training instead of 32-bit training."}
+        default=True,
+        metadata={"help": "Whether to use fp16 16-bit (mixed) precision training instead of 32-bit training."},
+    )
+    length_column_name: Optional[str] = field(
+        default="input_length",
+        metadata={"help": "Column name with precomputed lengths to use when grouping by length."},
     )
 
 
@@ -132,7 +174,9 @@ class DataCollatorForSupervisedDataset(object):
         input_ids, labels = tuple([instance[key] for instance in instances] for key in ("input_ids", "labels"))
 
         if self.pad_to_multiple_of is not None:
-            max_length_index, max_length = max(enumerate([len(input_ids_) for input_ids_ in input_ids]), key=lambda x: x[1])
+            max_length_index, max_length = max(
+                enumerate([len(input_ids_) for input_ids_ in input_ids]), key=lambda x: x[1]
+            )
             # n_padding = ((max_length // self.pad_to_multiple_of) + 1) * self.pad_to_multiple_of - max_length
             n_padding = math.ceil(max_length / self.pad_to_multiple_of) * self.pad_to_multiple_of - max_length
             # Pad the longest example to pad_to_multiple_of * N
@@ -142,7 +186,9 @@ class DataCollatorForSupervisedDataset(object):
         input_ids = [torch.LongTensor(input_ids_) for input_ids_ in input_ids]
         labels = [torch.LongTensor(labels_) for labels_ in labels]
 
-        input_ids = torch.nn.utils.rnn.pad_sequence(input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id)
+        input_ids = torch.nn.utils.rnn.pad_sequence(
+            input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
+        )
         labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
 
         return dict(
@@ -174,13 +220,15 @@ def smart_tokenizer_and_embedding_resize(
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
+        logger.info(f"Added {num_new_tokens} new special tokens to the model")
+
 
 def train():
     # HF parser
     parser = HfArgumentParser((ModelArguments, LoraArguments, DataArguments, VigogneTrainingArguments))
     model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses()
     # debug
-    # model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses(args)
+    # model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses(args=args)
 
     # Setup logging
     logging.basicConfig(
@@ -211,15 +259,30 @@ def train():
     logger.info(f"Data parameters {data_args}")
     logger.info(f"Training/evaluation parameters {training_args}")
 
-    # Load model and tokenizer
+    # BitsAndBytesConfig support
+    quantization_config = None
+    if model_args.load_in_8bit:
+        quantization_config = BitsAndBytesConfig(load_in_8bit=True)
+    if model_args.load_in_4bit:
+        # todo: customize 4bit config
+        quantization_config = BitsAndBytesConfig(
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_use_double_quant=True,
+            bnb_4bit_compute_dtype=torch.float16,
+        )
+
+    # Load model
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
         torch_dtype=torch.float16,
-        load_in_8bit=model_args.load_in_8bit,
         device_map={"": Accelerator().process_index},
+        quantization_config=quantization_config,
+        trust_remote_code=model_args.trust_remote_code,
         use_cache=not training_args.gradient_checkpointing,
     )
 
+    # Load tokenizer
     # fast version llama for "with you.</s>"
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
@@ -244,7 +307,11 @@ def train():
         model=model,
     )
 
-    if model_args.load_in_8bit:
+    if model_args.load_in_8bit or model_args.load_in_4bit:
+        # todo
+        # model.gradient_checkpointing_enable()
+        # model = prepare_model_for_kbit_training(model)
+
         # Cast the small parameters (e.g. layernorm) to fp32 for stability
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
     elif training_args.gradient_checkpointing:
@@ -252,6 +319,7 @@ def train():
         # See https://github.com/huggingface/peft/issues/137
         model.enable_input_require_grads()
 
+    # Load LoRA
     lora_config = LoraConfig(
         r=lora_args.lora_r,
         lora_alpha=lora_args.lora_alpha,
@@ -283,31 +351,34 @@ def train():
         ext = data_args.eval_file.rsplit(".", 1)[-1]
         ext = "json" if ext == "jsonl" else ext
         raw_datasets["eval"] = load_dataset(ext, data_files=data_args.eval_file)["train"]
-    # logger.info(raw_datasets)
+    logger.info(f"Raw dataset: {raw_datasets}")
 
     # Determine model_max_length for truncation
-    model_max_length = data_args.model_max_length
-    get_example_length_function = get_chat_example_length if data_args.mode == CHAT else get_instruct_example_length
-    get_example_length_function_p = partial(get_example_length_function, tokenizer=tokenizer)
+    # model_max_length = data_args.model_max_length
+    # get_example_length_function = get_chat_example_length if data_args.mode == CHAT else get_instruct_example_length
+    # get_example_length_function_p = partial(get_example_length_function, tokenizer=tokenizer)
 
-    if model_max_length is None:
-        with training_args.main_process_first(desc="dataset map tokenization"):
-            train_example_lengths = raw_datasets["train"].map(
-                get_example_length_function_p,
-                num_proc=data_args.preprocessing_num_workers,
-                remove_columns=next(iter(raw_datasets.values())).column_names,
-                load_from_cache_file=not data_args.overwrite_cache,
-                desc="get example lengths",
-            )["example_length"]
-        # Take percentile of max length
-        model_max_length = math.ceil(np.percentile(train_example_lengths, data_args.model_max_length_percentile))
-        logger.info(
-            f"`model_max_length` has been set to the {data_args.model_max_length_percentile}th percentile of training example lengths: {model_max_length}"
-        )
+    # if model_max_length is None:
+    #     with training_args.main_process_first(desc="dataset map tokenization"):
+    #         train_example_lengths = raw_datasets["train"].map(
+    #             get_example_length_function_p,
+    #             num_proc=data_args.preprocessing_num_workers,
+    #             remove_columns=next(iter(raw_datasets.values())).column_names,
+    #             load_from_cache_file=not data_args.overwrite_cache,
+    #             desc="get example lengths",
+    #         )["example_length"]
+    #     # Take percentile of max length
+    #     model_max_length = math.ceil(np.percentile(train_example_lengths, data_args.model_max_length_percentile))
+    #     logger.info(
+    #         f"`model_max_length` has been set to the {data_args.model_max_length_percentile}th percentile of training example lengths: {model_max_length}"
+    #     )
 
     # Tokenize data
     preprocess_function = preprocess_chat_example if data_args.mode == CHAT else preprocess_instruct_example
-    preprocess_function_p = partial(preprocess_function, tokenizer=tokenizer, model_max_length=data_args.model_max_length)
+    # preprocess_function_p = partial(preprocess_function, tokenizer=tokenizer, model_max_length=model_max_length)
+    preprocess_function_p = partial(
+        preprocess_function, tokenizer=tokenizer, length_column_name=training_args.length_column_name
+    )
 
     with training_args.main_process_first(desc="dataset map tokenization"):
         preprocessed_dataset = raw_datasets.map(
@@ -317,6 +388,37 @@ def train():
             load_from_cache_file=not data_args.overwrite_cache,
             desc="preprocess dataset",
         )
+
+        # Remove long examples
+        def is_input_in_length_range(length):
+            # return length > data_args.model_min_length and length < data_args.model_max_length
+            is_in_range = True
+            if data_args.model_min_length is not None:
+                is_in_range &= length > data_args.model_min_length
+            if data_args.model_max_length is not None:
+                is_in_range &= length < data_args.model_max_length
+            return is_in_range
+
+        if (
+            data_args.model_min_length is not None or data_args.model_max_length is not None
+        ) and training_args.length_column_name in next(iter(preprocessed_dataset.values())).column_names:
+            # filter data that is shorter than model_min_length or longer than model_max_length
+            preprocessed_dataset = preprocessed_dataset.filter(
+                is_input_in_length_range,
+                num_proc=data_args.preprocessing_num_workers,
+                input_columns=[training_args.length_column_name],
+                load_from_cache_file=not data_args.overwrite_cache,
+                desc="filter dataset by input length",
+            )
+
+            logger.info(f"Filtered dataset: {preprocessed_dataset}")
+            # debug
+            # logger.info(sorted(preprocessed_dataset["train"][training_args.length_column_name], reverse=True)[:10])
+            # logger.info(sorted(preprocessed_dataset["eval"][training_args.length_column_name], reverse=True)[:10])
+
+    if data_args.preprocessing_only:
+        logger.info(f"Data preprocessing finished. Files cached at {preprocessed_dataset.cache_files}")
+        return
 
     train_dataset = preprocessed_dataset["train"]
     if data_args.max_train_samples is not None:
@@ -350,7 +452,6 @@ def train():
 
     # Training
     if training_args.do_train:
-
         train_result = trainer.train()
 
         # Saves the tokenizer too for easy upload
