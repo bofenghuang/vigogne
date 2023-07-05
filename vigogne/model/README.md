@@ -32,7 +32,7 @@ The weights for the Vigogne-Chat models can be found on the 🤗 Hugging Face Hu
 | :---------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------: |
 |        [bofenghuang/vigogne-7b-chat](https://huggingface.co/bofenghuang/vigogne-7b-chat)        |                         LLaMA-7B model fine-tuned for chat                          |
 | [bofenghuang/vigogne-falcon-7b-chat](https://huggingface.co/bofenghuang/vigogne-falcon-7b-chat) |                Falcon-7B model fine-tuned for chat (**Recommended**)                |
-|                                              <!--                                               | [bofenghuang/vigogne-13b-chat](https://huggingface.co/bofenghuang/vigogne-13b-chat) | TODO | --> |
+<!-- | [bofenghuang/vigogne-13b-chat](https://huggingface.co/bofenghuang/vigogne-13b-chat) | TODO  | -->
 
 ### Pretrained Models
 
