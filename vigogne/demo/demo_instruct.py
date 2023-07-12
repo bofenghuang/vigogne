@@ -4,11 +4,9 @@
 
 """
 Usage:
-CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0
 
-python vigogne/demo/demo_instruct.py \
-    --base_model_name_or_path name/or/path/to/hf/llama/7b/model \
-    --lora_model_name_or_path bofenghuang/vigogne-instruct-7b
+python vigogne/demo/demo_instruct.py --base_model_name_or_path bofenghuang/vigogne-7b-instruct
 """
 
 import logging
@@ -49,46 +47,37 @@ examples = [
 
 
 def main(
-    base_model_name_or_path: str = "huggyllama/llama-7b",
-    lora_model_name_or_path: str = "bofenghuang/vigogne-instruct-7b",
+    base_model_name_or_path: str = "bofenghuang/vigogne-7b-instruct",
+    lora_model_name_or_path: Optional[str] = None,
     load_8bit: bool = False,
     server_name: Optional[str] = "0.0.0.0",
     server_port: Optional[str] = None,
     share: bool = True,
 ):
     tokenizer = AutoTokenizer.from_pretrained(base_model_name_or_path, padding_side="right", use_fast=False)
+    # tokenizer.pad_token = tokenizer.eos_token
 
     if device == "cuda":
         model = AutoModelForCausalLM.from_pretrained(
             base_model_name_or_path,
-            load_in_8bit=load_8bit,
             torch_dtype=torch.float16,
             device_map="auto",
-        )
-        model = PeftModel.from_pretrained(
-            model,
-            lora_model_name_or_path,
-            torch_dtype=torch.float16,
+            load_in_8bit=load_8bit,
+            # trust_remote_code=True,
         )
     elif device == "mps":
         model = AutoModelForCausalLM.from_pretrained(
             base_model_name_or_path,
-            device_map={"": device},
             torch_dtype=torch.float16,
-        )
-        model = PeftModel.from_pretrained(
-            model,
-            lora_model_name_or_path,
             device_map={"": device},
-            torch_dtype=torch.float16,
         )
     else:
-        model = AutoModelForCausalLM.from_pretrained(base_model_name_or_path, device_map={"": device}, low_cpu_mem_usage=True)
-        model = PeftModel.from_pretrained(
-            model,
-            lora_model_name_or_path,
-            device_map={"": device},
+        model = AutoModelForCausalLM.from_pretrained(
+            base_model_name_or_path, device_map={"": device}, low_cpu_mem_usage=True
         )
+
+    if lora_model_name_or_path is not None:
+        model = PeftModel.from_pretrained(model, lora_model_name_or_path)
 
     if not load_8bit and device != "cpu":
         model.half()  # seems to fix bugs for some users.
@@ -112,8 +101,8 @@ def main(
         prompt = generate_instruct_prompt(instruction=instruction)
         logger.info(f"Prompt: {prompt}")
 
-        inputs = tokenizer(prompt, return_tensors="pt").to(device)
-        input_length = inputs.input_ids.shape[1]
+        input_ids = tokenizer(prompt, return_tensors="pt")["input_ids"].to(device)
+        input_length = input_ids.shape[1]
 
         generation_config = GenerationConfig(
             temperature=temperature,
@@ -131,11 +120,13 @@ def main(
             # in the main thread. Adds timeout to the streamer to handle exceptions in the generation thread.
             streamer = TextIteratorStreamer(tokenizer, timeout=10.0, skip_prompt=True, skip_special_tokens=True)
             generation_kwargs = dict(
-                **inputs,
+                input_ids=input_ids,
                 streamer=streamer,
                 generation_config=generation_config,
                 # return_dict_in_generate=True,
                 # output_scores=True,
+                # pad_token_id=tokenizer.eos_token_id,
+                # eos_token_id=tokenizer.eos_token_id,
             )
             t = Thread(target=model.generate, kwargs=generation_kwargs)
             t.start()
@@ -150,10 +141,12 @@ def main(
 
         else:
             generated_outputs = model.generate(
-                **inputs,
+                input_ids=input_ids,
                 generation_config=generation_config,
                 return_dict_in_generate=True,
                 # output_scores=True,
+                # pad_token_id=tokenizer.eos_token_id,
+                # eos_token_id=tokenizer.eos_token_id,
             )
             generated_tokens = generated_outputs.sequences[0, input_length:]
             generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
@@ -168,7 +161,7 @@ def main(
         gr.Markdown(
             """<h1><center>🦙 Vigogne Instruction-following</center></h1>
 
-            This demo is of [Vigogne instruct models](https://huggingface.co/bofenghuang/vigogne-instruct-7b). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned to follow the French 🇫🇷 instructions.
+            This demo is of [Vigogne instruct models](https://huggingface.co/bofenghuang/vigogne-7b-instruct). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned to follow the French 🇫🇷 instructions.
 
             For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.
     """
@@ -289,7 +282,7 @@ def main(
     #     ],
     #     outputs=[gr.Textbox(label="Output", interactive=False)],
     #     title="🦙 Vigogne Instruction-following",
-    #     description="This demo is of [Vigogne-Instruct-7B](https://huggingface.co/bofenghuang/vigogne-instruct-7b). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned finetuned to follow the French 🇫🇷 instructions. For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.",
+    #     description="This demo is of [Vigogne-7B-Instruct](https://huggingface.co/bofenghuang/vigogne-7b-instruct). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned finetuned to follow the French 🇫🇷 instructions. For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.",
     # ).launch(enable_queue=True, share=share, server_name=server_name, server_port=server_port)
 
 

@@ -6,25 +6,22 @@
 Modified from: https://huggingface.co/spaces/mosaicml/mpt-7b-chat/raw/main/app.py
 
 Usage:
-CUDA_VISIBLE_DEVICES=0
+export CUDA_VISIBLE_DEVICES=0
 
-python vigogne/demo/demo_chat.py \
-    --base_model_name_or_path huggyllama/llama-7b \
-    --lora_model_name_or_path bofenghuang/vigogne-chat-7b
+python vigogne/demo/demo_chat.py --base_model_name_or_path bofenghuang/vigogne-7b-chat
 """
+
+import json
 
 # import datetime
 import logging
 import os
 import re
+import sys
 from threading import Event, Thread
 from typing import List, Optional
 
-
-# from uuid import uuid4
-
 import fire
-import json
 import gradio as gr
 
 # import requests
@@ -39,8 +36,13 @@ from transformers import (
 )
 
 from vigogne.constants import ASSISTANT, USER
-from vigogne.preprocess import generate_inference_chat_prompt
 from vigogne.inference.inference_utils import StopWordsCriteria
+from vigogne.preprocess import generate_inference_chat_prompt
+
+# from uuid import uuid4
+
+
+
 
 logging.basicConfig(
     format="%(asctime)s [%(levelname)s] [%(name)s] %(message)s",
@@ -91,51 +93,47 @@ def user(message, history):
 
 
 def main(
-    base_model_name_or_path: str = "huggyllama/llama-7b",
-    lora_model_name_or_path: str = "bofenghuang/vigogne-chat-7b",
+    base_model_name_or_path: str = "bofenghuang/vigogne-7b-chat",
+    lora_model_name_or_path: Optional[str] = None,
     load_8bit: bool = False,
     server_name: Optional[str] = "0.0.0.0",
     server_port: Optional[str] = None,
     share: bool = True,
 ):
     tokenizer = AutoTokenizer.from_pretrained(base_model_name_or_path, padding_side="right", use_fast=False)
+    # tokenizer.pad_token = tokenizer.eos_token
 
     if device == "cuda":
         model = AutoModelForCausalLM.from_pretrained(
             base_model_name_or_path,
-            load_in_8bit=load_8bit,
             torch_dtype=torch.float16,
             device_map="auto",
-        )
-        model = PeftModel.from_pretrained(
-            model,
-            lora_model_name_or_path,
-            torch_dtype=torch.float16,
+            load_in_8bit=load_8bit,
+            # trust_remote_code=True,
         )
     elif device == "mps":
         model = AutoModelForCausalLM.from_pretrained(
             base_model_name_or_path,
-            device_map={"": device},
             torch_dtype=torch.float16,
-        )
-        model = PeftModel.from_pretrained(
-            model,
-            lora_model_name_or_path,
             device_map={"": device},
-            torch_dtype=torch.float16,
         )
     else:
-        model = AutoModelForCausalLM.from_pretrained(base_model_name_or_path, device_map={"": device}, low_cpu_mem_usage=True)
-        model = PeftModel.from_pretrained(
-            model,
-            lora_model_name_or_path,
+        model = AutoModelForCausalLM.from_pretrained(
+            base_model_name_or_path,
             device_map={"": device},
+            low_cpu_mem_usage=True
         )
+
+    if lora_model_name_or_path is not None:
+        model = PeftModel.from_pretrained(model, lora_model_name_or_path)
 
     if not load_8bit and device != "cpu":
         model.half()  # seems to fix bugs for some users.
 
     model.eval()
+
+    if torch.__version__ >= "2" and sys.platform != "win32":
+        model = torch.compile(model)
 
     # NB
     stop_words = [f"<|{ASSISTANT}|>", f"<|{USER}|>"]
@@ -165,6 +163,8 @@ def main(
             ),
             streamer=streamer,
             stopping_criteria=StoppingCriteriaList([stop_words_criteria]),
+            # pad_token_id=tokenizer.eos_token_id,
+            # eos_token_id=tokenizer.eos_token_id,
         )
 
         # stream_complete = Event()
@@ -213,7 +213,7 @@ def main(
         gr.Markdown(
             """<h1><center>🦙 Vigogne Chat</center></h1>
 
-            This demo is of [Vigogne-Chat-7B](https://huggingface.co/bofenghuang/vigogne-chat-7b). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned to conduct French 🇫🇷 dialogues between a user and an AI assistant.
+            This demo is of [Vigogne-7B-Chat](https://huggingface.co/bofenghuang/vigogne-7b-chat). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned to conduct French 🇫🇷 dialogues between a user and an AI assistant.
 
             For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.
     """
