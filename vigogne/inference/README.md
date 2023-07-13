@@ -8,15 +8,19 @@ You can use the following Google Colab Notebook to infer the Vigogne instruction
 
 <a href="https://colab.research.google.com/github/bofenghuang/vigogne/blob/main/notebooks/infer_instruct.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
 
+For the Vigogne-Chat models, refer to this notebook.
+
+<a href="https://colab.research.google.com/github/bofenghuang/vigogne/blob/main/notebooks/infer_chat.ipynb" target="_blank"><img src="https://colab.research.google.com/assets/colab-badge.svg" alt="Open In Colab"/></a>
+
 ## Gradio Demo
 
-To launch a Gradio demo in streaming mode and interact with the Vigogne instruction-following models, use the following command:
+To launch a Gradio demo in streaming mode and interact with the Vigogne instruction-following models, simply execute the command provided below:
 
 ```bash
 python vigogne/demo/demo_instruct.py --base_model_name_or_path bofenghuang/vigogne-7b-instruct
 ```
 
-For the Vigogne-Chat model, you can use the following command.
+For the Vigogne-Chat models, you can follow this command:
 
 ```bash
 python vigogne/demo/demo_chat.py --base_model_name_or_path bofenghuang/vigogne-7b-chat
