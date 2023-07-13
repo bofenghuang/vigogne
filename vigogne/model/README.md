@@ -11,12 +11,12 @@ The Vigogne-Instruct models were fine-tuned using instruction-following tasks. A
 
 The weights for the Vigogne-Instruct models can be found on the 🤗 Hugging Face Hub:
 
-|                                                  Model                                                  |                              Description                               |
-| :-----------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------: |
-|        [bofenghuang/vigogne-7b-instruct](https://huggingface.co/bofenghuang/vigogne-7b-instruct)        |          LLaMA-7B model fine-tuned for instruction-following           |
-|       [bofenghuang/vigogne-13b-instruct](https://huggingface.co/bofenghuang/vigogne-13b-instruct)       | LLaMA-13B model fine-tuned for instruction-following (**Recommended**) |
-| [bofenghuang/vigogne-bloom-7b1-instruct](https://huggingface.co/bofenghuang/vigogne-bloom-7b1-instruct) |          BLOOM-7B1 model fine-tuned for instruction-following          |
-| [bofenghuang/vigogne-falcon-7b-instruct](https://huggingface.co/bofenghuang/vigogne-falcon-7b-instruct) | Falcon-7B model fine-tuned for instruction-following (**Recommended**) |
+|                                            Model                                            |                              Description                               |
+| :-----------------------------------------------------------------------------------------: | :--------------------------------------------------------------------: |
+|        [vigogne-7b-instruct](https://huggingface.co/bofenghuang/vigogne-7b-instruct)        |          LLaMA-7B model fine-tuned for instruction-following           |
+|       [vigogne-13b-instruct](https://huggingface.co/bofenghuang/vigogne-13b-instruct)       | LLaMA-13B model fine-tuned for instruction-following (**Recommended**) |
+| [vigogne-bloom-7b1-instruct](https://huggingface.co/bofenghuang/vigogne-bloom-7b1-instruct) |          BLOOM-7B1 model fine-tuned for instruction-following          |
+| [vigogne-falcon-7b-instruct](https://huggingface.co/bofenghuang/vigogne-falcon-7b-instruct) | Falcon-7B model fine-tuned for instruction-following (**Recommended**) |
 
 <!-- The graph below illustrates the loss curve for the fine-tuning process, based on 5000 evaluation examples.
 
@@ -28,11 +28,11 @@ The Vigogne-Chat models were fine-tuned using dialogue examples. Additional deta
 
 The weights for the Vigogne-Chat models can be found on the 🤗 Hugging Face Hub:
 
-|                                              Model                                              |                                     Description                                     |
-| :---------------------------------------------------------------------------------------------: | :---------------------------------------------------------------------------------: |
-|        [bofenghuang/vigogne-7b-chat](https://huggingface.co/bofenghuang/vigogne-7b-chat)        |                         LLaMA-7B model fine-tuned for chat                          |
-| [bofenghuang/vigogne-falcon-7b-chat](https://huggingface.co/bofenghuang/vigogne-falcon-7b-chat) |                Falcon-7B model fine-tuned for chat (**Recommended**)                |
-<!-- | [bofenghuang/vigogne-13b-chat](https://huggingface.co/bofenghuang/vigogne-13b-chat) | TODO  | -->
+|                                        Model                                        |                      Description                      |
+| :---------------------------------------------------------------------------------: | :---------------------------------------------------: |
+|        [vigogne-7b-chat](https://huggingface.co/bofenghuang/vigogne-7b-chat)        |          LLaMA-7B model fine-tuned for chat           |
+|       [vigogne-13b-chat](https://huggingface.co/bofenghuang/vigogne-13b-chat)       |          LLaMA-13B model fine-tuned for chat          |
+| [vigogne-falcon-7b-chat](https://huggingface.co/bofenghuang/vigogne-falcon-7b-chat) | Falcon-7B model fine-tuned for chat (**Recommended**) |
 
 ### Pretrained Models
 
