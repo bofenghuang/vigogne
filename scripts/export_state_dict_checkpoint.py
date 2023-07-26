@@ -7,11 +7,12 @@ Modified from: https://github.com/tloen/alpaca-lora
 
 import json
 import os
+from typing import Optional
 
 import fire
 import torch
 from peft import PeftModel
-from transformers import LlamaForCausalLM
+from transformers import AutoModelForCausalLM
 
 CHECKPOINT_PARAMS = {
     "7B": {"dim": 4096, "multiple_of": 256, "n_heads": 32, "n_layers": 32, "norm_eps": 1e-06, "vocab_size": -1},
@@ -21,8 +22,12 @@ CHECKPOINT_PARAMS = {
 }
 
 
-def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir: str, base_model_size: str = "7B"):
-
+def main(
+    base_model_name_or_path: str,
+    output_dir: str,
+    lora_model_name_or_path: Optional[str] = None,
+    base_model_size: str = "7B",
+):
     # Retrieve the model parameters
     params = CHECKPOINT_PARAMS.get(base_model_size)
     if params is None:
@@ -30,45 +35,41 @@ def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir:
             f"Cannot find the right model parameters for {base_model_size}. Please choose between {list(CHECKPOINT_PARAMS.keys())}."
         )
 
-    # tokenizer = LlamaTokenizer.from_pretrained(base_model_name_or_path)
+    # tokenizer = AutoTokenizer.from_pretrained(base_model_name_or_path)
 
-    base_model = LlamaForCausalLM.from_pretrained(
+    model = AutoModelForCausalLM.from_pretrained(
         base_model_name_or_path,
-        load_in_8bit=False,
         torch_dtype=torch.float16,
         device_map={"": "cpu"},
+        # trust_remote_code=True,
+        low_cpu_mem_usage=True,
     )
 
-    lora_model = PeftModel.from_pretrained(
-        base_model,
-        lora_model_name_or_path,
-        device_map={"": "cpu"},
-        torch_dtype=torch.float16,
-    )
+    if lora_model_name_or_path is not None:
+        lora_model = PeftModel.from_pretrained(model, lora_model_name_or_path)
 
-    # merge weights
-    for layer in lora_model.base_model.model.model.layers:
-        if hasattr(layer.self_attn.q_proj, "merge_weights"):
-            layer.self_attn.q_proj.merge_weights = True
-        if hasattr(layer.self_attn.v_proj, "merge_weights"):
-            layer.self_attn.v_proj.merge_weights = True
-        if hasattr(layer.self_attn.k_proj, "merge_weights"):
-            layer.self_attn.k_proj.merge_weights = True
-        if hasattr(layer.self_attn.o_proj, "merge_weights"):
-            layer.self_attn.o_proj.merge_weights = True
-        if hasattr(layer.mlp.gate_proj, "merge_weights"):
-            layer.mlp.gate_proj.merge_weights = True
-        if hasattr(layer.mlp.down_proj, "merge_weights"):
-            layer.mlp.down_proj.merge_weights = True
-        if hasattr(layer.mlp.up_proj, "merge_weights"):
-            layer.mlp.up_proj.merge_weights = True
+        # merge weights
+        # for layer in lora_model.model.model.model.layers:
+        #     if hasattr(layer.self_attn.q_proj, "merge_weights"):
+        #         layer.self_attn.q_proj.merge_weights = True
+        #     if hasattr(layer.self_attn.v_proj, "merge_weights"):
+        #         layer.self_attn.v_proj.merge_weights = True
+        #     if hasattr(layer.self_attn.k_proj, "merge_weights"):
+        #         layer.self_attn.k_proj.merge_weights = True
+        #     if hasattr(layer.self_attn.o_proj, "merge_weights"):
+        #         layer.self_attn.o_proj.merge_weights = True
+        #     if hasattr(layer.mlp.gate_proj, "merge_weights"):
+        #         layer.mlp.gate_proj.merge_weights = True
+        #     if hasattr(layer.mlp.down_proj, "merge_weights"):
+        #         layer.mlp.down_proj.merge_weights = True
+        #     if hasattr(layer.mlp.up_proj, "merge_weights"):
+        #         layer.mlp.up_proj.merge_weights = True
 
-    # todo
-    # lora_model = lora_model.merge_and_unload()
+        model = lora_model.merge_and_unload()
 
-    lora_model.train(False)
+    model.train(False)
 
-    lora_model_sd = lora_model.state_dict()
+    model_sd = model.state_dict()
 
     # params = {
     #     "dim": 4096,
@@ -92,7 +93,8 @@ def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir:
         return w.view(n_heads, 2, dim // n_heads // 2, dim).transpose(1, 2).reshape(dim, dim)
 
     def translate_state_dict_key(k):
-        k = k.replace("base_model.model.", "")
+        if lora_model_name_or_path is not None:
+            k = k.replace("base_model.model.", "")
         if k == "model.embed_tokens.weight":
             return "tok_embeddings.weight"
         elif k == "model.norm.weight":
@@ -129,7 +131,7 @@ def main(base_model_name_or_path: str, lora_model_name_or_path: str, output_dir:
             raise NotImplementedError
 
     new_state_dict = {}
-    for k, v in lora_model_sd.items():
+    for k, v in model_sd.items():
         new_k = translate_state_dict_key(k)
         if new_k is not None:
             if "wq" in new_k or "wk" in new_k:

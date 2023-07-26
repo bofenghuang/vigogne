@@ -7,6 +7,7 @@
 
 [![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/bofenghuang/vigogne/blob/main/LICENSE)
 [![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/bofenghuang/vigogne/blob/main/DATA_LICENSE)
+[![Models](https://img.shields.io/badge/Hugging%20Face-Models-yellow.svg)](https://huggingface.co/models?search=bofenghuang/vigogne)
 
 *The vigogne (French name for vicuña) is a South American camelid native to the Andes Mountains. It is closely related to the llama, alpaca, and guanaco.*
 
@@ -21,7 +22,7 @@ The main contributions of this project include:
 
 **Usage and License Notices**: Same as [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), Vigogne is intended and licensed for research use only. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
 
-💡 *The screencast below shows the current 🦙 Vigogne-Chat-7B model running on Apple M1 Pro using 4GB of weights (no sped up).*
+💡 *The screencast below shows the current 🦙 Vigogne-7B-Chat model running on Apple M1 Pro using 4GB of weights (no sped up).*
 
 ![](./assets/screencast_llamacpp_chat.gif)
 
@@ -96,7 +97,7 @@ More information can be found in the [vigogne/train](vigogne/train/README.md).
 
 Répondez à la question suivante : Les pratiques artistiques transforment-elles le monde ?
 
-- **vigogne-instruct-7b**: Les pratiques d'art peuvent transformer le monde en créant des œuvres qui évoquent des sentiments, des idées et des émotions. Elles peuvent également être utilisées pour créer des Œuvres d'Art Vivant qui sont des œuvre vivantes qui peuvent être utilisés pour créé des expériences et des conversations. Les praticiens d'arts peuvent également utiliser leurs pratiques pour créerer des œufs d'âme, des êtres vivants créés à partir de matériaux naturels, qui peuvent avoir un impact sur la façon dont les gens pensent et ressentent le monde.
+- **vigogne-7b-instruct**: Les pratiques d'art peuvent transformer le monde en créant des œuvres qui évoquent des sentiments, des idées et des émotions. Elles peuvent également être utilisées pour créer des Œuvres d'Art Vivant qui sont des œuvre vivantes qui peuvent être utilisés pour créé des expériences et des conversations. Les praticiens d'arts peuvent également utiliser leurs pratiques pour créerer des œufs d'âme, des êtres vivants créés à partir de matériaux naturels, qui peuvent avoir un impact sur la façon dont les gens pensent et ressentent le monde.
 
 <details><summary>Other models</summary>
 
@@ -110,7 +111,7 @@ Répondez à la question suivante : Les pratiques artistiques transforment-elles
 
 Expliquez la différence entre DoS et phishing en français.
 
-- **vigogne-instruct-7b**: Le DoS (Denial of Service) est une attaque informatique qui consiste à bloquer ou à interrompre l'accès à un service ou à un système informatique. Le phishing est une technique de fraude qui consisterait à obtenir des informations sensibles d'un utilisateur en lui demandant de fournir des renseignements, tels que des mots de passe ou des numéros de carte de crédit.
+- **vigogne-7b-instruct**: Le DoS (Denial of Service) est une attaque informatique qui consiste à bloquer ou à interrompre l'accès à un service ou à un système informatique. Le phishing est une technique de fraude qui consisterait à obtenir des informations sensibles d'un utilisateur en lui demandant de fournir des renseignements, tels que des mots de passe ou des numéros de carte de crédit.
 
 <details><summary>Other models</summary>
 
@@ -130,7 +131,7 @@ Résumez le texte suivant en une seule phrase.
 
 La science des données est l'étude des données afin d'en extraire des informations significatives pour les entreprises. Il s'agit d'une approche pluridisciplinaire qui combine des principes et des pratiques issus des domaines des mathématiques, des statistiques, de l'intelligence artificielle et du génie informatique, en vue d'analyser de grands volumes de données. Cette analyse aide les scientifiques des données à poser des questions et à y répondre, comme Que s'est-il passé, Pourquoi cela s'est-il passé, Que va-t-il se passer et Que peut-on faire avec des résultats.
 
-- **vigogne-instruct-7b**: Le scientifique des données utilise des données pour analyser et extraire de l’information pour aider les entrepreneurs à posent des questions, répondre à des questions existantes et prendre des décisions.
+- **vigogne-7b-instruct**: Le scientifique des données utilise des données pour analyser et extraire de l’information pour aider les entrepreneurs à posent des questions, répondre à des questions existantes et prendre des décisions.
 
 <details><summary>Other models</summary>
 
@@ -144,7 +145,7 @@ La science des données est l'étude des données afin d'en extraire des informa
 
 Écrivez une fonction qui prend une liste de chaînes de caractères et renvoie une liste sans doublons.
 
-- **vigogne-instruct-7b**:
+- **vigogne-7b-instruct**:
 
 ```python
 def remove_duplicates(lst):

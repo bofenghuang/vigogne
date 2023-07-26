@@ -11,35 +11,21 @@ from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, IGNORE_INDEX, RO
 
 # Prompt for instruct
 # Original English prompt of Alpaca
-# INSTRUCT_PROMPT_DICT = {
-#     "prompt_input": (
-#         "Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.\n\n"
-#         "### Instruction:\n{instruction}\n\n### Input:\n{input}\n\n### Response:\n"
-#     ),
-#     "prompt_no_input": (
-#         "Below is an instruction that describes a task. Write a response that appropriately completes the request.\n\n"
-#         "### Instruction:\n{instruction}\n\n### Response:\n"
-#     ),
-# }
-# French prompt translated by chatgpt
-# INSTRUCT_PROMPT_DICT = {
-#     "prompt_input": (
-#         "Ci-dessous se trouve une instruction qui décrit une tâche, associée à une entrée qui fournit un contexte supplémentaire. Écrivez une réponse qui complète correctement la demande.\n\n"
-#         "### Instruction:\n{instruction}\n\n### Entrée:\n{input}\n\n### Réponse:\n"
-#     ),
-#     "prompt_no_input": (
-#         "Ci-dessous se trouve une instruction qui décrit une tâche. Écrivez une réponse qui complète correctement la demande.\n\n"
-#         "### Instruction:\n{instruction}\n\n### Réponse:\n"
-#     ),
-# }
-# French prompt merging instruction and input
-INSTRUCT_PROMPT = """Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière précise à la demande.
+INSTRUCT_PROMPT = """Below is an instruction that describes a task. Write a response that appropriately completes the request.
 
 ### Instruction:
 {instruction}
 
-### Réponse:
+### Response:
 """
+# French version
+# INSTRUCT_PROMPT = """Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière précise à la demande.
+
+# ### Instruction:
+# {instruction}
+
+# ### Réponse:
+# """
 
 # System message for chat
 # SYSTEM_MESSAGE = """Vous êtes un modèle de langage appelé "Vigogne". Votre fonction est de fournir des réponses concises, utiles et courtoises aux questions posées par un utilisateur curieux lors d'une conversation avec un assistant d'intelligence artificielle."""
@@ -62,7 +48,7 @@ Vigogne cannot receive or generate audio or visual content and cannot access the
 Vigogne strictly avoids discussing sensitive, offensive, illegal, ethical, or political topics and caveats when unsure of the answer.
 """
 
-# Start message for inferenc
+# Start message for inference
 # todo
 # INFERENCE_SYSTEM_MESSAGE = (
 #     SYSTEM_MESSAGE + f"\n<|{USER}|>: Salut, assistant !\n<|{ASSISTANT}|>: Bonjour, que puis-je pour vous ?"
@@ -98,7 +84,10 @@ def get_instruct_example_length(example: Dict, tokenizer: transformers.PreTraine
 
 
 def preprocess_instruct_example(
-    example: Dict, tokenizer: transformers.PreTrainedTokenizer, model_max_length: Optional[int] = None
+    example: Dict,
+    tokenizer: transformers.PreTrainedTokenizer,
+    model_max_length: Optional[int] = None,
+    length_column_name: Optional[str] = None,
 ):
     # Format prompt
     user_prompt = generate_instruct_prompt(**example)
@@ -119,7 +108,11 @@ def preprocess_instruct_example(
     # Mask prompt
     # labels[:len_user_prompt_tokens] = IGNORE_INDEX
 
-    return {"input_ids": input_ids, "labels": labels}
+    processed_example = {"input_ids": input_ids, "labels": labels}
+    if length_column_name is not None:
+        processed_example[length_column_name] = len(input_ids)
+
+    return processed_example
 
 
 def generate_train_chat_prompt(example: Dict, tokenizer: transformers.PreTrainedTokenizer):
@@ -161,6 +154,7 @@ def preprocess_chat_example(
     example: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
     model_max_length: Optional[int] = None,
+    length_column_name: Optional[str] = None,
     do_mask_input: bool = True,
 ):
     input_ids = tokenizer(SYSTEM_MESSAGE)["input_ids"]
@@ -194,4 +188,8 @@ def preprocess_chat_example(
     else:
         labels = input_ids.copy()
 
-    return {"input_ids": input_ids, "labels": labels}
+    processed_example = {"input_ids": input_ids, "labels": labels}
+    if length_column_name is not None:
+        processed_example[length_column_name] = len(input_ids)
+
+    return processed_example

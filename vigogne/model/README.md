@@ -7,30 +7,35 @@ The fine-tuned 🦙 Vigogne models come in two types: **instruction-following mo
 
 ### Instruction-following Models
 
-The Vigogne-Instruct models were fine-tuned using approximately 224k instruction-following tasks. Additional details regarding the data are available in the [vigogne/data](../data/README.md).
+The Vigogne-Instruct models were fine-tuned using instruction-following tasks. Additional details regarding the data are available in the [vigogne/data](../data/README.md).
 
-The LoRA weights for the Vigogne-Instruct models can be found on the 🤗 Hugging Face Hub:
+The weights for the Vigogne-Instruct models can be found on the 🤗 Hugging Face Hub:
 
-|                                                  Model                                                  |                              Description                               |
-| :-----------------------------------------------------------------------------------------------------: | :--------------------------------------------------------------------: |
-|        [bofenghuang/vigogne-instruct-7b](https://huggingface.co/bofenghuang/vigogne-instruct-7b)        |          LLaMA-7B model fine-tuned for instruction-following           |
-|       [bofenghuang/vigogne-instruct-13b](https://huggingface.co/bofenghuang/vigogne-instruct-13b)       | LLaMA-13B model fine-tuned for instruction-following (**Recommended**) |
-| [bofenghuang/vigogne-instruct-bloom-7b1](https://huggingface.co/bofenghuang/vigogne-instruct-bloom-7b1) |          BLOOM-7B1 model fine-tuned for instruction-following          |
+| Model                                                                                       | Description                                                                                                         |
+| ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| [Vigogne-2-7B-Instruct](https://huggingface.co/bofenghuang/vigogne-2-7b-instruct)           | [Llama-2-7B](https://ai.meta.com/llama) model fine-tuned for instruction-following      (**Recommended**)           |
+| [Vigogne-7B-Instruct](https://huggingface.co/bofenghuang/vigogne-7b-instruct)               | [LLaMA-7B](https://ai.meta.com/blog/large-language-model-llama-meta-ai) model fine-tuned for instruction-following  |
+| [Vigogne-13B-Instruct](https://huggingface.co/bofenghuang/vigogne-13b-instruct)             | [LLaMA-13B](https://ai.meta.com/blog/large-language-model-llama-meta-ai) model fine-tuned for instruction-following |
+| [Vigogne-33B-Instruct](https://huggingface.co/bofenghuang/vigogne-33b-instruct)             | [LLaMA-33B](https://ai.meta.com/blog/large-language-model-llama-meta-ai) model fine-tuned for instruction-following |
+| [Vigogne-Falcon-7B-Instruct](https://huggingface.co/bofenghuang/vigogne-falcon-7b-instruct) | [Falcon-7B](https://falconllm.tii.ae) model fine-tuned for instruction-following                                    |
+| [Vigogne-MPT-7B-Instruct](https://huggingface.co/bofenghuang/vigogne-mpt-7b-instruct)       | [MPT-7B](https://www.mosaicml.com/blog/mpt-7b) model fine-tuned for instruction-following                           |
+| [Vigogne-Bloom-7B1-Instruct](https://huggingface.co/bofenghuang/vigogne-bloom-7b1-instruct) | [BLOOM-7B1](https://huggingface.co/bigscience/bloom-7b1) model fine-tuned for instruction-following                 |
 
-The graph below illustrates the loss curve for the fine-tuning process, based on 5000 evaluation examples.
+<!-- The graph below illustrates the loss curve for the fine-tuning process, based on 5000 evaluation examples.
 
-<img src="../../assets/sft_instruct_eval_loss.png" style="width: 60%;">
+<img src="../../assets/sft_instruct_eval_loss.png" style="width: 60%;"> -->
 
 ### Chat Models
 
-The Vigogne-Chat models were fine-tuned using approximately 213k dialogue examples. Additional details regarding the data are available in the [vigogne/data](../data/README.md).
+The Vigogne-Chat models were fine-tuned using dialogue examples. Additional details regarding the data are available in the [vigogne/data](../data/README.md).
 
-The LoRA weights for the Vigogne-Instruct models can be found on the 🤗 Hugging Face Hub:
+The weights for the Vigogne-Chat models can be found on the 🤗 Hugging Face Hub:
 
-|                                        Model                                        |            Description             |
-| :---------------------------------------------------------------------------------: | :--------------------------------: |
-|  [bofenghuang/vigogne-chat-7b](https://huggingface.co/bofenghuang/vigogne-chat-7b)  | LLaMA-7B model fine-tuned for chat |
-| [bofenghuang/vigogne-chat-13b](https://huggingface.co/bofenghuang/vigogne-chat-13b) |                TODO                |
+| Model                                                                               | Description                                                                                        |
+| ----------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| [Vigogne-7B-Chat](https://huggingface.co/bofenghuang/vigogne-7b-chat)               | [LLaMA-7B](https://ai.meta.com/blog/large-language-model-llama-meta-ai) model fine-tuned for chat  |
+| [Vigogne-13B-Chat](https://huggingface.co/bofenghuang/vigogne-13b-chat)             | [LLaMA-13B](https://ai.meta.com/blog/large-language-model-llama-meta-ai) model fine-tuned for chat |
+| [Vigogne-falcon-7B-Chat](https://huggingface.co/bofenghuang/vigogne-falcon-7b-chat) | [Falcon-7B](https://falconllm.tii.ae) model fine-tuned for chat (**Recommended**)                  |
 
 ### Pretrained Models
 
