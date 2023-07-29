@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # coding=utf-8
+# Copyright 2023  Bofeng Huang
 
 """
+Generate Baize's style self-chat examples.
+
 Usage:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python vigogne/data/generate_conversations.py \
+python scripts/data_generation/generate_conversations.py \
     --input_json_file data/chat/subject_quora_fr_nllb3b3.jsonl \
     --output_json_file data/chat/self_chat_data_quora_fr.jsonl \
     --subject_field translated_subject \
@@ -28,7 +31,7 @@ from tenacity import retry, stop_after_attempt, wait_random_exponential
 from tqdm import tqdm
 
 from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
-from vigogne.data.utils import jsonl_load, thread_safe_jsonl_dump
+from vigogne.file_utils import jsonl_load, thread_safe_jsonl_dump
 
 # Replace 'your_api_key' with your actual API key
 openai.api_key = os.getenv("OPENAI_API_KEY")

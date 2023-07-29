@@ -8,7 +8,7 @@ Translate Stanford Alpaca data by the API of OpenAI.
 Usage:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python vigogne/data/translate_alpaca.py \
+python scripts/data_generation/translate_alpaca.py \
     --input_file data/alpaca_data_cleaned.jsonl \
     --output_file data/alpaca_data_cleaned_fr.jsonl \
     --failed_output_file data/alpaca_data_cleaned_fr_failed.jsonl \
@@ -29,7 +29,7 @@ import tiktoken
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from tqdm import tqdm
 
-from vigogne.data.utils import thread_safe_jsonl_dump, jsonl_load
+from vigogne.file_utils import thread_safe_jsonl_dump, jsonl_load
 
 # Replace 'your_api_key' with your actual API key
 openai.api_key = os.getenv("OPENAI_API_KEY")

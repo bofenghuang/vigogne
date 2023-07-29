@@ -20,7 +20,7 @@ import torch
 from nltk import tokenize
 from transformers import AutoModelForSeq2SeqLM, AutoTokenizer
 
-from vigogne.data.utils import jsonl_load, jsonl_dump
+from vigogne.file_utils import jsonl_load, jsonl_dump
 
 LANG_MAPPINGS = {
     "en": "english",

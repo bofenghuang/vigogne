@@ -4,7 +4,7 @@
 
 import fire
 
-from vigogne.data.utils import jload, jsonl_dump
+from vigogne.file_utils import jload, jsonl_dump
 
 
 def main(input_file, output_file):

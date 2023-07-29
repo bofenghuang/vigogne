@@ -4,8 +4,10 @@
 """
 Modified from: https://github.com/tatsu-lab/stanford_alpaca/blob/main/generate_instruction.py
 
+Deduplicate self-instruct data by rouge score.
+
 Usage:
-python vigogne/data/deduplicate_instructions.py \
+python scripts/data_generation/deduplicate_instructions.py \
     --input_file ./data/machine_generated_data.jsonl \
     --output_file ./data/machine_generated_data_deduped.jsonl \
     --n_workers 64
@@ -21,7 +23,7 @@ from nltk import RegexpTokenizer
 from rouge_score import rouge_scorer
 from tqdm import tqdm
 
-from vigogne.data.utils import jsonl_dump, jsonl_load
+from vigogne.file_utils import jsonl_dump, jsonl_load
 
 
 class CustomizedTokenizer(RegexpTokenizer):

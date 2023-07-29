@@ -2,10 +2,12 @@
 # coding=utf-8
 # Copyright 2023 Bofeng Huang
 
+"""Filter unwanted examples from self-instruct datasets."""
+
 import fire
 import re
 
-from vigogne.data.utils import jsonl_load, jsonl_dump
+from vigogne.file_utils import jsonl_load, jsonl_dump
 
 
 def main(input_file, valid_output_file, invalid_output_file, instruction_field="instruction", input_field="input"):

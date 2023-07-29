@@ -6,7 +6,7 @@ import random
 
 import fire
 
-from vigogne.data.utils import jsonl_dump, jsonl_load
+from vigogne.file_utils import jsonl_dump, jsonl_load
 
 
 def main(input_file, output_file_train, output_file_test, num_test_samples=5_000):

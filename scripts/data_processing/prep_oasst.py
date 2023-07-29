@@ -11,7 +11,7 @@ wget https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/main/2023-04-1
 # 2. Convert to chat
 # Requirement: Python 3.10, oasst-data (See https://github.com/LAION-AI/Open-Assistant/tree/main/oasst-data)
 
-python vigogne/data/prep_oasst.py \
+python scripts/data_processing/prep_oasst.py \
     --input_file path/to/2023-04-12_oasst_ready.trees.jsonl.gz \
     --output_file data/oasst_20230412_fr_chat.jsonl \
     --lang fr
@@ -29,7 +29,7 @@ from torch import Generator
 from torch.utils.data import Dataset, random_split
 
 from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
-from vigogne.data.utils import jsonl_dump
+from vigogne.file_utils import jsonl_dump
 
 
 class ListDataset(Dataset):

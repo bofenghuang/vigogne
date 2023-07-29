@@ -2,12 +2,14 @@
 # coding=utf-8
 # Copyright 2023 Bofeng Huang
 
+"""Convert alpaca instruct-following data to conversation format."""
+
 from functools import partial
 
 import fire
 
 from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
-from vigogne.data.utils import jsonl_dump, jsonl_load
+from vigogne.file_utils import jsonl_dump, jsonl_load
 from vigogne.preprocess import merge_instruction_and_input
 
 

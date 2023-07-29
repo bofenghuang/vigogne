@@ -7,7 +7,7 @@ import re
 import fire
 
 from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
-from vigogne.data.utils import jload, jsonl_dump
+from vigogne.file_utils import jload, jsonl_dump
 
 ROLES = [USER, ASSISTANT]
 

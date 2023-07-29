@@ -5,7 +5,8 @@
 import argparse
 
 from pathlib import Path
-from vigogne.data.utils import jsonl_load, jsonl_dump
+from vigogne.file_utils import jsonl_load, jsonl_dump
+from vigogne.constants import CONVERSATION, ID
 
 
 def main():
@@ -15,6 +16,7 @@ def main():
     args = parser.parse_args()
 
     validated_keys = {"instruction", "input", "output"}
+    # validated_keys = {CONVERSATION}
 
     data = []
     for input_file in args.inputs_files:
@@ -24,11 +26,11 @@ def main():
 
         for example_idx, example in enumerate(sub_data):
             example = {k: v for k, v in example.items() if k in validated_keys}
-            example["id"] = Path(input_file).stem + f"_{example_idx:09d}"
+            # if "tmp_alpaca_selfinstruct_dollybactrian_selfchatquora_oasstfr_dummy_train" not in input_file:
+            #     example[ID] = Path(input_file).stem + f"_{example_idx:09d}"
             data.append(example)
 
     jsonl_dump(data, args.output_file, mode="w")
-
     print(f"Saved {len(data)} examples into {args.output_file}")
 
 

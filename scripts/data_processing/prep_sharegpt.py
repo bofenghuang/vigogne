@@ -19,7 +19,7 @@ python -m fastchat.data.split_long_conversation --in data/sg_90k_all_cleaned.jso
 
 4. Filter by language and other staffs (this script)
 # Requirement: pip install polyglot icu pyicu pycld2
-python vigogne/data/prep_sharegpt.py data/sg_90k_all_cleaned_splitted.json
+python scripts/data_processing/prep_sharegpt.py data/sg_90k_all_cleaned_splitted.json
 
 """
 
@@ -37,7 +37,7 @@ from polyglot.detect.base import logger as polyglot_logger
 from tqdm import tqdm
 
 from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ROLE, USER
-from vigogne.data.utils import jdump, jload, jsonl_dump
+from vigogne.file_utils import jdump, jload, jsonl_dump
 
 polyglot_logger.setLevel("ERROR")
 
