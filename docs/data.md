@@ -43,7 +43,7 @@ To translate the Alpaca dataset, you can use the following command:
 # Specify your OpenAI API key
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python vigogne/data/translate_alpaca.py \
+python scripts/data_generation/translate_alpaca.py \
     --input_file data/alpaca_data_cleaned.jsonl \
     --output_file data/alpaca_data_cleaned_fr.jsonl \
     --failed_output_file data/alpaca_data_cleaned_fr_failed.jsonl \
@@ -67,7 +67,7 @@ You can use the following script to generate the instruction-following data:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
 # num_instructions_to_generate is by worker
-python scripts/generate_instruction.py \
+python scripts/data_generation/generate_instructions.py \
     --seed_tasks_path data/instruct/seed_tasks_vigogne.jsonl \
     --prompt_path data/instruct/prompt_vigogne.txt \
     --output_file data/instruct/self_instruct_data.jsonl \
@@ -111,7 +111,7 @@ Below is an example of a script we used to provide some translated subjects in [
 # Specify your OpenAI API key
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python vigogne/data/generate_conversations.py \
+python scripts/data_generation/generate_conversations.py \
     --input_json_file data/chat/subject_quora_fr_nllb3b3.jsonl \
     --output_json_file data/chat/self_chat_data_quora_fr.jsonl \
     --subject_field translated_subject \
@@ -126,7 +126,7 @@ python vigogne/data/generate_conversations.py \
 We have provided a script to translate the dataset on the Hugging Face Hub. You need to specify the machine translation model to use and the data fields to translate.
 
 ```bash
-python vigogne/data/translate_dataset.py \
+python scripts/data_processing/translate_dataset.py \
     --dataset_name qwedsacf/grade-school-math-instructions \
     --output_file data/chat/grade_school_math_instructions_fr_nllb3b3.jsonl \
     --field_names '["INSTRUCTION", "RESPONSE"]' \

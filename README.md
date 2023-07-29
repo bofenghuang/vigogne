@@ -70,19 +70,19 @@ pip install .
 
 The fine-tuned 🦙 Vigogne models come in two types: **instruction-following models** and **chat models**. The instruction-following models are optimized to generate concise and helpful responses to user instructions, similar to `text-davinci-003`. Meanwhile, the chat models are designed for multi-turn dialogues, but they also perform well in instruction-following tasks, similar to `gpt-3.5-turbo`.
 
-More information can be found in the [vigogne/model](vigogne/model/README.md).
+More information can be found in the [vigogne/model](docs/model.md).
 
 ## Inference and Deployment
 
 This repository offers multiple options for inference and deployment, such as a **Google Colab notebook**, **Gradio demo**, and instructions for running experiments on your own PC using [**llama.cpp**](https://github.com/ggerganov/llama.cpp).
 
-More information can be found in the [vigogne/inference](vigogne/inference/README.md).
+More information can be found in the [vigogne/inference](docs/inference.md).
 
 ## Data
 
 The Vigogne models were trained using open-source datasets, ChatGPT-distillation datasets (self-instruct, self-chatting), and translated datasets.
 
-More information can be found in the [vigogne/data](vigogne/data/README.md).
+More information can be found in the [vigogne/data](docs/data.md).
 
 ## Training
 
@@ -90,7 +90,7 @@ To fine-tune LLMs more efficiently, we employ a technique called [low-rank adapt
 
 In addition, you can further reduce the memory usage during fine-tuning by using [LLM.int8()](https://arxiv.org/abs/2208.07339), which employs a 2-stage quantization method that quantizes part of the computation to int8. This enables efficient training on a single consumer GPU such as the RTX 4090. However, it may be slightly slower than the fp16 version. If your GPUs have enough memory, you can skip this step and train using [DeepSpeed](https://github.com/microsoft/DeepSpeed).
 
-More information can be found in the [vigogne/train](vigogne/train/README.md).
+More information can be found in the [vigogne/training](docs/training.md).
 
 ## Example Outputs
 
