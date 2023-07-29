@@ -1,5 +1,5 @@
-#!/usr/bin/env python
 # coding=utf-8
+# Copyright 2023  Bofeng Huang
 
 import json
 import io
