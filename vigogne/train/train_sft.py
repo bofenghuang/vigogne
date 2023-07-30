@@ -3,12 +3,12 @@
 # Copyright 2023  Bofeng Huang
 
 import logging
-import math
 import os
+import random
 import sys
 from dataclasses import dataclass, field
 from functools import partial
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional
 
 import bitsandbytes as bnb
 import datasets
@@ -17,7 +17,7 @@ import torch
 import transformers
 from accelerate import Accelerator
 from datasets import DatasetDict, load_dataset
-from peft import LoraConfig, TaskType, get_peft_model, get_peft_model_state_dict, prepare_model_for_kbit_training
+from peft import LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
@@ -26,25 +26,22 @@ from transformers import (
     Trainer,
     TrainingArguments,
 )
-from transformers.trainer_utils import get_last_checkpoint
+from transformers.trainer_utils import get_last_checkpoint, set_seed
 
-from vigogne.constants import (
-    CHAT,
+import vigogne
+from vigogne.constants import CHAT, INSTRUCT, VALID_MODES
+from vigogne.train.utils import (
     DEFAULT_BOS_TOKEN,
     DEFAULT_EOS_TOKEN,
     DEFAULT_PAD_TOKEN,
     DEFAULT_UNK_TOKEN,
-    IGNORE_INDEX,
-    INSTRUCT,
-    VALID_MODES,
+    SUPPORTED_PROCESSOR_TEMPLATES,
+    DataCollatorForSupervisedDataset,
+    LoadBestPeftModelCallback,
+    ModerateConcatenator,
+    SavePeftModelCallback,
+    print_trainable_parameters,
 )
-from vigogne.preprocess import (
-    get_chat_example_length,
-    get_instruct_example_length,
-    preprocess_chat_example,
-    preprocess_instruct_example,
-)
-from vigogne.train.training_utils import LoadBestPeftModelCallback, SavePeftModelCallback, print_trainable_parameters
 
 logger = logging.getLogger(__name__)
 
@@ -54,11 +51,29 @@ class ModelArguments:
     """Base model parameters."""
 
     model_name_or_path: Optional[str] = field(default=None)
+    compute_dtype: str = field(
+        default="float16",
+        metadata={
+            "help": "Load the model under a specific `dtype`. Use `bfloat16` if you have NVIDIA architecture higher than Ampere to accelerate."
+        },
+    )
     load_in_8bit: bool = field(
         default=False, metadata={"help": "Whether to convert the loaded model into mixed-8bit quantized model."}
     )
     load_in_4bit: bool = field(
         default=False, metadata={"help": "Whether to convert the loaded model into mixed-4bit quantized model."}
+    )
+    use_nested_quant: bool = field(
+        default=False,
+        metadata={
+            "help": "Nested quantization where the quantization constants from the first quantization are quantized again. Only used 4bit base models."
+        },
+    )
+    bnb_4bit_quant_type: str = field(
+        default="nf4",
+        metadata={
+            "help": "Quantization data type in the bnb.nn.Linear4Bit layers, which are specified by `fp4` or `nf4`. Only used 4bit base models."
+        },
     )
     trust_remote_code: bool = field(
         default=False,
@@ -142,6 +157,15 @@ class DataArguments:
         },
     )
     mode: str = field(default=INSTRUCT, metadata={"help": "The mode to preprocess and format the data."})
+    pack_into_block: bool = field(
+        default=False,
+        metadata={
+            "help": "Whether to pack examples into blocks for faster training. Note this might affect performance."
+        },
+    )
+    block_size: int = field(
+        default=1024, metadata={"help": "Block size for packed examples. Only used when `pack_into_block` is True."}
+    )
 
     def __post_init__(self):
         assert self.mode in VALID_MODES, f"`mode` should be chosen in {VALID_MODES}"
@@ -149,7 +173,7 @@ class DataArguments:
 
 @dataclass
 class VigogneTrainingArguments(TrainingArguments):
-    optim: str = field(default="adamw_torch", metadata={"help": "Optimizer to use."})
+    # todo: remove when adding bf16
     fp16: bool = field(
         default=True,
         metadata={"help": "Whether to use fp16 16-bit (mixed) precision training instead of 32-bit training."},
@@ -160,46 +184,7 @@ class VigogneTrainingArguments(TrainingArguments):
     )
 
 
-# Modified from: https://github.com/bofenghuang/stanford_alpaca/blob/eb5b171d9b103a12a8e14e0edca9cbc45fe1d512/train.py#L166-L182
-# Almost same to transformers.DataCollatorForSeq2Seq
-@dataclass
-class DataCollatorForSupervisedDataset(object):
-    """Collate examples for supervised fine-tuning."""
-
-    tokenizer: transformers.PreTrainedTokenizer
-    pad_to_multiple_of: Optional[int] = None
-
-    def __call__(self, instances: Sequence[Dict]) -> Dict[str, torch.Tensor]:
-        # dtype = torch.long
-        # input_ids, labels = tuple([torch.LongTensor(instance[key]) for instance in instances] for key in ("input_ids", "labels"))
-        input_ids, labels = tuple([instance[key] for instance in instances] for key in ("input_ids", "labels"))
-
-        if self.pad_to_multiple_of is not None:
-            max_length_index, max_length = max(
-                enumerate([len(input_ids_) for input_ids_ in input_ids]), key=lambda x: x[1]
-            )
-            # n_padding = ((max_length // self.pad_to_multiple_of) + 1) * self.pad_to_multiple_of - max_length
-            n_padding = math.ceil(max_length / self.pad_to_multiple_of) * self.pad_to_multiple_of - max_length
-            # Pad the longest example to pad_to_multiple_of * N
-            input_ids[max_length_index].extend([self.tokenizer.pad_token_id] * n_padding)
-            labels[max_length_index].extend([IGNORE_INDEX] * n_padding)
-
-        input_ids = [torch.LongTensor(input_ids_) for input_ids_ in input_ids]
-        labels = [torch.LongTensor(labels_) for labels_ in labels]
-
-        input_ids = torch.nn.utils.rnn.pad_sequence(
-            input_ids, batch_first=True, padding_value=self.tokenizer.pad_token_id
-        )
-        labels = torch.nn.utils.rnn.pad_sequence(labels, batch_first=True, padding_value=IGNORE_INDEX)
-
-        return dict(
-            input_ids=input_ids,
-            labels=labels,
-            attention_mask=input_ids.ne(self.tokenizer.pad_token_id),
-        )
-
-
-# Copied from https://github.com/bofenghuang/stanford_alpaca/blob/eb5b171d9b103a12a8e14e0edca9cbc45fe1d512/train.py#L75-L95
+# Copied from https://github.com/tatsu-lab/stanford_alpaca/blob/eb5b171d9b103a12a8e14e0edca9cbc45fe1d512/train.py#L75-L95
 def smart_tokenizer_and_embedding_resize(
     special_tokens_dict: Dict,
     tokenizer: transformers.PreTrainedTokenizer,
@@ -225,6 +210,8 @@ def smart_tokenizer_and_embedding_resize(
 
 
 def train():
+    # debug
+    # def train(args):
     # HF parser
     parser = HfArgumentParser((ModelArguments, LoraArguments, DataArguments, VigogneTrainingArguments))
     model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses()
@@ -243,11 +230,12 @@ def train():
         transformers.utils.logging.set_verbosity_info()
 
     log_level = training_args.get_process_log_level()
-    logger.setLevel(log_level)
     datasets.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.set_verbosity(log_level)
     transformers.utils.logging.enable_default_handler()
     transformers.utils.logging.enable_explicit_format()
+    vigogne.train.utils.set_verbosity(log_level)
+    logger.setLevel(log_level)
 
     # Log on each process the small summary:
     logger.warning(
@@ -274,9 +262,12 @@ def train():
                 f"Checkpoint detected, resuming training at {last_checkpoint}. To avoid this behavior, change "
                 "the `--output_dir` or add `--overwrite_output_dir` to train from scratch."
             )
-    
-    # Set seed before initializing model.
-    # set_seed(training_args.seed)
+
+    # Set seed before initializing model
+    set_seed(training_args.seed)
+
+    # Compute type
+    compute_dtype = getattr(torch, model_args.compute_dtype)
 
     # BitsAndBytesConfig support
     quantization_config = None
@@ -286,15 +277,15 @@ def train():
         # todo: customize 4bit config
         quantization_config = BitsAndBytesConfig(
             load_in_4bit=True,
-            bnb_4bit_quant_type="nf4",
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_compute_dtype=torch.float16,
+            bnb_4bit_compute_dtype=compute_dtype,
+            bnb_4bit_quant_type=model_args.bnb_4bit_quant_type,
+            bnb_4bit_use_double_quant=model_args.use_nested_quant,
         )
 
     # Load model
     model = AutoModelForCausalLM.from_pretrained(
         model_args.model_name_or_path,
-        torch_dtype=torch.float16,
+        torch_dtype=compute_dtype,
         device_map={"": Accelerator().process_index},
         quantization_config=quantization_config,
         trust_remote_code=model_args.trust_remote_code,
@@ -302,13 +293,11 @@ def train():
     )
 
     # Load tokenizer
-    # fast version llama for "with you.</s>"
     tokenizer = AutoTokenizer.from_pretrained(
         model_args.model_name_or_path,
         padding_side="right",
         use_fast=False,
     )
-    # llama has no pad token, like gpt2
     # Some special tokens can be "" or None depending on releases
     special_tokens_dict = dict()
     if tokenizer.pad_token is None or not tokenizer.pad_token:
@@ -346,6 +335,7 @@ def train():
         lora_dropout=lora_args.lora_dropout,
         bias="none",
         task_type=TaskType.CAUSAL_LM,
+        inference_mode=False,
     )
     model = get_peft_model(model, lora_config)
     print_trainable_parameters(model)
@@ -372,6 +362,10 @@ def train():
         raw_datasets["eval"] = load_dataset(ext, data_files=data_args.eval_file)["train"]
     logger.info(f"Raw dataset: {raw_datasets}")
 
+    # Log a few random samples from the training set:
+    for index in random.sample(range(len(raw_datasets["train"])), 3):
+        logger.info(f'Sample {index} of the training set: {raw_datasets["train"][index]}.')
+
     # Determine model_max_length for truncation
     # model_max_length = data_args.model_max_length
     # get_example_length_function = get_chat_example_length if data_args.mode == CHAT else get_instruct_example_length
@@ -393,19 +387,19 @@ def train():
     #     )
 
     # Tokenize data
-    preprocess_function = preprocess_chat_example if data_args.mode == CHAT else preprocess_instruct_example
-    # preprocess_function_p = partial(preprocess_function, tokenizer=tokenizer, model_max_length=model_max_length)
-    preprocess_function_p = partial(
-        preprocess_function, tokenizer=tokenizer, length_column_name=training_args.length_column_name
+    process_function = SUPPORTED_PROCESSOR_TEMPLATES[data_args.mode].process_example
+    # process_function_p = partial(process_function, tokenizer=tokenizer, model_max_length=model_max_length)
+    process_function_p = partial(
+        process_function, tokenizer=tokenizer, length_column_name=training_args.length_column_name
     )
 
     with training_args.main_process_first(desc="dataset map tokenization"):
-        preprocessed_dataset = raw_datasets.map(
-            preprocess_function_p,
+        processed_dataset = raw_datasets.map(
+            process_function_p,
             num_proc=data_args.preprocessing_num_workers,
             remove_columns=next(iter(raw_datasets.values())).column_names,
             load_from_cache_file=not data_args.overwrite_cache,
-            desc="preprocess dataset",
+            desc="process dataset",
         )
 
         # Remove long examples
@@ -420,9 +414,9 @@ def train():
 
         if (
             data_args.model_min_length is not None or data_args.model_max_length is not None
-        ) and training_args.length_column_name in next(iter(preprocessed_dataset.values())).column_names:
+        ) and training_args.length_column_name in next(iter(processed_dataset.values())).column_names:
             # filter data that is shorter than model_min_length or longer than model_max_length
-            preprocessed_dataset = preprocessed_dataset.filter(
+            processed_dataset = processed_dataset.filter(
                 is_input_in_length_range,
                 num_proc=data_args.preprocessing_num_workers,
                 input_columns=[training_args.length_column_name],
@@ -430,22 +424,35 @@ def train():
                 desc="filter dataset by input length",
             )
 
-            logger.info(f"Filtered dataset: {preprocessed_dataset}")
-            # debug
-            # logger.info(sorted(preprocessed_dataset["train"][training_args.length_column_name], reverse=True)[:10])
-            # logger.info(sorted(preprocessed_dataset["eval"][training_args.length_column_name], reverse=True)[:10])
+            # Remove length column
+            if training_args.length_column_name in next(iter(processed_dataset.values())).column_names:
+                processed_dataset = processed_dataset.remove_columns(training_args.length_column_name)
+
+            logger.info(f"Filtered dataset: {processed_dataset}")
 
     if data_args.preprocessing_only:
-        logger.info(f"Data preprocessing finished. Files cached at {preprocessed_dataset.cache_files}")
+        logger.info(f"Data preprocessing finished. Files cached at {processed_dataset.cache_files}")
         return
 
-    train_dataset = preprocessed_dataset["train"]
+    train_dataset = processed_dataset["train"]
     if data_args.max_train_samples is not None:
         max_train_samples = min(len(train_dataset), data_args.max_train_samples)
         train_dataset = train_dataset.select(range(max_train_samples))
 
+    # pack (group) examples
+    # NB: here we only pack training set, but can also pack eval set depending on use case
+    if data_args.pack_into_block:
+        block_size = min(data_args.block_size, tokenizer.model_max_length)
+        with training_args.main_process_first(desc="packing samples together"):
+            train_dataset = train_dataset.map(
+                ModerateConcatenator(block_size=block_size),
+                batched=True,
+                load_from_cache_file=not data_args.overwrite_cache,
+                desc=f"packing texts in blocks of {block_size}",
+            )
+
     if data_args.eval_file is not None:
-        eval_dataset = preprocessed_dataset["eval"]
+        eval_dataset = processed_dataset["eval"]
         if data_args.max_eval_samples is not None:
             max_eval_samples = min(len(eval_dataset), data_args.max_eval_samples)
             eval_dataset = eval_dataset.select(range(max_eval_samples))
