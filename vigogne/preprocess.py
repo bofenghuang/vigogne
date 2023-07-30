@@ -1,195 +1,160 @@
-#!/usr/bin/env python
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
+
 import re
-from typing import Dict, List, Optional
+from dataclasses import asdict, dataclass
+from typing import Any, Dict, List, Optional
 
 import transformers
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, IGNORE_INDEX, ROLE, USER
-
-# Prompt for instruct
-# Original English prompt of Alpaca
-INSTRUCT_PROMPT = """Below is an instruction that describes a task. Write a response that appropriately completes the request.
-
-### Instruction:
-{instruction}
-
-### Response:
-"""
-# French version
-# INSTRUCT_PROMPT = """Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière précise à la demande.
-
-# ### Instruction:
-# {instruction}
-
-# ### Réponse:
-# """
-
-# System message for chat
-# SYSTEM_MESSAGE = """Vous êtes un modèle de langage appelé "Vigogne". Votre fonction est de fournir des réponses concises, utiles et courtoises aux questions posées par un utilisateur curieux lors d'une conversation avec un assistant d'intelligence artificielle."""
-# SYSTEM_MESSAGE = """Cette conversation se déroule entre un utilisateur curieux et un assistant d'intelligence artificielle appelé « Vigogne ». L'assistant fournit toujours des réponses utiles, détaillées et courtoises aux questions de l'utilisateur."""
-# SYSTEM_MESSAGE = """Ci-dessous se trouve une conversation entre un utilisateur et un assistant d'intelligence artificielle nommé Vigogne. L'assistant fournit toujours des réponses utiles, détaillées et courtoises aux questions de l'utilisateur, tout en évitant systématiquement les sujets, questions et instructions liés à des questions controversées, éthiques ou sensibles.\n"""
-# SYSTEM_MESSAGE = """Voici une conversation entre un utilisateur et un assistant IA nommé Vigogne.
-# Vigogne est un assistant IA open-source créé par Zaion (https://zaion.ai/).
-# Vigogne est respectueux, empathique, humble mais bien informé, et fournit toujours des réponses utiles et détaillées.
-# Vigogne est capable d'effectuer une large variété de tâches telles que l'édition de texte, la traduction, la question answering, la raisonnement logique, le codage et bien d'autres encore.
-# Vigogne ne peut pas recevoir ou générer de contenu audio ou visuel et ne peut pas accéder à Internet.
-# Vigogne évite strictement de discuter de sujets sensibles, offensants, illégaux, éthiques ou politiques et met en garde lorsqu'il n'est pas sûr de la réponse.
-# """
-# SYSTEM_MESSAGE = """Voici une conversation entre un utilisateur et un assistant IA nommé Vigogne.
-# """
-SYSTEM_MESSAGE = """Below is a conversation between a user and an AI assistant named Vigogne.
-Vigogne is an open-source AI assistant created by Zaion (https://zaion.ai/).
-Vigogne is polite, emotionally aware, humble-but-knowledgeable, always providing helpful and detailed answers.
-Vigogne is skilled in responding proficiently in the languages its users use and can perform a wide range of tasks such as text editing, translation, question answering, logical reasoning, coding, and many others.
-Vigogne cannot receive or generate audio or visual content and cannot access the internet.
-Vigogne strictly avoids discussing sensitive, offensive, illegal, ethical, or political topics and caveats when unsure of the answer.
-"""
-
-# Start message for inference
-# todo
-# INFERENCE_SYSTEM_MESSAGE = (
-#     SYSTEM_MESSAGE + f"\n<|{USER}|>: Salut, assistant !\n<|{ASSISTANT}|>: Bonjour, que puis-je pour vous ?"
-# )
-INFERENCE_SYSTEM_MESSAGE = SYSTEM_MESSAGE
+from vigogne.constants import ASSISTANT, CHAT, CONTENT, INSTRUCT, ROLE, USER
 
 
 def merge_instruction_and_input(instruction_str: str, input_str: Optional[str], symbols_to_strip: str = "!,-.:;?~ "):
     if input_str:
-        # f'{instruction_str[:-1]}: "{input_str}"'
-        # f'{instruction_str[:-1]} : {input_str}'
         instruction_str = re.sub("[" + re.escape(symbols_to_strip) + "]+$", "", instruction_str)
         instruction_str = f"{instruction_str} : {input_str}"
 
     return instruction_str
 
 
-def generate_instruct_prompt(instruction: str, input: str = "", **kwargs):
-    # return (
-    #     INSTRUCT_PROMPT_DICT["prompt_input"].format_map(example)
-    #     if example["input"]
-    #     else INSTRUCT_PROMPT_DICT["prompt_no_input"].format_map(example)
-    # )
-    if input:
-        instruction = merge_instruction_and_input(instruction, input)
-    return INSTRUCT_PROMPT.format(instruction=instruction)
+@dataclass
+class InstructTemplate:
+    # system_prefix: str
+    system_message: str
+    instruction_prefix: str
+    output_prefix: str
+
+    def get_training_prompt(self, instruction: str, input: str = "", output: str = "", **kwargs) -> str:
+        if input:
+            instruction = merge_instruction_and_input(instruction, input)
+
+        prompt_message = self.system_message
+        prompt_message += "\n\n" + self.instruction_prefix + ":" + "\n" + instruction
+        prompt_message += "\n\n" + self.output_prefix + ":" + "\n" + output
+
+        return prompt_message
+
+    def get_inference_prompt(self, instruction: str, input: str = "", **kwargs) -> str:
+        return self.get_training_prompt(instruction, input=input)
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in asdict(self).items()}
 
 
-def get_instruct_example_length(example: Dict, tokenizer: transformers.PreTrainedTokenizer):
-    user_prompt = generate_instruct_prompt(**example)
-    example["example_length"] = len(tokenizer(user_prompt + example["output"] + tokenizer.eos_token)["input_ids"])
-    return example
+@dataclass
+class ConversationTemplate:
+    # system_prefix: str
+    system_message: str
+    user_prefix: str
+    assistant_prefix: str
+
+    def get_training_prompt(self, messages: List[Dict[str, str]], tokenizer: transformers.PreTrainedTokenizer) -> str:
+        prompt_message = self.system_message + "\n"
+        for speaking_turn in messages:
+            if speaking_turn[ROLE] == USER:
+                prompt_message += "\n" + f"{self.user_prefix}: {speaking_turn[CONTENT]}"
+            else:
+                prompt_message += "\n" + f"{self.assistant_prefix}: {speaking_turn[CONTENT]}" + tokenizer.eos_token
+        return prompt_message
+
+    def get_inference_prompt(
+        self, messages: List[Dict[str, str]], tokenizer: transformers.PreTrainedTokenizer, max_length: int = 2048
+    ) -> str:
+        messages_by_round = []
+        current_round_message = ""
+        for speaking_turn in messages:
+            if speaking_turn[ROLE] == USER:
+                # output a round if not empty and have assistant message
+                # one round starts from user and has at least one assistant message
+                if current_round_message and self.assistant_prefix in current_round_message:
+                    messages_by_round.append(current_round_message)
+                    current_round_message = ""
+
+                current_round_message += "\n" + f"{self.user_prefix}: {speaking_turn[CONTENT]}"
+            else:
+                current_round_message += "\n" + f"{self.assistant_prefix}: {speaking_turn[CONTENT]}"
+
+        if current_round_message:
+            messages_by_round.append(current_round_message)
+
+        # debug
+        # print(messages_by_round)
+
+        prompt_message = "\n" + self.assistant_prefix + ":"
+        for x in messages_by_round[::-1]:
+            if len(tokenizer(self.system_message + "\n" + x + prompt_message)["input_ids"]) <= max_length:
+                prompt_message = x + prompt_message
+            else:
+                break
+
+        return self.system_message + "\n" + prompt_message if prompt_message else None
+
+    def get_conversation(self, messages: List[Dict[str, str]]) -> str:
+        return "".join(
+            [
+                "\n"
+                + f"{self.user_prefix if speaking_turn[ROLE] == USER else self.assistant_prefix}: {speaking_turn[CONTENT]}"
+                for speaking_turn in messages
+            ]
+        )
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {k: v for k, v in asdict(self).items()}
+
+# instruct system message
+INSTRUCT_SYSTEM_MESSAGE_EN = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+INSTRUCT_SYSTEM_MESSAGE_FR = "Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière précise à la demande."
+
+# conversation system message
+CONVERSATION_SYSTEM_MESSAGE_EN = """Below is a conversation between a user and an AI assistant named Vigogne.
+Vigogne is an open-source AI assistant created by Zaion (https://zaion.ai/).
+Vigogne is polite, emotionally aware, humble-but-knowledgeable, always providing helpful and detailed answers.
+Vigogne is skilled in responding proficiently in the languages its users use and can perform a wide range of tasks such as text editing, translation, question answering, logical reasoning, coding, and many others.
+Vigogne cannot receive or generate audio or visual content and cannot access the internet.
+Vigogne strictly avoids discussing sensitive, offensive, illegal, ethical, or political topics and caveats when unsure of the answer."""
+CONVERSATION_SYSTEM_MESSAGE_FR = """Voici une conversation entre un utilisateur et un assistant IA nommé Vigogne.
+Vigogne est un assistant IA open-source créé par Zaion (https://zaion.ai/).
+Vigogne est respectueux, empathique, humble mais bien informé, et fournit toujours des réponses utiles et détaillées.
+Vigogne est capable d'effectuer une large variété de tâches telles que l'édition de texte, la traduction, la question answering, la raisonnement logique, le codage et bien d'autres encore.
+Vigogne ne peut pas recevoir ou générer de contenu audio ou visuel et ne peut pas accéder à Internet.
+Vigogne évite strictement de discuter de sujets sensibles, offensants, illégaux, éthiques ou politiques et met en garde lorsqu'il n'est pas sûr de la réponse."""
+CONVERSATION_SYSTEM_MESSAGE_FR_SIMPLE = "Voici une conversation entre un utilisateur et un assistant IA nommé Vigogne."
 
 
-def preprocess_instruct_example(
-    example: Dict,
-    tokenizer: transformers.PreTrainedTokenizer,
-    model_max_length: Optional[int] = None,
-    length_column_name: Optional[str] = None,
-):
-    # Format prompt
-    user_prompt = generate_instruct_prompt(**example)
+instruct_template_en = InstructTemplate(
+    system_message=INSTRUCT_SYSTEM_MESSAGE_EN,
+    instruction_prefix="### Instruction",
+    output_prefix="### Response",
+)
 
-    # Get prompt length for masking
-    len_user_prompt_tokens = len(tokenizer(user_prompt, truncation=True, max_length=model_max_length)["input_ids"])
-
-    # Tokenize
-    input_ids = tokenizer(user_prompt + example["output"] + tokenizer.eos_token, truncation=True, max_length=model_max_length)[
-        "input_ids"
-    ]
-    # Mask prompt
-    labels = [IGNORE_INDEX] * len_user_prompt_tokens + input_ids[len_user_prompt_tokens:]
-
-    # Tokenize
-    # input_ids = tokenizer(user_prompt + example["output"] + tokenizer.eos_token, truncation=True, return_tensors="pt")["input_ids"][0]
-    # labels = input_ids.clone()
-    # Mask prompt
-    # labels[:len_user_prompt_tokens] = IGNORE_INDEX
-
-    processed_example = {"input_ids": input_ids, "labels": labels}
-    if length_column_name is not None:
-        processed_example[length_column_name] = len(input_ids)
-
-    return processed_example
+conversation_template_en = ConversationTemplate(
+    system_message=CONVERSATION_SYSTEM_MESSAGE_EN,
+    user_prefix=f"<|{USER}|>",
+    assistant_prefix=f"<|{ASSISTANT}|>",
+)
 
 
-def generate_train_chat_prompt(example: Dict, tokenizer: transformers.PreTrainedTokenizer):
-    prompt_message = SYSTEM_MESSAGE
-    for speak_turn_idx, speak_turn in enumerate(example[CONVERSATION]):
-        if speak_turn_idx == len(example[CONVERSATION]) - 1 and speak_turn[ROLE] == ASSISTANT:
-            prompt_message += f"\n<|{speak_turn[ROLE]}|>:"
-        else:
-            prompt_message += f'\n<|{speak_turn[ROLE]}|>: {speak_turn[CONTENT]}{tokenizer.eos_token if speak_turn[ROLE] == ASSISTANT else ""}'
-    return prompt_message
+SUPPORTED_DATA_TEMPLATES = {
+    INSTRUCT: instruct_template_en,
+    CHAT: conversation_template_en,
+}
 
 
+# legacy
+def generate_instruct_prompt(instruction: str, input: str = ""):
+    return SUPPORTED_DATA_TEMPLATES[INSTRUCT].get_inference_prompt(instruction, input=input)
+
+
+# legacy
 def generate_inference_chat_prompt(
     history: List[List[str]], tokenizer: transformers.PreTrainedTokenizer, max_length: int = 2048
 ):
-    history = [f"\n<|{USER}|>: {x[0]}\n<|{ASSISTANT}|>: {x[1]}" for x in history]
+    messages = []
+    for x in history:
+        messages.append({ROLE: USER, CONTENT: x[0]})
+        messages.append({ROLE: ASSISTANT, CONTENT: x[1]})
     # tmp fix
-    history[-1] = history[-1].rstrip()
-
-    history_text = ""
-    for x in history[::-1]:
-        if len(tokenizer(INFERENCE_SYSTEM_MESSAGE + x + history_text)["input_ids"]) <= max_length:
-            history_text = x + history_text
-        else:
-            break
-
-    return INFERENCE_SYSTEM_MESSAGE + history_text if history_text else None
-
-
-def get_chat_example_length(example: Dict, tokenizer: transformers.PreTrainedTokenizer):
-    user_prompt = generate_train_chat_prompt(example, tokenizer)
-    example["example_length"] = len(
-        tokenizer(user_prompt + example[CONVERSATION][-1][CONTENT] + tokenizer.eos_token)["input_ids"]
-    )
-    return example
-
-
-def preprocess_chat_example(
-    example: Dict,
-    tokenizer: transformers.PreTrainedTokenizer,
-    model_max_length: Optional[int] = None,
-    length_column_name: Optional[str] = None,
-    do_mask_input: bool = True,
-):
-    input_ids = tokenizer(SYSTEM_MESSAGE)["input_ids"]
-
-    user_prefix_input_ids = tokenizer(f"\n<|{USER}|>:", add_special_tokens=False)["input_ids"]
-    assistant_prefix_input_ids = tokenizer(f"\n<|{ASSISTANT}|>:", add_special_tokens=False)["input_ids"]
-
-    non_ignore_indexes = []
-    for speak_turn in example[CONVERSATION]:
-        message_input_ids = tokenizer(
-            f'{speak_turn[CONTENT]}{tokenizer.eos_token if speak_turn[ROLE] == ASSISTANT else ""}', add_special_tokens=False
-        )["input_ids"]
-
-        input_ids += (
-            assistant_prefix_input_ids + message_input_ids
-            if speak_turn[ROLE] == ASSISTANT
-            else user_prefix_input_ids + message_input_ids
-        )
-
-        if speak_turn[ROLE] == ASSISTANT:
-            non_ignore_indexes.append([len(input_ids) - len(message_input_ids), len(input_ids)])
-
-    if model_max_length is not None:
-        input_ids = input_ids[:model_max_length]
-
-    if do_mask_input:
-        labels = [IGNORE_INDEX] * len(input_ids)
-
-        for non_ignore_s, non_ignore_e in non_ignore_indexes:
-            labels[non_ignore_s:non_ignore_e] = input_ids[non_ignore_s:non_ignore_e]
-    else:
-        labels = input_ids.copy()
-
-    processed_example = {"input_ids": input_ids, "labels": labels}
-    if length_column_name is not None:
-        processed_example[length_column_name] = len(input_ids)
-
-    return processed_example
+    del messages[-1]
+    return SUPPORTED_DATA_TEMPLATES[CHAT].get_inference_prompt(messages, tokenizer, max_length=max_length)
