@@ -40,7 +40,8 @@ The main contributions of this project include:
 
 ## Updates
 
-- [2023/07/20]: Introduce the latest Vigogne models, based on Llama-2.
+- [2023/07/31]: Added support for [FlashAttention-2](https://arxiv.org/abs/2307.08691) and implemented example packing for improved efficiency.
+- [2023/07/20]: Introduced the latest Vigogne models, based on Llama-2.
 - [2023/07/05]: Released Vigogne models derived from Falcon and MPT, offering a more friendly license for commercial use.
 - [2023/06/05]: Provided support for [QLoRA](https://arxiv.org/abs/2305.14314), resulting in a significant memory usage reduction.
 - [2023/05/15]: Unveiled the Vigogne-Chat models and integrated the Gradio Demo for interactive chat demonstrations.
