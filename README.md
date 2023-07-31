@@ -15,11 +15,11 @@ Vigogne is a collection of powerful French 🇫🇷 large language models (LLMs)
 The main contributions of this project include:
 
 - Open-sourced 🦙 Vigogne models for French instruction-following and chat
-- Efficient training code for fine-tuning LLMs such as [LLaMA](https://github.com/facebookresearch/llama), [BLOOM](https://bigscience.huggingface.co/blog/bloom), and [FLAN-T5](https://huggingface.co/google/flan-t5-xl)
-- Generated, translated, and collected French 🇫🇷 datasets for instruction-following and dialogue, along with the scripts used to obtain them
+- Efficient training code for fine-tuning LLMs such as [LLaMA](https://github.com/facebookresearch/llama), [Llama-2](https://ai.meta.com/llama), [Falcon](https://falconllm.tii.ae), and [FLAN-T5](https://huggingface.co/google/flan-t5-xl)
+- Generated, translated, and collected French instruction-following and dialogue datasets, along with the used scripts
 - Inference code and gradio demo, as well as detailed instructions for experiencing the quantized Vigogne models on your PC
 
-**Usage and License Notices**: Same as [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca), Vigogne is intended and licensed for research use only. The dataset is CC BY NC 4.0 (allowing only non-commercial use) and models trained using the dataset should not be used outside of research purposes.
+
 
 💡 *The screencast below shows the current 🦙 Vigogne-7B-Chat model running on Apple M1 Pro using 4GB of weights (no sped up).*
 
@@ -40,13 +40,17 @@ The main contributions of this project include:
 
 ## Updates
 
-- 2023/3/29: Include deployment instructions using [llama.cpp](https://github.com/ggerganov/llama.cpp)
-- 2023/4/3: Add training script for seq2seq models
-- 2023/4/6: Enhance the translation quality of the Stanford Alpaca dataset
-- 2023/5/11: Integrate data generation scripts for self-instruct, self-chatting, and translation
-- 2023/5/11: Expand the training scripts to include chat-optimized models, and incorporate DeepSpeed support for more efficient training
-- 2023/5/11: Release Vigogne-Instruct v2 models trained on a more extensive dataset
-- 2023/5/15: Release Vigogne-Chat models and introduce the Gradio Demo for them
+- [2023/07/20]: Introduce the latest Vigogne models, based on Llama-2.
+- [2023/07/05]: Released Vigogne models derived from Falcon and MPT, offering a more friendly license for commercial use.
+- [2023/06/05]: Provided support for [QLoRA](https://arxiv.org/abs/2305.14314), resulting in a significant memory usage reduction.
+- [2023/05/15]: Unveiled the Vigogne-Chat models and integrated the Gradio Demo for interactive chat demonstrations.
+- [2023/05/11]: Added support for DeepSpeed, significantly improving the efficiency of model training.
+- [2023/05/11]: Implemented chat data generation using [Self-Chat](https://arxiv.org/abs/2304.01196), empowering the model with more conversational abilities.
+- [2023/05/11]: Presented the upgraded Vigogne-Instruct V2 models, trained on a larger and more diverse dataset.
+- [2023/05/11]: Released annotated French seed tasks and the generation script for Self-Instruct.
+- [2023/04/03]: Provided a training script for seq2seq models, utilizing LoRA and LLM.int8().
+- [2023/03/29]: Included deployment instructions using [llama.cpp](https://github.com/ggerganov/llama.cpp).
+- [2023/03/26]: Open-sourced the Vigogne projet and released fine-tuned LLaMA and BLOOM models trained on the translated Stanford Alpaca dataset.
 
 ## Installation
 

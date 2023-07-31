@@ -1,6 +1,6 @@
 # Data
 
-The Vigogne models were trained on a variety of datasets, including open-source datasets, ChatGPT-distillation datasets (self-instruct and self-chatting), and translated datasets.
+The Vigogne models were trained on a variety of datasets, including open-source datasets, ChatGPT-distillation datasets (self-instruct and self-chat), and translated datasets.
 
 These datasets cover different purposes such as instruction-following and human-assistant chat.
 
@@ -8,26 +8,21 @@ These datasets cover different purposes such as instruction-following and human-
 
 Here is a subset of the instruction-following data that was utilized to fine-tune the Vigogne-Instruct models:
 
-|                    Dataset                    |                   Size                    |                                                                       Link                                                                        |                                                                                            Description                                                                                            |
-| :-------------------------------------------: | :---------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------: |
-|          Translated Stanford Alpaca           |                    52k                    |        [alpaca_data_cleaned_fr_52k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/alpaca_data_cleaned_fr_52k.jsonl)        |                                                          Stanford Alpaca data translated into French using `gpt-3.5-turbo` in April 2023                                                          |
-|           French self-instruct data           |                   100k                    |                                                                        N/A                                                                        |                                          Instruction-following data generated using `gpt-3.5-turbo` in April 2023 (See [Self-instruct](#self-instruct))                                           |
-| French Databricks Dolly of Bactrian's version |                    15k                    |             [dolly_bactrian_fr_15k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/dolly_bactrian_fr_15k.jsonl)             |                                        French Dolly subset extracted from [`MBZUAI/Bactrian-X`](https://huggingface.co/datasets/MBZUAI/Bactrian-X) dataset                                        |
-|                     <!--                      | Translated Grade School Math Instructions |                                                                        8k                                                                         |              [grade_school_math_instructions_fr_nllb3b3_8k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/grade_school_math_instructions_fr_nllb3b3_8k.jsonl)              | [`qwedsacf/grade-school-math-instructions`](https://huggingface.co/datasets/qwedsacf/grade-school-math-instructions) dataset translated into French using [`facebook/nllb-200-3.3B`](https://huggingface.co/facebook/nllb-200-3.3B) |
-|          Translated Logic Inference           |                    54k                    | [logic_inference_oa_fr_nllb3b3_54k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/logic_inference_oa_fr_nllb3b3_54k.jsonl) | [`KK04/LogicInference_OA`](https://huggingface.co/datasets/KK04/LogicInference_OA) dataset translated into French using [`facebook/nllb-200-3.3B`](https://huggingface.co/facebook/nllb-200-3.3B) | -->                                                                                                                                                                                                                                 |
+|                    Dataset                    | Size  |                                                                Link                                                                 |                                                     Description                                                     |
+| :-------------------------------------------: | :---: | :---------------------------------------------------------------------------------------------------------------------------------: | :-----------------------------------------------------------------------------------------------------------------: |
+|          Translated Stanford Alpaca           |  52k  | [alpaca_data_cleaned_fr_52k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/alpaca_data_cleaned_fr_52k.jsonl) |                   Stanford Alpaca data translated into French using `gpt-3.5-turbo` in April 2023                   |
+|           French self-instruct data           | 100k  |                                                                 N/A                                                                 |   Instruction-following data generated using `gpt-3.5-turbo` in April 2023 (See [Self-Instruct](#self-instruct))    |
+| French Databricks Dolly of Bactrian's version |  15k  |      [dolly_bactrian_fr_15k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/dolly_bactrian_fr_15k.jsonl)      | French Dolly subset extracted from [`MBZUAI/Bactrian-X`](https://huggingface.co/datasets/MBZUAI/Bactrian-X) dataset |
 
 ## Chat Data
 
 Here is a subset of the human-assistant chat data used to fine-tune the Vigogne-Chat models:
 
-|                          Dataset                          |                  Size                  |                                                                   Link                                                                    |                                                                     Description                                                                     |
-| :-------------------------------------------------------: | :------------------------------------: | :---------------------------------------------------------------------------------------------------------------------------------------: | :-------------------------------------------------------------------------------------------------------------------------------------------------: |
-|                 French self-chatting data                 |                  50k                   |                                                                    N/A                                                                    |                          Dialogue data generated using `gpt-3.5-turbo` in April 2023 (See [Self-chatting](#self-chatting))                          |
-|               French dialogues from OASST1                |                   1k                   |          [oasst_20230412_fr_top1.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/oasst_20230412_fr_top1.jsonl)          |                French dialogues extracted from [OpenAssistant/oasst1](https://huggingface.co/datasets/OpenAssistant/oasst1) dataset                 |
-|              French dialogues from ShareGPT               |                   1k                   |                           [sg_fr.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/sg_fr.jsonl)                           |                 French dialogues extracted from [RyokoAI/ShareGPT52K](https://huggingface.co/datasets/RyokoAI/ShareGPT52K) dataset                  |
-|                           <!--                            | Reformatted translated Stanford Alpaca |                                                                    52k                                                                    | [converted_alpaca_data_cleaned_fr_52k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/converted_alpaca_data_cleaned_fr_52k.jsonl) | Translated Stanford Alpaca dataset reformatted into dialogues |
-|           Reformatted French self-instruct data           |                  100k                  |                                                                    N/A                                                                    |                                              Translated self-instruct data reformatted into dialogues                                               |
-| Reformatted French Databricks Dolly of Bactrian's version |                  15k                   | [converted_dolly_bactrian_fr_15k.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/converted_dolly_bactrian_fr_15k.jsonl) |                                Translated Databricks Dolly dataset of Bactrian's version reformatted into dialogues                                 | -->                                                           |
+|            Dataset             | Size  |                                                          Link                                                           |                                                     Description                                                      |
+| :----------------------------: | :---: | :---------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------: |
+|     French self-chat data      |  50k  |                                                           N/A                                                           |              Dialogue data generated using `gpt-3.5-turbo` in April 2023 (See [Self-Chat](#self-chat))               |
+|  French dialogues from OASST1  |  1k   | [oasst_20230412_fr_top1.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/oasst_20230412_fr_top1.jsonl) | French dialogues extracted from [OpenAssistant/oasst1](https://huggingface.co/datasets/OpenAssistant/oasst1) dataset |
+| French dialogues from ShareGPT |  1k   |                  [sg_fr.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/sg_fr.jsonl)                  |  French dialogues extracted from [RyokoAI/ShareGPT52K](https://huggingface.co/datasets/RyokoAI/ShareGPT52K) dataset  |
 
 ## Data Preparation
 
@@ -75,7 +70,7 @@ python scripts/data_generation/generate_instructions.py \
     --n_workers 1
 ```
 
-### Self-Chatting
+### Self-Chat
 
 We generated some multi-turn dialogues between a human user and an AI assistant by providing a topic to `gpt-3.5-turbo` and letting it generate a conversation, following the approach used in [Baize](https://arxiv.org/abs/2304.01196).
 
@@ -121,7 +116,7 @@ python scripts/data_generation/generate_conversations.py \
     --max_parallel_requests 4
 ```
 
-### Translate dataset
+### Dataset Translation
 
 We have provided a script to translate the dataset on the Hugging Face Hub. You need to specify the machine translation model to use and the data fields to translate.
 
