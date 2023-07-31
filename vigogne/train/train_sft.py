@@ -2,6 +2,13 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
+# NB
+# Make it more memory efficient by monkey patching the LLaMA model with FlashAttn.
+# Need to call this before importing transformers.
+# from vigogne.model.llama_flash_attn_monkey_patch import replace_attn_with_flash_attn
+
+# replace_attn_with_flash_attn()
+
 import logging
 import os
 import random
