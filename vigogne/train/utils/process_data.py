@@ -6,23 +6,22 @@ from typing import Dict, Optional
 
 import transformers
 
-from vigogne.constants import ASSISTANT, CHAT, CONTENT, CONVERSATION, INSTRUCT, ROLE, USER
+from vigogne.data_utils import Role, SFTMode
 from vigogne.preprocess import SUPPORTED_DATA_TEMPLATES, ConversationTemplate, InstructTemplate
 from vigogne.train.utils.constants import IGNORE_INDEX
 
 
 @dataclass
 class InstructProcessor(InstructTemplate):
-    def get_example_length(self, example: Dict[str, str], tokenizer: transformers.PreTrainedTokenizer):
-        # user_prompt = self.get_training_prompt(example["instruction"], example["input"], example["output"])
-        user_prompt = self.get_training_prompt(**example)
+    def get_example_length(self, example: Dict, tokenizer: transformers.PreTrainedTokenizer):
+        prompt = self.get_training_prompt(example, tokenizer)
         # NB: might be incorrect for other tokenizers than llama depending on config
-        example["example_length"] = len(tokenizer(user_prompt + tokenizer.eos_token)["input_ids"])
+        example["example_length"] = len(tokenizer(prompt)["input_ids"])
         return example
 
     def process_example(
         self,
-        example: Dict[str, str],
+        example: Dict,
         tokenizer: transformers.PreTrainedTokenizer,
         model_max_length: Optional[int] = None,
         length_column_name: Optional[str] = None,
@@ -32,21 +31,20 @@ class InstructProcessor(InstructTemplate):
         label_tokens = [tokenizer.bos_token] + [-100] * len(prompt_tokens) + completion_tokens + [tokenizer.eos_token]
         """
         # Format prompt
-        user_prompt = self.get_inference_prompt(**example)
+        user_prompt = self.get_inference_prompt(example)
+        full_prompt = self.get_training_prompt(example, tokenizer)
 
         # Get prompt length for masking
         len_user_prompt_tokens = len(tokenizer(user_prompt, truncation=True, max_length=model_max_length)["input_ids"])
 
         # Tokenize
-        input_ids = tokenizer(
-            user_prompt + example["output"] + tokenizer.eos_token, truncation=True, max_length=model_max_length
-        )["input_ids"]
+        input_ids = tokenizer(full_prompt, truncation=True, max_length=model_max_length)["input_ids"]
 
         # Mask prompt
         labels = [IGNORE_INDEX] * len_user_prompt_tokens + input_ids[len_user_prompt_tokens:]
 
         # Tokenize
-        # input_ids = tokenizer(user_prompt + example["output"] + tokenizer.eos_token, truncation=True, return_tensors="pt")["input_ids"][0]
+        # input_ids = tokenizer(full_prompt, truncation=True, return_tensors="pt")["input_ids"][0]
         # labels = input_ids.clone()
         # Mask prompt
         # labels[:len_user_prompt_tokens] = IGNORE_INDEX
@@ -61,16 +59,16 @@ class InstructProcessor(InstructTemplate):
 
 @dataclass
 class ConversationProcessor(ConversationTemplate):
-    def get_example_length(self, example: Dict[str, str], tokenizer: transformers.PreTrainedTokenizer):
-        user_prompt = self.get_training_prompt(example, tokenizer)
+    def get_example_length(self, example: Dict, tokenizer: transformers.PreTrainedTokenizer):
+        prompt = self.get_training_prompt(example, tokenizer)
         # eos_token has been already formatted into prompt
         # NB: might be incorrect for other tokenizers than llama depending on config
-        example["example_length"] = len(tokenizer(user_prompt)["input_ids"])
+        example["example_length"] = len(tokenizer(prompt)["input_ids"])
         return example
 
     def process_example(
         self,
-        example: Dict[str, str],
+        example: Dict,
         tokenizer: transformers.PreTrainedTokenizer,
         model_max_length: Optional[int] = None,
         length_column_name: Optional[str] = None,
@@ -80,8 +78,12 @@ class ConversationProcessor(ConversationTemplate):
         input_tokens = [tokenizer.bos_token] + user_tokens_a + assistant_tokens_a + [tokenizer.eos_token]  + user_tokens_b + assistant_tokens_b + [tokenizer.eos_token]
         label_tokens = [tokenizer.bos_token] + [-100] * len(user_tokens_a) + assistant_tokens_a + [tokenizer.eos_token] + [-100] * len(user_tokens_b) + assistant_tokens_b
         """
+        conversation = self._ensure_type(example)
+
+        system_message = self.default_system_message if conversation.system is None else conversation.system
+        system_header_text = f"{self.system_prefix}: {system_message}{tokenizer.eos_token}"
         # w/ bos_token, w/o eos_token
-        input_ids = tokenizer(self.system_message + "\n")["input_ids"]
+        input_ids = tokenizer(system_header_text)["input_ids"]
 
         # w/o bos_token or eos_token
         user_prefix_input_ids = tokenizer(f"\n{self.user_prefix}:", add_special_tokens=False)["input_ids"]
@@ -93,21 +95,18 @@ class ConversationProcessor(ConversationTemplate):
         assistant_prefix_input_ids = assistant_prefix_input_ids[1:]
 
         non_ignore_indexes = []
-        for speaking_turn in example[CONVERSATION]:
+        for utterance in conversation.messages:
             # w/o bos_token or eos_token
-            message_input_ids = tokenizer(
-                f'{speaking_turn[CONTENT]}{tokenizer.eos_token if speaking_turn[ROLE] == ASSISTANT else ""}',
-                add_special_tokens=False,
-            )["input_ids"]
+            message_input_ids = tokenizer(utterance.content + tokenizer.eos_token, add_special_tokens=False)["input_ids"]
 
             input_ids += (
                 assistant_prefix_input_ids + message_input_ids
-                if speaking_turn[ROLE] == ASSISTANT
+                if utterance.role == Role.assistant
                 else user_prefix_input_ids + message_input_ids
             )
 
             # note token indexes for reponse
-            if speaking_turn[ROLE] == ASSISTANT:
+            if utterance.role == Role.assistant:
                 non_ignore_indexes.append([len(input_ids) - len(message_input_ids), len(input_ids)])
 
         if model_max_length is not None:
@@ -130,6 +129,6 @@ class ConversationProcessor(ConversationTemplate):
 
 
 SUPPORTED_PROCESSOR_TEMPLATES = {
-    INSTRUCT: InstructProcessor(**SUPPORTED_DATA_TEMPLATES.get(INSTRUCT).to_dict()),
-    CHAT: ConversationProcessor(**SUPPORTED_DATA_TEMPLATES.get(CHAT).to_dict()),
+    SFTMode.instruct.value: InstructProcessor(**SUPPORTED_DATA_TEMPLATES.get(SFTMode.instruct.value).to_dict()),
+    SFTMode.chat.value: ConversationProcessor(**SUPPORTED_DATA_TEMPLATES.get(SFTMode.chat.value).to_dict()),
 }

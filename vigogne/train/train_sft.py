@@ -36,7 +36,7 @@ from transformers import (
 from transformers.trainer_utils import get_last_checkpoint, set_seed
 
 import vigogne
-from vigogne.constants import CHAT, INSTRUCT, VALID_MODES
+from vigogne.data_utils import SFTMode
 from vigogne.train.utils import (
     DEFAULT_BOS_TOKEN,
     DEFAULT_EOS_TOKEN,
@@ -163,7 +163,7 @@ class DataArguments:
             )
         },
     )
-    mode: str = field(default=INSTRUCT, metadata={"help": "The mode to preprocess and format the data."})
+    mode: SFTMode = field(default=SFTMode.instruct, metadata={"help": "The mode to preprocess and format the data."})
     pack_into_block: bool = field(
         default=False,
         metadata={
@@ -174,21 +174,11 @@ class DataArguments:
         default=1024, metadata={"help": "Block size for packed examples. Only used when `pack_into_block` is True."}
     )
 
-    def __post_init__(self):
-        assert self.mode in VALID_MODES, f"`mode` should be chosen in {VALID_MODES}"
-
 
 @dataclass
 class VigogneTrainingArguments(TrainingArguments):
-    # todo: remove when adding bf16
-    fp16: bool = field(
-        default=True,
-        metadata={"help": "Whether to use fp16 16-bit (mixed) precision training instead of 32-bit training."},
-    )
-    length_column_name: Optional[str] = field(
-        default="input_length",
-        metadata={"help": "Column name with precomputed lengths to use when grouping by length."},
-    )
+    # todo
+    pass
 
 
 # Copied from https://github.com/tatsu-lab/stanford_alpaca/blob/eb5b171d9b103a12a8e14e0edca9cbc45fe1d512/train.py#L75-L95
@@ -217,8 +207,8 @@ def smart_tokenizer_and_embedding_resize(
 
 
 def train():
-    # debug
-    # def train(args):
+# debug
+# def train(args):
     # HF parser
     parser = HfArgumentParser((ModelArguments, LoraArguments, DataArguments, VigogneTrainingArguments))
     model_args, lora_args, data_args, training_args = parser.parse_args_into_dataclasses()
@@ -231,10 +221,6 @@ def train():
         datefmt="%m/%d/%Y %H:%M:%S",
         handlers=[logging.StreamHandler(sys.stdout)],
     )
-
-    if training_args.should_log:
-        # The default of training_args.log_level is passive, so we set log level at info here to have that default.
-        transformers.utils.logging.set_verbosity_info()
 
     log_level = training_args.get_process_log_level()
     datasets.utils.logging.set_verbosity(log_level)
@@ -481,8 +467,8 @@ def train():
     # old_state_dict = model.state_dict
     # model.state_dict = (lambda self, *_, **__: get_peft_model_state_dict(self, old_state_dict())).__get__(model, type(model))
 
-    if torch.__version__ >= "2" and sys.platform != "win32":
-        model = torch.compile(model)
+    # if torch.__version__ >= "2" and sys.platform != "win32":
+    #     model = torch.compile(model)
 
     # Training
     if training_args.do_train:
@@ -492,7 +478,6 @@ def train():
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
 
-        # train_result = trainer.train()
         train_result = trainer.train(resume_from_checkpoint=checkpoint)
 
         # Saves the tokenizer too for easy upload
