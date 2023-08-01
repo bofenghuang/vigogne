@@ -35,13 +35,11 @@ from transformers import (
     TextIteratorStreamer,
 )
 
-from vigogne.constants import ASSISTANT, USER
+from vigogne.data_utils import Role
 from vigogne.inference.inference_utils import StopWordsCriteria
 from vigogne.preprocess import generate_inference_chat_prompt
 
 # from uuid import uuid4
-
-
 
 
 logging.basicConfig(
@@ -136,7 +134,7 @@ def main(
         model = torch.compile(model)
 
     # NB
-    stop_words = [f"<|{ASSISTANT}|>", f"<|{USER}|>"]
+    stop_words = [f"<|{Role.assistant.value}|>", f"<|{Role.user.value}|>"]
     stop_words_criteria = StopWordsCriteria(stop_words=stop_words, tokenizer=tokenizer)
     pattern_trailing_stop_words = re.compile(rf'(?:{"|".join([re.escape(stop_word) for stop_word in stop_words])})\W*$')
 

@@ -5,7 +5,7 @@
 import fire
 from datasets import load_dataset
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ROLE, USER
+from vigogne.data_utils import Instruct
 
 
 def main(output_file):
@@ -16,11 +16,16 @@ def main(output_file):
     # print(processed_dataset)
 
     def process_function(example):
-        return {
-            "instruction": example["conversations"][0]["value"],
-            "input": "",
-            "output": example["conversations"][1]["value"],
-        }
+        # return {
+        #     "instruction": example["conversations"][0]["value"],
+        #     "input": "",
+        #     "output": example["conversations"][1]["value"],
+        # }
+        return Instruct(
+            instruction=example["conversations"][0]["value"],
+            input="",
+            output=example["conversations"][1]["value"],
+        ).model_dump()
 
     # debug
     # raw_dataset = raw_dataset.select(range(10))

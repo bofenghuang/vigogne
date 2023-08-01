@@ -36,10 +36,19 @@ from polyglot.detect import Detector
 from polyglot.detect.base import logger as polyglot_logger
 from tqdm import tqdm
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ROLE, USER
-from vigogne.file_utils import jdump, jload, jsonl_dump
+from vigogne.file_utils import jload, jsonl_dump
 
 polyglot_logger.setLevel("ERROR")
+
+# tmp
+# Data field
+ID = "id"
+MESSAGES = "messages"
+ROLE = "role"
+CONTENT = "content"
+# Role name
+USER = "USER"
+ASSISTANT = "ASSISTANT"
 
 role_mappings = {
     "human": USER,
@@ -60,13 +69,13 @@ def detect_language_simple(s):
 
 
 def detect_language(example):
-    concatenated_text = " ".join([turn[CONTENT] for turn in example[CONVERSATION]])
+    concatenated_text = " ".join([turn[CONTENT] for turn in example[MESSAGES]])
     example["lang"] = detect_language_simple(concatenated_text)
     return example
 
 
 def convert_format(example):
-    example[CONVERSATION] = [
+    example[MESSAGES] = [
         {ROLE: role_mappings[turn["from"]], CONTENT: turn["value"]}
         for turn in example.pop("conversations")
         if turn["from"] not in ["system"]
@@ -91,10 +100,10 @@ def filter_function(example, validated_languages):
         return False
 
     # Remove repetitive numbers
-    if any(bool(re.search(r"(\d)\1{8}", turn[CONTENT])) for turn in example[CONVERSATION]):
+    if any(bool(re.search(r"(\d)\1{8}", turn[CONTENT])) for turn in example[MESSAGES]):
         return False
 
-    if example[CONVERSATION][0][ROLE] != USER:
+    if example[MESSAGES][0][ROLE] != USER:
         return False
 
     return True
@@ -117,7 +126,9 @@ def main(input_file, validated_languages=["en", "fr"]):
 
     processed_data = list(map(process_function, tqdm(data, desc="process data")))
     processed_data = [
-        example for example in tqdm(processed_data, desc="filter data") if filter_function(example, validated_languages)
+        example
+        for example in tqdm(processed_data, desc="filter data")
+        if filter_function(example, validated_languages)
     ]
     print(f"Filtered to {len(processed_data)} examples")
 

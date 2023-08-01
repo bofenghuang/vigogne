@@ -5,8 +5,6 @@
 import fire
 from datasets import load_dataset
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ROLE, USER
-
 
 def main(output_file):
     # raw_dataset = load_dataset("KK04/LogicInference_OA")["train"]

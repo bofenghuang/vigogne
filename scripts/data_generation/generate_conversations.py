@@ -30,8 +30,17 @@ from datasets import load_dataset
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from tqdm import tqdm
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
 from vigogne.file_utils import jsonl_load, thread_safe_jsonl_dump
+
+# tmp
+# Data field
+ID = "id"
+MESSAGES = "messages"
+ROLE = "role"
+CONTENT = "content"
+# Role name
+USER = "USER"
+ASSISTANT = "ASSISTANT"
 
 # Replace 'your_api_key' with your actual API key
 openai.api_key = os.getenv("OPENAI_API_KEY")
@@ -102,7 +111,7 @@ def post_process(output_str):
         print(f"Failed to split output: {output_str}")
         return
 
-    data = {CONVERSATION: []}
+    data = {MESSAGES: []}
 
     for idx in range(0, len(splitted_data), 2):
         speaker_name, content = splitted_data[idx], splitted_data[idx + 1]
@@ -113,7 +122,7 @@ def post_process(output_str):
         # generated line break is kind of random
         content = content.strip()
 
-        data[CONVERSATION].append({ROLE: speaker_name, CONTENT: content})
+        data[MESSAGES].append({ROLE: speaker_name, CONTENT: content})
 
     return data
 
@@ -140,7 +149,7 @@ def process_item(
     if generated_output is None:
         return
 
-    # generated_output[CONVERSATION].insert(0, {ROLE: USER, CONTENT: input_text})
+    # generated_output[MESSAGES].insert(0, {ROLE: USER, CONTENT: input_text})
     generated_output[ID] = f"{id_prefix}{idx:09d}"
     generated_output[output_subject_field] = input_text
     # print(generated_output)

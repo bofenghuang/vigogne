@@ -22,13 +22,14 @@ from pathlib import Path
 from typing import Iterable, Literal, Optional
 
 import fire
+
 # from model_training.custom_datasets.formatting import DatasetEntrySft, Role, Utterance
 from oasst_data import ExportMessageNode, read_dataset_message_trees, read_message_trees, visit_threads_depth_first
 from oasst_data.schemas import ExportMessageTree
 from torch import Generator
 from torch.utils.data import Dataset, random_split
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
+from vigogne.data_utils import Conversation, Role, Utterance
 from vigogne.file_utils import jsonl_dump
 
 
@@ -190,12 +191,13 @@ def load_oasst_export(
 def convert_to_chat(example_input, task_id_prefix):
     example_idx, example = example_input
 
-    conversation = []
-    for idx in range(0, len(example), 2):
-        conversation.append({ROLE: USER, CONTENT: example[idx]})
-        conversation.append({ROLE: ASSISTANT, CONTENT: example[idx + 1]})
+    conversation = Conversation(id=f"{task_id_prefix}-{example_idx:08d}", messages=[])
 
-    return {ID: f"{task_id_prefix}-{example_idx:08d}", CONVERSATION: conversation}
+    for idx in range(0, len(example), 2):
+        conversation.messages.append(Utterance(role=Role.user, content=example[idx]))
+        conversation.messages.append(Utterance(role=Role.assistant, content=example[idx + 1]))
+
+    return conversation.fully_model_dump()
 
 
 def main(

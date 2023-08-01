@@ -3,10 +3,10 @@
 # Copyright 2023 Bofeng Huang
 
 import argparse
-
 from pathlib import Path
-from vigogne.file_utils import jsonl_load, jsonl_dump
-from vigogne.constants import CONVERSATION, ID
+
+from vigogne.data_utils import Conversation, Instruct
+from vigogne.file_utils import jsonl_dump, jsonl_load
 
 
 def main():
@@ -15,8 +15,10 @@ def main():
     parser.add_argument("--output-file", type=str, required=True)
     args = parser.parse_args()
 
-    validated_keys = {"instruction", "input", "output"}
-    # validated_keys = {CONVERSATION}
+    # validated_keys = {"instruction", "input", "output"}
+    # validated_keys = {"messages"}
+    validated_keys = set(Instruct.__fields__.keys())
+    # validated_keys = set(Conversation.__fields__.keys())
 
     data = []
     for input_file in args.inputs_files:

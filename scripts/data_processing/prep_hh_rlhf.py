@@ -7,11 +7,11 @@ import re
 import fire
 from datasets import load_dataset
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ROLE, USER
+from vigogne.data_utils import Conversation, Role, Utterance
 
 role_mappings = {
-    "Human": USER,
-    "Assistant": ASSISTANT,
+    "Human": Role.user,
+    "Assistant": Role.assistant,
 }
 
 
@@ -20,10 +20,8 @@ def process_function(example):
     splitted_data = splitted_data[1:] if not splitted_data[0] else splitted_data
     assert len(splitted_data) % 2 == 0, print(splitted_data)
 
-    example[CONVERSATION] = [
-        {ROLE: role_mappings[splitted_data[i]], CONTENT: splitted_data[i + 1]} for i in range(0, len(splitted_data), 2)
-    ]
-    return example
+    conversation = Conversation(messages=[Utterance(role=role_mappings[splitted_data[i]], content=splitted_data[i + 1]) for i in range(0, len(splitted_data), 2)])
+    return conversation.fully_model_dump()
 
 
 def main(output_file):

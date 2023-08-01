@@ -6,10 +6,10 @@ import re
 
 import fire
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
+from vigogne.data_utils import Conversation, Role, Utterance
 from vigogne.file_utils import jload, jsonl_dump
 
-ROLES = [USER, ASSISTANT]
+ROLES = [Role.user, Role.assistant]
 
 
 def convert_to_chat(example):
@@ -22,10 +22,8 @@ def convert_to_chat(example):
     assert len(splitted) % 2 == 0, f"Failed to parse the example: {splitted}"
     # print(*splitted, sep="\n")
 
-    return {
-        # ID: f"{task_id_prefix}-{example_idx:08d}",
-        CONVERSATION: [{ROLE: ROLES[idx % 2], CONTENT: sentence} for idx, sentence in enumerate(splitted)]
-    }
+    conversation = Conversation(messages=[Utterance(role=ROLES[idx % 2], content=sentence) for idx, sentence in enumerate(splitted)])
+    return conversation.fully_model_dump()
 
 
 def main(input_file, output_file):

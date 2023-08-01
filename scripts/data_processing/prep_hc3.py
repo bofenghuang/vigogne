@@ -5,8 +5,6 @@
 import fire
 from datasets import load_dataset
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ROLE, USER
-
 
 def main(output_file):
     raw_dataset = load_dataset("Hello-SimpleAI/HC3", "all")["train"]
@@ -34,17 +32,6 @@ def main(output_file):
     data_df["input"] = ""
     data_df = data_df[["instruction", "input", "output"]]
     print(data_df.head())
-
-    # conversation format
-    # data_df[CONVERSATION] = data_df.apply(
-    #     lambda row: [
-    #         {ROLE: USER, CONTENT: row["question"]},
-    #         {ROLE: ASSISTANT, CONTENT: row["answer"]},
-    #     ],
-    #     axis=1,
-    # )
-    # data_df = data_df[["source", CONVERSATION]]
-    # print(data_df.head())
 
     data_df.to_json(output_file, orient="records", lines=True, force_ascii=False)
     print(f"The processed data is saved into {output_file}")

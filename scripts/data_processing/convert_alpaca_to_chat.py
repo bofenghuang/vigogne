@@ -8,23 +8,19 @@ from functools import partial
 
 import fire
 
-from vigogne.constants import ASSISTANT, CONTENT, CONVERSATION, ID, ROLE, USER
+from vigogne.data_utils import Conversation, Role, Utterance
 from vigogne.file_utils import jsonl_dump, jsonl_load
 from vigogne.preprocess import merge_instruction_and_input
 
 
-# todo: prepend alpaca prompt ?
 def convert_to_chat(example):
-    return {
-        # ID: f"{task_id_prefix}-{example_idx:08d}",
-        CONVERSATION: [
-            {
-                ROLE: USER,
-                CONTENT: merge_instruction_and_input(example["instruction"], example["input"]),
-            },
-            {ROLE: ASSISTANT, CONTENT: example["output"]},
-        ],
-    }
+    conversation = Conversation(
+        messages=[
+            Utterance(role=Role.user, content=merge_instruction_and_input(example["instruction"], example["input"])),
+            Utterance(role=Role.assistant, content=example["output"])
+        ]
+    )
+    return conversation.fully_model_dump()
 
 
 def main(input_file, output_file):
