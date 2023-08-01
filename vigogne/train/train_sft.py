@@ -451,7 +451,8 @@ def train():
     if data_args.pack_into_block:
         block_size = min(data_args.block_size, tokenizer.model_max_length)
         with training_args.main_process_first(desc="packing samples together"):
-            train_dataset = train_dataset.map(
+            # shuffle examples before packing
+            train_dataset = train_dataset.shuffle(seed=training_args.seed).map(
                 ModerateConcatenator(block_size=block_size),
                 batched=True,
                 load_from_cache_file=not data_args.overwrite_cache,

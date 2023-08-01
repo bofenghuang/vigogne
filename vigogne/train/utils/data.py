@@ -36,6 +36,10 @@ class Concatenator:
 
 
 class ModerateConcatenator:
+    """
+    Packing ensures total length within the block_size without truncation or inserting tailing parts into subsequent blocks.
+    """
+
     def __init__(self, block_size=2048):
         self.block_size = block_size
 
