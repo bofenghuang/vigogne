@@ -2,7 +2,7 @@
 
 This repository offers multiple options for inference and deployment, such as a **Google Colab notebook**, **Gradio demo**, and instructions for running experiments on your own PC using [**llama.cpp**](https://github.com/ggerganov/llama.cpp).
 
-Thanks to the efforts by [TheBloke](https://huggingface.co/TheBloke), [some of the Vigogne models](https://huggingface.co/models?sort=trending&search=TheBloke+vigogne) have also been quantized to [GGML](https://github.com/ggerganov/ggml) format (compatible with [llama.cpp](https://github.com/ggerganov/llama.cpp), [text-generation-webui
+Thanks to the efforts by [TheBloke](https://huggingface.co/TheBloke), [some](https://huggingface.co/models?sort=trending&search=TheBloke+vigogne) of the Vigogne models have also been quantized to [GGML](https://github.com/ggerganov/ggml) format (compatible with [llama.cpp](https://github.com/ggerganov/llama.cpp), [text-generation-webui
 ](https://github.com/oobabooga/text-generation-webui), [ctransformers](https://github.com/marella/ctransformers), etc.) and [GTPQ](https://github.com/IST-DASLab/gptq) format (compatible with [GPTQ-for-LLaMA](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ)) for easier testing and development. 
 
 ## Google Colab Notebook
