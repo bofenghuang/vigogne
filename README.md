@@ -19,8 +19,6 @@ The main contributions of this project include:
 - Generated, translated, and collected French instruction-following and dialogue datasets, along with the used scripts
 - Inference code and gradio demo, as well as detailed instructions for experiencing the quantized Vigogne models on your PC
 
-
-
 💡 *The screencast below shows the current 🦙 Vigogne-7B-Chat model running on Apple M1 Pro using 4GB of weights (no sped up).*
 
 ![](./assets/screencast_llamacpp_chat.gif)
@@ -42,15 +40,15 @@ The main contributions of this project include:
 
 - [2023/08/02]: Added the generation script for [Orca-style](https://arxiv.org/abs/2306.02707) data.
 - [2023/07/31]: Added support for [FlashAttention-2](https://arxiv.org/abs/2307.08691) and implemented example packing for improved efficiency.
-- [2023/07/20]: Introduced the latest Vigogne models, based on Llama-2.
-- [2023/07/05]: Released Vigogne models derived from Falcon and MPT, offering a more friendly license for commercial use.
+- [2023/07/20]: Introduced the latest [Vigogne models](https://huggingface.co/models?search=bofenghuang+vigogne-2), based on [Llama-2](https://ai.meta.com/llama/use-policy).
+- [2023/07/05]: Released Vigogne models derived from [Falcon](https://falconllm.tii.ae)  and [MPT](https://www.mosaicml.com/blog/mpt-7b)  , offering a more friendly license for commercial use.
 - [2023/06/05]: Provided support for [QLoRA](https://arxiv.org/abs/2305.14314), resulting in a significant memory usage reduction.
-- [2023/05/15]: Unveiled the Vigogne-Chat models and integrated the Gradio Demo for interactive chat demonstrations.
-- [2023/05/11]: Added support for DeepSpeed, significantly improving the efficiency of model training.
+- [2023/05/15]: Unveiled the [Vigogne-Chat](https://huggingface.co/models?search=bofenghuang+vigogne+chat) models and integrated the Gradio Demo for interactive chat demonstrations.
+- [2023/05/11]: Added support for [DeepSpeed](https://github.com/microsoft/DeepSpeed), significantly improving the efficiency of model training.
 - [2023/05/11]: Implemented chat data generation using [Self-Chat](https://arxiv.org/abs/2304.01196), empowering the model with more conversational abilities.
-- [2023/05/11]: Presented the upgraded Vigogne-Instruct V2 models, trained on a larger and more diverse dataset.
-- [2023/05/11]: Released annotated French seed tasks and the generation script for Self-Instruct.
-- [2023/04/03]: Provided a training script for seq2seq models, utilizing LoRA and LLM.int8().
+- [2023/05/11]: Presented the upgraded [Vigogne-Instruct](https://huggingface.co/models?sort=trending&search=bofenghuang+vigogne+instruct) V2 models, trained on a larger and more diverse dataset.
+- [2023/05/11]: Released annotated French seed tasks and the generation script for [Self-Instruct]((https://arxiv.org/abs/2212.10560)).
+- [2023/04/03]: Provided a training script for seq2seq models, utilizing [LoRA](https://arxiv.org/abs/2106.09685) and [LLM.int8()](https://arxiv.org/abs/2208.07339).
 - [2023/03/29]: Included deployment instructions using [llama.cpp](https://github.com/ggerganov/llama.cpp).
 - [2023/03/26]: Open-sourced the Vigogne projet and released fine-tuned LLaMA and BLOOM models trained on the translated Stanford Alpaca dataset.
 
