@@ -14,10 +14,11 @@ def main(output_file):
     # raw_dataset = raw_dataset.select(range(10))
 
     data_df = raw_dataset.to_pandas()
-    # data_df["answer"] = data_df.apply(lambda row: row["human_answers"] + row["chatgpt_answers"], axis=1)
-    data_df["answer"] = data_df.apply(lambda row: [*row["human_answers"], *row["chatgpt_answers"]], axis=1)
+    # take all answers
+    # data_df["answer"] = data_df.apply(lambda row: [*row["human_answers"], *row["chatgpt_answers"]], axis=1)
+    # take only chatgpt answers
+    data_df["answer"] = data_df.apply(lambda row: [*row["chatgpt_answers"]], axis=1)
     data_df = data_df.explode("answer")
-    # data_df = data_df[["question", "answer", "source"]]
     # print(data_df.head())
     # print(data_df.info())
     print(data_df.shape[0])
