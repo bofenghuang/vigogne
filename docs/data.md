@@ -1,6 +1,6 @@
 # Data
 
-The Vigogne models were trained on a variety of datasets, including open-source datasets, ChatGPT-distillation datasets (self-instruct and self-chat), and translated datasets.
+The Vigogne models were trained on a variety of datasets, including open-source datasets, ChatGPT-distillation datasets (self-instruct, self-chat, and orca-style data), and translated datasets.
 
 These datasets cover different purposes such as instruction-following and human-assistant chat.
 
@@ -24,7 +24,7 @@ Here is a subset of the human-assistant chat data used to fine-tune the Vigogne-
 |  French dialogues from OASST1  |  1k   | [oasst_20230412_fr_top1.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/oasst_20230412_fr_top1.jsonl) | French dialogues extracted from [OpenAssistant/oasst1](https://huggingface.co/datasets/OpenAssistant/oasst1) dataset |
 | French dialogues from ShareGPT |  1k   |                  [sg_fr.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/sg_fr.jsonl)                  |  French dialogues extracted from [RyokoAI/ShareGPT52K](https://huggingface.co/datasets/RyokoAI/ShareGPT52K) dataset  |
 
-## Data Preparation
+## Data Generation
 
 ### Translate Alpaca Data
 
@@ -79,7 +79,7 @@ The following is an example of a provided topic and the generated dialogue:
 ```json
 {
     "subject":"Quelle est la meilleure façon de lire un livre technique?",
-    "conversation":[
+    "messages":[
         {
             "role":"UTILISATEUR",
             "content":"Je me demande quelle est la meilleure façon de lire un livre technique. As-tu des conseils à me donner ?"
@@ -126,4 +126,27 @@ python scripts/data_processing/translate_dataset.py \
     --output_file data/chat/grade_school_math_instructions_fr_nllb3b3.jsonl \
     --field_names '["INSTRUCTION", "RESPONSE"]' \
     --model_name_or_path facebook/nllb-200-3.3B
+```
+
+### Orca-style Data
+
+We generated instruction-following data in the style of [Orca](https://arxiv.org/abs/2306.02707), which introduces explanatory signals from the teacher model `gpt-4`, showcasing its reasoning process during response generation. Additionally, responses can also be generated using `gpt-3.5-turbo` as an intermediate teacher for curriculum learning.
+
+To achieve this, we first translated the instructions in the [Flan-v2](https://github.com/google-research/FLAN/tree/main/flan/v2) collection into French using the script available in [Dataset Translation](#dataset-translation). You can access the sub-collections, namely [COT](https://huggingface.co/datasets/conceptofmind/cot_submix_original), [NIV2](https://huggingface.co/datasets/conceptofmind/niv2_submix_original), [T0](https://huggingface.co/datasets/conceptofmind/t0_submix_original), and [FLAN 2021](https://huggingface.co/datasets/conceptofmind/flan2021_submix_original), provided by Enrico Shippole on the Hugging Face Hub.
+
+Next, you can generate responses using the following script. Please note that the generation might take some time due to the rate limit, endpoint load, and the long text of query and response pairs.
+
+```bash
+# Specify your OpenAI API key
+export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
+
+python scripts/data_generation/generate_responses.py \
+    --input_json_file path/to/flanv2_translated.jsonl \
+    --output_json_file path/to/flanv2_translated_completed.jsonl \
+    --system_field system_prompt \
+    --instruction_field translated_question \
+    --response_field fr_response \
+    --model gpt-4 \
+    --max_parallel_requests 1 \
+    --max_samples 1
 ```
