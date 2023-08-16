@@ -88,6 +88,7 @@ pip install deepspeed
 pip install packaging ninja
 # For FlashAttention 1
 # pip install --no-build-isolation flash-attn<2
+# For FlashAttention 2
 # Might takes 3-5 minutes on a 64-core machine
 pip install --no-build-isolation flash-attn
 
@@ -108,15 +109,17 @@ More information can be found in the [vigogne/inference](docs/inference.md).
 
 ## Data
 
-The Vigogne models were trained using open-source datasets, ChatGPT-distillation datasets (self-instruct, self-chatting), and translated datasets.
+The Vigogne models were trained on a variety of datasets, including open-source datasets, ChatGPT-distillation datasets (self-instruct, self-chat, and orca-style data), and translated datasets.
 
 More information can be found in the [vigogne/data](docs/data.md).
 
 ## Training
 
-To fine-tune LLMs more efficiently, we employ a technique called [low-rank adaptation (LoRA)](https://arxiv.org/abs/2106.09685) provided by 🤗 Hugging Face's [PEFT](https://github.com/huggingface/peft) library, which involves freezing the base model's weights and adding a small number of learnable parameters.
+For efficient LLM fine-tuning, we utilize a technique called [low-rank adaptation (LoRA)](https://arxiv.org/abs/2106.09685) from 🤗 Hugging Face's [PEFT](https://github.com/huggingface/peft) library. This approach involves freezing the base model's weights and introducing a small number of learnable parameters.
 
-In addition, you can further reduce the memory usage during fine-tuning by using [LLM.int8()](https://arxiv.org/abs/2208.07339), which employs a 2-stage quantization method that quantizes part of the computation to int8. This enables efficient training on a single consumer GPU such as the RTX 4090. However, it may be slightly slower than the fp16 version. If your GPUs have enough memory, you can skip this step and train using [DeepSpeed](https://github.com/microsoft/DeepSpeed).
+Additionally, for practitioners without access to GPUs with ample memory, it's advisable to consider quantizing certain computations to either 8-bit or 4-bit precision using [LLM.int8()](https://arxiv.org/abs/2208.07339) or [QLoRA](https://arxiv.org/abs/2305.14314). Be aware that this might lead to a minor reduction in speed compared to fp16 or bf16 versions.
+
+We highly recommend the utilization of tools such as [DeepSpeed](https://github.com/microsoft/DeepSpeed) or [FSDP](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api), particularly when engaged in distributed learning scenarios. When dealing with long sequences, [FlashAttention](https://arxiv.org/abs/2307.08691) becomes crucial to speed up training and minimize memory usage.
 
 More information can be found in the [vigogne/training](docs/training.md).
 
