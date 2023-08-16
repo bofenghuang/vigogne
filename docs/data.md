@@ -4,7 +4,7 @@ The Vigogne models were trained on a variety of datasets, including open-source 
 
 These datasets cover different purposes such as instruction-following and human-assistant chat.
 
-## Instruction-following Data
+<!-- ## Instruction-following Data
 
 Here is a subset of the instruction-following data that was utilized to fine-tune the Vigogne-Instruct models:
 
@@ -22,7 +22,17 @@ Here is a subset of the human-assistant chat data used to fine-tune the Vigogne-
 | :----------------------------: | :---: | :---------------------------------------------------------------------------------------------------------------------: | :------------------------------------------------------------------------------------------------------------------: |
 |     French self-chat data      |  50k  |                                                           N/A                                                           |              Dialogue data generated using `gpt-3.5-turbo` in April 2023 (See [Self-Chat](#self-chat))               |
 |  French dialogues from OASST1  |  1k   | [oasst_20230412_fr_top1.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/oasst_20230412_fr_top1.jsonl) | French dialogues extracted from [OpenAssistant/oasst1](https://huggingface.co/datasets/OpenAssistant/oasst1) dataset |
-| French dialogues from ShareGPT |  1k   |                  [sg_fr.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/sg_fr.jsonl)                  |  French dialogues extracted from [RyokoAI/ShareGPT52K](https://huggingface.co/datasets/RyokoAI/ShareGPT52K) dataset  |
+| French dialogues from ShareGPT |  1k   |                  [sg_fr.jsonl](https://github.com/bofenghuang/vigogne/blob/main/data/chat/sg_fr.jsonl)                  |  French dialogues extracted from [RyokoAI/ShareGPT52K](https://huggingface.co/datasets/RyokoAI/ShareGPT52K) dataset  | -->
+
+## Data Collection
+
+Below is a non-exhaustive list of datasets containing 🇫🇷 French instruction-following and chat examples (feel free to submit a PR to include more datasets 🤗):
+
+- [MBZUAI/Bactrian-X](https://huggingface.co/datasets/MBZUAI/Bactrian-X)
+- [OpenAssistant/oasst1](https://huggingface.co/datasets/OpenAssistant/oasst1)
+- [ShareGPT](https://huggingface.co/datasets/RyokoAI/ShareGPT52K)
+- [camel-ai/ai_society_translated](https://huggingface.co/datasets/camel-ai/ai_society_translated)
+- [Gt-Doremiti/gt-doremiti-instructions](https://huggingface.co/datasets/Gt-Doremiti/gt-doremiti-instructions)
 
 ## Data Generation
 
@@ -81,19 +91,19 @@ The following is an example of a provided topic and the generated dialogue:
     "subject":"Quelle est la meilleure façon de lire un livre technique?",
     "messages":[
         {
-            "role":"UTILISATEUR",
+            "role":"User",
             "content":"Je me demande quelle est la meilleure façon de lire un livre technique. As-tu des conseils à me donner ?"
         },
         {
-            "role":"ASSISTANT",
+            "role":"Assistant",
             "content":"Bien sûr, voici quelques conseils pour vous aider à lire un livre technique de manière efficace : \n\n1. Commencez par une lecture rapide pour vous familiariser avec le contenu du livre. \n2. Utilisez un surligneur ou prenez des notes pour marquer les parties importantes du texte. \n3. Ne passez pas trop de temps à essayer de comprendre chaque concept dès le début. Lisez plutôt le livre en entier et revenez aux parties plus difficiles plus tard. Vous aurez déjà une meilleure compréhension générale du sujet.\n4. Révisez régulièrement les parties que vous avez surlignées ou notées. relire les passages importants plusieurs fois pour vous assurer que vous les avez vraiment compris.\n5. N'hésitez pas à chercher des ressources supplémentaires pour vous aider à comprendre les parties les plus difficiles."
         },
         {
-            "role":"UTILISATEUR",
+            "role":"User",
             "content":"C'est une bonne idée de prendre des notes et de surligner les parties importantes. Comment savoir quelles parties sont les plus importantes ?"
         },
         {
-            "role":"ASSISTANT",
+            "role":"Assistant",
             "content":"Les parties les plus importantes d'un livre technique sont généralement celles qui sont liées aux objectifs que vous vous êtes fixés en lisant ce livre. Si vous recherchez des informations sur un concept spécifique, vous voudrez peut-être surligner tous les passages qui y sont liés. Si vous voulez comprendre comment résoudre un problème particulier, vous voudrez peut-être surligner les parties qui offrent des solutions à ce problème. En général, c'est une bonne idée de surligner les parties qui expliquent les concepts clés et les méthodes de travail."
         }
     ]
@@ -116,7 +126,7 @@ python scripts/data_generation/generate_conversations.py \
     --max_parallel_requests 4
 ```
 
-### Dataset Translation
+### Translate Dataset
 
 We have provided a script to translate the dataset on the Hugging Face Hub. You need to specify the machine translation model to use and the data fields to translate.
 
@@ -128,9 +138,27 @@ python scripts/data_processing/translate_dataset.py \
     --model_name_or_path facebook/nllb-200-3.3B
 ```
 
-### Orca-style Data
+### Orca-Style Data
 
 We generated instruction-following data in the style of [Orca](https://arxiv.org/abs/2306.02707), which introduces explanatory signals from the teacher model `gpt-4`, showcasing its reasoning process during response generation. Additionally, responses can also be generated using `gpt-3.5-turbo` as an intermediate teacher for curriculum learning.
+
+Here's an example to illustrate:
+
+```json
+{
+    "system": "Vous êtes un assistant IA qui aide les gens à trouver des informations. L'utilisateur vous posera une question. Votre tâche est de répondre aussi fidèlement que possible. Tout en répondant, réfléchissez étape par étape et justifiez votre réponse.",
+    "messages": [
+        {
+            "content": "Utilisez le raisonnement pour apporter la réponse à la question suivante :\nLe petit salon de beauté de propriété locale a eu son grand ouverture, les gens espéraient qu'il va stimuler l'économie dans les environs de quoi?\nLes options :\nLe clergé\nLa boutique Barber\n- Le voisinage\n- la ville\nLe Strip Mall\nProcessus de raisonnement :",
+            "role": "User"
+        },
+        {
+            "content": "Pour répondre à cette question, analysons chaque option et déterminons celle qui correspond le mieux à la situation décrite.\n\n1. Le clergé: Le clergé fait référence aux membres du clergé religieux, il ne semble pas y avoir de lien direct entre un salon de beauté et une stimulation économique pour les membres du clergé. Donc, cette option n'est probablement pas correcte.\n\n2. La boutique Barber: Une boutique Barber fait souvent référence à un salon de coiffure masculin. Bien que ce soit lié à l'industrie de la beauté, l'ouverture d'un petit salon de beauté pourrait entraîner une compétition plutôt qu'une stimulation économique pour une boutique Barber. Cette option n'est donc pas la meilleure réponse non plus.\n\n3. Le voisinage: L'ouverture d'un petit salon de beauté pourrait attirer des clients dans le voisinage, stimulant ainsi l'économie locale, car les gens seraient plus susceptibles de dépenser de l'argent dans les environs. Cela semble être une réponse plausible.\n\n4. La ville: Même si l'ouverture d'un salon de beauté peut avoir un impact sur l'économie d'une ville, l'effet serait généralement moins direct et moins important que pour le voisinage immédiat. Cependant, cette réponse reste possible.\n\n5. Le Strip Mall: Un Strip Mall est un centre commercial composé de plusieurs magasins, généralement situé le long d'une artère principale. L'ouverture d'un petit salon de beauté pourrait stimuler l'économie d'un Strip Mall en attirant des clients pour d'autres magasins, mais cela dépend de la situation géographique du salon.\n\nEn prenant en compte ces informations, il semble que les deux options les plus plausibles soient \"Le voisinage\" et \"la ville\". Cependant, étant donné que la question mentionne spécifiquement \"les environs\", cela implique une portée géographique plus limitée. Par conséquent, la réponse la plus précise et justifiée serait \"Le voisinage\".",
+            "role": "Assistant"
+        }
+    ]
+}
+```
 
 To achieve this, we first translated the instructions in the [Flan-v2](https://github.com/google-research/FLAN/tree/main/flan/v2) collection into French using the script available in [Dataset Translation](#dataset-translation). You can access the sub-collections, namely [COT](https://huggingface.co/datasets/conceptofmind/cot_submix_original), [NIV2](https://huggingface.co/datasets/conceptofmind/niv2_submix_original), [T0](https://huggingface.co/datasets/conceptofmind/t0_submix_original), and [FLAN 2021](https://huggingface.co/datasets/conceptofmind/flan2021_submix_original), provided by Enrico Shippole on the Hugging Face Hub.
 
@@ -149,4 +177,35 @@ python scripts/data_generation/generate_responses.py \
     --model gpt-4 \
     --max_parallel_requests 1 \
     --max_samples 1
+```
+
+
+### Translation Data
+
+We've supplied a script for reformatting machine translation data into the instruction task format.
+
+Here's an example:
+
+```json
+{
+    "system": "You are an AI assistant that follows instructions extremely well. Help as much as you can.",
+    "messages": [
+        {
+            "content": "Switch the specified sentences from their English form to French form.\n\nIt has been issued since 2006 to partner institutions and associations who have requested it and is on the Ministry's website, with each caption accompanied by an illustration.",
+            "role": "User"
+        },
+        {
+            "content": "Elle est diffusée depuis 2006 aux partenaires demandeurs (institutionnels et associatifs) et sur le site Internet du ministère, chaque phrase étant accompagnée d'une illustration.",
+            "role": "Assistant"
+        }
+    ]
+}
+```
+
+Here's an example of how we utilized the script to reformat the [WMT14](https://huggingface.co/datasets/wmt14) translation dataset. The instructions have been copied and adapted from the [Parrot](https://github.com/wxjiao/ParroT/blob/master/scripts/instruct_follow.txt) project.
+
+```bash
+python scripts/data_processing/prep_translation.py \
+    --instruction_file_path scripts/data_processing/prompt_translation_en.txt \
+    --output_file path/to/translation_task_wmt14_en_fr_cleaned.jsonl
 ```

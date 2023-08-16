@@ -4,9 +4,26 @@
 
 # Vigogne 🦙: French Instruction-following and Chat Models
 
-[![Code License](https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg)](https://github.com/bofenghuang/vigogne/blob/main/LICENSE)
-[![Data License](https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg)](https://github.com/bofenghuang/vigogne/blob/main/DATA_LICENSE)
-[![Models](https://img.shields.io/badge/Hugging%20Face-Models-yellow.svg)](https://huggingface.co/models?search=bofenghuang/vigogne)
+<p align="center">
+    <a href="https://github.com/bofenghuang/vigogne/releases">
+        <img alt="GitHub release" src="https://img.shields.io/github/release/bofenghuang/vigogne.svg">
+    </a>
+    <!-- <a href="https://github.com/bofenghuang/vigogne/blob/main/LICENSE">
+        <img alt="License" src="https://img.shields.io/github/license/bofenghuang/vigogne.svg?color=green">
+    </a> -->
+    <a href="https://github.com/bofenghuang/vigogne/blob/main/LICENSE">
+        <img alt="Code License" src="https://img.shields.io/badge/Code%20License-Apache_2.0-green.svg">
+    </a>
+    <a href="https://github.com/bofenghuang/vigogne/blob/main/DATA_LICENSE">
+        <img alt="Data License" src="https://img.shields.io/badge/Data%20License-CC%20By%20NC%204.0-red.svg">
+    </a>
+    <a href="https://huggingface.co/models?search=bofenghuang/vigogne">
+        <img alt="Models" src="https://img.shields.io/badge/%F0%9F%A4%97%20Hugging%20Face-Models-yellow.svg">
+    </a>
+    <a href="https://colab.research.google.com/github/bofenghuang/vigogne/blob/main/notebooks/infer_chat.ipynb">
+        <img alt="Open In Colab" src="https://colab.research.google.com/assets/colab-badge.svg">
+    </a>
+</p>
 
 *The vigogne (French name for vicuña) is a South American camelid native to the Andes Mountains. It is closely related to the llama, alpaca, and guanaco.*
 
@@ -31,26 +48,26 @@ The main contributions of this project include:
 - [Inference and Deployment](#inference-and-deployment)
 - [Data](#data)
 - [Training](#training)
-- [Example Outputs](#example-outputs)
 - [Bias, Risks, and Limitations](#bias-risks-and-limitations)
 - [Acknowledgements](#acknowledgements)
 - [Citation](#citation)
 
 ## Updates
 
-- [2023/08/02]: Implemented the generation script for [Orca-style](https://arxiv.org/abs/2306.02707) data, along with system message customization feature.
-- [2023/07/31]: Added support for [FlashAttention-2](https://arxiv.org/abs/2307.08691) and implemented example packing for improved efficiency.
-- [2023/07/20]: Introduced the latest [Vigogne models](https://huggingface.co/models?search=bofenghuang+vigogne-2), based on [Llama-2](https://ai.meta.com/llama/use-policy).
-- [2023/07/05]: Released Vigogne models derived from [Falcon](https://falconllm.tii.ae)  and [MPT](https://www.mosaicml.com/blog/mpt-7b)  , offering a more friendly license for commercial use.
-- [2023/06/05]: Provided support for [QLoRA](https://arxiv.org/abs/2305.14314), resulting in a significant memory usage reduction.
-- [2023/05/15]: Unveiled the [Vigogne-Chat](https://huggingface.co/models?search=bofenghuang+vigogne+chat) models and integrated the Gradio Demo for interactive chat demonstrations.
-- [2023/05/11]: Added support for [DeepSpeed](https://github.com/microsoft/DeepSpeed), significantly improving the efficiency of model training.
-- [2023/05/11]: Implemented chat data generation using [Self-Chat](https://arxiv.org/abs/2304.01196), empowering the model with more conversational abilities.
-- [2023/05/11]: Presented the upgraded [Vigogne-Instruct](https://huggingface.co/models?sort=trending&search=bofenghuang+vigogne+instruct) V2 models, trained on a larger and more diverse dataset.
-- [2023/05/11]: Released annotated French seed tasks and the generation script for [Self-Instruct]((https://arxiv.org/abs/2212.10560)).
-- [2023/04/03]: Provided a training script for seq2seq models, utilizing [LoRA](https://arxiv.org/abs/2106.09685) and [LLM.int8()](https://arxiv.org/abs/2208.07339).
+- [2023/08/16]: Added support for serving using [FastChat](https://github.com/lm-sys/FastChat) and [vLLM](https://vllm.ai).
+- [2023/08/02]: Implemented generation script for [Orca-style](https://arxiv.org/abs/2306.02707) data.
+- [2023/07/31]: Integrated [FlashAttention](https://arxiv.org/abs/2307.08691) support and implemented training example packing.
+- [2023/07/20]: Introduced the latest Vigogne models built upon [Llama-2](https://ai.meta.com/llama/use-policy).
+- [2023/07/05]: Released Vigogne models based on [Falcon](https://falconllm.tii.ae)  and [MPT](https://www.mosaicml.com/blog/mpt-7b), with commercial-friendly licenses.
+- [2023/06/05]: Integrated [QLoRA](https://arxiv.org/abs/2305.14314) support for improved training efficiency.
+- [2023/05/15]: Introduced Vigogne-Chat models with enhanced conversational capabilities.
+- [2023/05/11]: Implemented [Self-Chat](https://arxiv.org/abs/2304.01196) data generation script for conversational data.
+- [2023/05/11]: Introduced improved Vigogne-Instruct-V2 models, trained on more diverse data.
+- [2023/05/11]: Released annotated seed tasks in French and generation script for [Self-Instruct](https://arxiv.org/abs/2212.10560).
+- [2023/04/03]: Expanded training scripts to incorporate seq2seq models.
 - [2023/03/29]: Included deployment instructions using [llama.cpp](https://github.com/ggerganov/llama.cpp).
-- [2023/03/26]: Open-sourced the Vigogne projet and released fine-tuned LLaMA and BLOOM models trained on the translated Stanford Alpaca dataset.
+- [2023/03/26]: Released initial Vigogne-Instruct models trained on translated Stanford Alpaca data.
+- [2023/03/26]: Open-sourced Vigogne project with optimized training scripts ([LoRA](https://arxiv.org/abs/2106.09685), [LLM.int8()](https://arxiv.org/abs/2208.07339)).
 
 ## Installation
 
@@ -67,6 +84,13 @@ cd vigogne
 # Install DeepSpeed if want to accelerate training with it
 pip install deepspeed
 
+# Install FlashAttention to further speed up training and reduce memory usage (essential for long sequences)
+pip install packaging ninja
+# For FlashAttention 1
+# pip install --no-build-isolation flash-attn<2
+# Might takes 3-5 minutes on a 64-core machine
+pip install --no-build-isolation flash-attn
+
 pip install .
 ```
 
@@ -78,7 +102,7 @@ More information can be found in the [vigogne/model](docs/model.md).
 
 ## Inference and Deployment
 
-This repository offers multiple options for inference and deployment, such as a **Google Colab notebook**, **Gradio demo**, and instructions for running experiments on your own PC using [**llama.cpp**](https://github.com/ggerganov/llama.cpp).
+This repository offers multiple options for inference and deployment, including Google Colab notebooks, Gradio demos, [FastChat](https://github.com/lm-sys/FastChat), and [vLLM](https://vllm.ai). It also offers guidance on conducting experiments using [llama.cpp](https://github.com/ggerganov/llama.cpp) on your personal computer.
 
 More information can be found in the [vigogne/inference](docs/inference.md).
 
@@ -95,95 +119,6 @@ To fine-tune LLMs more efficiently, we employ a technique called [low-rank adapt
 In addition, you can further reduce the memory usage during fine-tuning by using [LLM.int8()](https://arxiv.org/abs/2208.07339), which employs a 2-stage quantization method that quantizes part of the computation to int8. This enables efficient training on a single consumer GPU such as the RTX 4090. However, it may be slightly slower than the fp16 version. If your GPUs have enough memory, you can skip this step and train using [DeepSpeed](https://github.com/microsoft/DeepSpeed).
 
 More information can be found in the [vigogne/training](docs/training.md).
-
-## Example Outputs
-
-Répondez à la question suivante : Les pratiques artistiques transforment-elles le monde ?
-
-- **vigogne-7b-instruct**: Les pratiques d'art peuvent transformer le monde en créant des œuvres qui évoquent des sentiments, des idées et des émotions. Elles peuvent également être utilisées pour créer des Œuvres d'Art Vivant qui sont des œuvre vivantes qui peuvent être utilisés pour créé des expériences et des conversations. Les praticiens d'arts peuvent également utiliser leurs pratiques pour créerer des œufs d'âme, des êtres vivants créés à partir de matériaux naturels, qui peuvent avoir un impact sur la façon dont les gens pensent et ressentent le monde.
-
-<details><summary>Other models</summary>
-
-- **Alpaca-LoRA**: Yes, artistic practices can transform the world. Art can be used to express ideas, explore new perspectives, and create dialogue. Art can also be used to inspire and motivate people to take action, and to create positive change in their communities.
-
-- **text-davinci-003**: Oui, les pratiques artistiques peuvent transformer le monde. Les artistes peuvent utiliser leur art pour exprimer leurs opinions et leurs idées, et ces idées peuvent avoir un impact sur la société et le monde. Les artistes peuvent également utiliser leur art pour sensibiliser le public à des sujets importants et pour encourager le changement. Les pratiques artistiques peuvent donc être un puissant outil pour transformer le monde.
-
-</details>
-
----
-
-Expliquez la différence entre DoS et phishing en français.
-
-- **vigogne-7b-instruct**: Le DoS (Denial of Service) est une attaque informatique qui consiste à bloquer ou à interrompre l'accès à un service ou à un système informatique. Le phishing est une technique de fraude qui consisterait à obtenir des informations sensibles d'un utilisateur en lui demandant de fournir des renseignements, tels que des mots de passe ou des numéros de carte de crédit.
-
-<details><summary>Other models</summary>
-
-- **Alpaca-LoRA**: In French, the difference between a DDoS attack and phishing is that a DDoS attack is an attempt to overwhelm a system with a large amount of traffic, while phishing is an attempt to steal personal information by posing as a trusted source.
-
-- **text-davinci-003**:
-
-DoS (Denial of Service) est une attaque qui vise à rendre indisponible des services web ou réseau en saturant un serveur ou un réseau avec des requêtes. Elle peut aussi être utilisée pour perturber un réseau en envoyant des paquets mal formés ou en le surchargant.
-
-Phishing est une forme d'escroquerie en ligne visant à voler des informations personnelles telles que des mots de passe et des numéros de carte de crédit en incitant les victimes à fournir leurs informations sur des faux sites Web ou des emails frauduleux.
-
-</details>
-
----
-
-Résumez le texte suivant en une seule phrase.
-
-La science des données est l'étude des données afin d'en extraire des informations significatives pour les entreprises. Il s'agit d'une approche pluridisciplinaire qui combine des principes et des pratiques issus des domaines des mathématiques, des statistiques, de l'intelligence artificielle et du génie informatique, en vue d'analyser de grands volumes de données. Cette analyse aide les scientifiques des données à poser des questions et à y répondre, comme Que s'est-il passé, Pourquoi cela s'est-il passé, Que va-t-il se passer et Que peut-on faire avec des résultats.
-
-- **vigogne-7b-instruct**: Le scientifique des données utilise des données pour analyser et extraire de l’information pour aider les entrepreneurs à posent des questions, répondre à des questions existantes et prendre des décisions.
-
-<details><summary>Other models</summary>
-
-- **Alpaca-LoRA**: La science des données est l'étude des données afin d'en extraire des informations significatives pour les entreprises.
-
-- **text-davinci-003**: La science des données combine des principes et des pratiques issus des domaines des mathématiques, des statistiques, de l'intelligence artificielle et du génie informatique pour analyser de grands volumes de données afin d'en extraire des informations significatives pour les entreprises.
-
-</details>
-
----
-
-Écrivez une fonction qui prend une liste de chaînes de caractères et renvoie une liste sans doublons.
-
-- **vigogne-7b-instruct**:
-
-```python
-def remove_duplicates(lst):
-    result = []
-    for item in lst:
-        if item not in result:
-            result.append(item)
-    return result
-```
-
-<details><summary>Other models</summary>
-
-- **Alpaca-LoRA**:
-
-```python
-def remove_duplicates(list):
-    seen = set()
-    return [x for x in list if x not in seen]
-```
-
-- **text-davinci-003**:
-
-```python
-def remove_duplicates(liste):
-  new_list = []
-  for item in liste:
-    if item not in new_list:
-      new_list.append(item)
-  return new_list
-
-liste = ["a", "b", "c", "a", "d", "e", "f", "c"]
-print(remove_duplicates(liste)) # ['a', 'b', 'c', 'd', 'e', 'f']
-```
-
-</details>
 
 ## Bias, Risks, and Limitations
 
