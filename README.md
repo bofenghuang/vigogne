@@ -27,14 +27,14 @@
 
 *The vigogne (French name for vicuña) is a South American camelid native to the Andes Mountains. It is closely related to the llama, alpaca, and guanaco.*
 
-Vigogne is a collection of powerful French 🇫🇷 large language models (LLMs) that are open-source and designed for instruction-following and chat purposes.
+Vigogne is a collection of powerful 🇫🇷 French large language models (LLMs) that are open-source and designed for instruction-following and chat purposes.
 
 The main contributions of this project include:
 
 - Open-sourced 🦙 Vigogne models for French instruction-following and chat
 - Efficient training code for fine-tuning LLMs such as [LLaMA](https://github.com/facebookresearch/llama), [Llama-2](https://ai.meta.com/llama), [Falcon](https://falconllm.tii.ae), and [FLAN-T5](https://huggingface.co/google/flan-t5-xl)
 - Generated, translated, and collected French instruction-following and dialogue datasets, along with the used scripts
-- Inference code and gradio demo, as well as detailed instructions for experiencing the quantized Vigogne models on your PC
+- Inference code, Gradio demo, and support for deploying within various ecosystems such as 🤗 Transformers, llama.cpp, FastChat, and vLLM
 
 💡 *The screencast below shows the current 🦙 Vigogne-7B-Chat model running on Apple M1 Pro using 4GB of weights (no sped up).*
 
@@ -119,7 +119,7 @@ For efficient LLM fine-tuning, we utilize a technique called [low-rank adaptatio
 
 Additionally, for practitioners without access to GPUs with ample memory, it's advisable to consider quantizing certain computations to either 8-bit or 4-bit precision using [LLM.int8()](https://arxiv.org/abs/2208.07339) or [QLoRA](https://arxiv.org/abs/2305.14314). Be aware that this might lead to a minor reduction in speed compared to fp16 or bf16 versions.
 
-We highly recommend the utilization of tools such as [DeepSpeed](https://github.com/microsoft/DeepSpeed) or [FSDP](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api), particularly when engaged in distributed learning scenarios. When dealing with long sequences, [FlashAttention](https://arxiv.org/abs/2307.08691) becomes crucial to speed up training and minimize memory usage.
+We highly recommend the utilization of tools such as [DeepSpeed](https://github.com/microsoft/DeepSpeed) or [FSDP](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api), particularly when engaged in distributed learning scenarios. When dealing with long sequences, [FlashAttention](https://arxiv.org/abs/2307.08691) becomes crucial to speed up training and reduce memory usage.
 
 More information can be found in the [vigogne/training](docs/training.md).
 
