@@ -9,8 +9,12 @@ export CUDA_VISIBLE_DEVICES="0"
 
 # Launch vllm server with Vigogne instruct models
 # python -m fastchat.serve.cli \
-#     --model bofenghuang/vigogne-2-7b-instruct
+#     --model bofenghuang/vigogne-2-7b-instruct \
+#     --temperature 0.1 \
+#     --max-new-tokens 1024
 
 # Launch vllm server with Vigogne chat models
 python -m fastchat.serve.cli \
-    --model bofenghuang/vigogne-2-7b-chat
+    --model bofenghuang/vigogne-2-7b-chat \
+    --temperature 0.1 \
+    --max-new-tokens 1024
