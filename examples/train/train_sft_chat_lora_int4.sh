@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
 # Copyright 2023  Bofeng Huang
 
-export WANDB_PROJECT="llm-sft-instruct-fr"
+export WANDB_PROJECT="llm-sft-chat-fr"
 export OMP_NUM_THREADS="1"
 export TOKENIZERS_PARALLELISM="false"
 export BITSANDBYTES_NOWELCOME="1"
 export CUDA_VISIBLE_DEVICES="0,1,2,3"
 
-train_file=/path/to/train/instruct/file.jsonl
+train_file=/path/to/train/chat/file.jsonl
 
-mode=instruct
+mode=chat
 model_max_length=2048
 
 model_name_or_path=meta-llama/Llama-2-7b-hf
-output_dir=outputs/llama-2-7b-sft-instruct
+output_dir=outputs/llama-2-7b-sft-chat-lora-int4
 
-per_device_train_batch_size=8
-gradient_accumulation_steps=4
+per_device_train_batch_size=16
+gradient_accumulation_steps=8
 
 # Might need to adjust the batch size and other hyperparameters by yourself
 torchrun \
@@ -32,7 +32,7 @@ torchrun \
     --dataloader_num_workers "1" \
     --pack_into_block \
     --block_size "2048" \
-    --load_in_8bit \
+    --load_in_4bit \
     --lora_r "64" \
     --lora_alpha "16" \
     --lora_dropout "0.05" \

@@ -8,86 +8,41 @@ In addition, you can further reduce the memory usage during fine-tuning by using
 
 More examples can be found in [examples](https://github.com/bofenghuang/vigogne/blob/main/examples/train).
 
-The following command shows how to fine-tune the LLaMA-7B model on a single GPU using LLM.int8().
+The following command shows how to fine-tune the Llama 2 7B model on a single GPU using LoRA and LLM.int8().
 
 ```bash
 python vigogne/train/train_sft.py \
-    --model_name_or_path "name/or/path/to/hf/llama/7b/model" \
-    --train_file "data/instruct/alpaca_data_cleaned_fr_52k_validated_train.jsonl" \
-    --eval_file "data/instruct/alpaca_data_cleaned_fr_52k_validated_test.jsonl" \
-    --output_dir "outputs/llama-7b-ft-instruct-llmint8" \
-    --run_name "llama-7b-ft-instruct-llmint8" \
+    --model_name_or_path "meta-llama/Llama-2-7b-hf" \
+    --train_file "/path/to/train/instruct/file.jsonl" \
+    --output_dir "outputs/llama-2-7b-sft-instruct-lora-int8" \
     --overwrite_output_dir \
     --mode "instruct" \
-    --model_max_length "512" \
-    --preprocessing_num_workers "4" \
+    --preprocessing_num_workers "8" \
     --dataloader_num_workers "1" \
+    --pack_into_block \
+    --block_size "2048" \
     --load_in_8bit \
-    --lora_r "8" \
+    --lora_r "64" \
     --lora_alpha "16" \
     --lora_dropout "0.05" \
-    --target_modules "q_proj" "v_proj" "k_proj" "o_proj" "gate_proj" "down_proj" "up_proj" \
-    --per_device_train_batch_size "16" \
-    --per_device_eval_batch_size "8" \
-    --gradient_accumulation_steps "8" \
+    --target_modules "q_proj" "v_proj" "k_proj" "o_proj" "gate_proj" "up_proj" "down_proj" \
+    --per_device_train_batch_size "8" \
+    --per_device_eval_batch_size "4" \
     --num_train_epochs "3" \
-    --learning_rate "3e-4" \
-    --warmup_ratio "0.05" \
-    --weight_decay "0.01" \
-    --gradient_checkpointing \
-    --logging_steps "10" \
-    --logging_first_step true \
-    --save_strategy "steps" \
-    --save_steps "100" \
-    --save_total_limit "3" \
-    --evaluation_strategy "steps" \
-    --eval_steps "100" \
-    --load_best_model_at_end \
-    --report_to "tensorboard" "wandb" \
-    --do_train \
-    --do_eval
-```
-
-The following command shows how to fine-tune the LLaMA-13B model on 4 GPUs using DeepSpeed ZeRO stage 2.
-
-```bash
-torchrun \
-    --nproc_per_node 4 \
-    --master_port 29001 \
-    vigogne/train/train_sft.py \
-    --deepspeed vigogne/configs/ds_zero2_config.json \
-    --model_name_or_path "name/or/path/to/hf/llama/13b/model" \
-    --train_file "data/instruct/alpaca_data_cleaned_fr_52k_validated_train.jsonl" \
-    --eval_file "data/instruct/alpaca_data_cleaned_fr_52k_validated_test.jsonl" \
-    --output_dir "outputs/llama-13b-ft-instruct-ds" \
-    --run_name "llama-13b-ft-instruct-ds" \
-    --overwrite_output_dir \
-    --mode "instruct" \
-    --model_max_length "512" \
-    --preprocessing_num_workers "4" \
-    --dataloader_num_workers "1" \
-    --lora_r "8" \
-    --lora_alpha "16" \
-    --lora_dropout "0.05" \
-    --target_modules "q_proj" "v_proj" "k_proj" "o_proj" "gate_proj" "down_proj" "up_proj" \
-    --per_device_train_batch_size "16" \
-    --per_device_eval_batch_size "8" \
-    --gradient_accumulation_steps "2" \
-    --num_train_epochs "3" \
-    --learning_rate "3e-4" \
-    --warmup_ratio "0.05" \
-    --weight_decay "0.01" \
+    --learning_rate "1e-4" \
+    --warmup_ratio "0.03" \
+    --lr_scheduler_type "cosine" \
+    --weight_decay "0" \
+    --torch_compile \
+    --fp16 \
     --gradient_checkpointing \
     --ddp_find_unused_parameters false \
+    --log_level "info" \
     --logging_steps "10" \
     --logging_first_step true \
     --save_strategy "steps" \
     --save_steps "100" \
     --save_total_limit "3" \
-    --evaluation_strategy "steps" \
-    --eval_steps "100" \
-    --load_best_model_at_end \
     --report_to "tensorboard" "wandb" \
-    --do_train \
-    --do_eval
+    --do_train
 ```

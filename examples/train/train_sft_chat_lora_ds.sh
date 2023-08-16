@@ -13,7 +13,7 @@ mode=chat
 model_max_length=2048
 
 model_name_or_path=meta-llama/Llama-2-7b-hf
-output_dir=outputs/llama-2-7b-sft-chat
+output_dir=outputs/llama-2-7b-sft-chat-lora-ds
 
 per_device_train_batch_size=8
 gradient_accumulation_steps=4
@@ -21,7 +21,9 @@ gradient_accumulation_steps=4
 # Might need to adjust the batch size and other hyperparameters by yourself
 torchrun \
     --nproc_per_node 4 \
+    --master_port 29001 \
     vigogne/train/train_sft.py \
+    --deepspeed vigogne/configs/ds_zero2_no_offload.json \
     --model_name_or_path $model_name_or_path \
     --train_file $train_file \
     --output_dir $output_dir \
@@ -32,7 +34,6 @@ torchrun \
     --dataloader_num_workers "1" \
     --pack_into_block \
     --block_size "2048" \
-    --load_in_8bit \
     --lora_r "64" \
     --lora_alpha "16" \
     --lora_dropout "0.05" \
