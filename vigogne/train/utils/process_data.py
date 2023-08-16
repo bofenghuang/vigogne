@@ -81,7 +81,7 @@ class ConversationProcessor(ConversationTemplate):
         conversation = self._ensure_type(example)
 
         system_message = self.default_system_message if conversation.system is None else conversation.system
-        system_header_text = f"{self.system_prefix}: {system_message}{tokenizer.eos_token}"
+        system_header_text = f"{self.system_prefix}: {system_message}"
         # w/ bos_token, w/o eos_token
         input_ids = tokenizer(system_header_text)["input_ids"]
 
@@ -97,7 +97,10 @@ class ConversationProcessor(ConversationTemplate):
         non_ignore_indexes = []
         for utterance in conversation.messages:
             # w/o bos_token or eos_token
-            message_input_ids = tokenizer(utterance.content + tokenizer.eos_token, add_special_tokens=False)["input_ids"]
+            message_input_ids = tokenizer(
+                f"{utterance.content}{tokenizer.eos_token if utterance.role == Role.assistant else ''}",
+                add_special_tokens=False,
+            )["input_ids"]
 
             input_ids += (
                 assistant_prefix_input_ids + message_input_ids
