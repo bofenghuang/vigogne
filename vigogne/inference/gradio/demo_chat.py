@@ -8,7 +8,7 @@ Modified from: https://huggingface.co/spaces/mosaicml/mpt-7b-chat/raw/main/app.p
 Usage:
 export CUDA_VISIBLE_DEVICES=0
 
-python vigogne/demo/demo_chat.py --base_model_name_or_path bofenghuang/vigogne-7b-chat
+python vigogne/inference/gradio/demo_chat.py --base_model_name_or_path bofenghuang/vigogne-2-7b-chat
 """
 
 import json
@@ -91,7 +91,7 @@ def user(message, history):
 
 
 def main(
-    base_model_name_or_path: str = "bofenghuang/vigogne-7b-chat",
+    base_model_name_or_path: str = "bofenghuang/vigogne-2-7b-chat",
     lora_model_name_or_path: Optional[str] = None,
     load_8bit: bool = False,
     server_name: Optional[str] = "0.0.0.0",
@@ -99,7 +99,7 @@ def main(
     share: bool = True,
 ):
     tokenizer = AutoTokenizer.from_pretrained(base_model_name_or_path, padding_side="right", use_fast=False)
-    # tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token = tokenizer.eos_token
 
     if device == "cuda":
         model = AutoModelForCausalLM.from_pretrained(
@@ -107,7 +107,7 @@ def main(
             torch_dtype=torch.float16,
             device_map="auto",
             load_in_8bit=load_8bit,
-            # trust_remote_code=True,
+            trust_remote_code=True,
         )
     elif device == "mps":
         model = AutoModelForCausalLM.from_pretrained(
@@ -158,11 +158,11 @@ def main(
                 top_k=top_k,
                 repetition_penalty=repetition_penalty,
                 max_new_tokens=max_new_tokens,
+                eos_token_id=tokenizer.eos_token_id,
+                pad_token_id=tokenizer.pad_token_id,
             ),
             streamer=streamer,
             stopping_criteria=StoppingCriteriaList([stop_words_criteria]),
-            # pad_token_id=tokenizer.eos_token_id,
-            # eos_token_id=tokenizer.eos_token_id,
         )
 
         # stream_complete = Event()
@@ -211,7 +211,7 @@ def main(
         gr.Markdown(
             """<h1><center>🦙 Vigogne Chat</center></h1>
 
-            This demo is of [Vigogne-7B-Chat](https://huggingface.co/bofenghuang/vigogne-7b-chat). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned to conduct French 🇫🇷 dialogues between a user and an AI assistant.
+            This demo is of [Vigogne-Chat](https://huggingface.co/models?search=bofenghuang+vigogne+chat) models finetuned to conduct French 🇫🇷 dialogues between a user and an AI assistant.
 
             For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.
     """
@@ -236,9 +236,9 @@ def main(
                         with gr.Row():
                             max_new_tokens = gr.Slider(
                                 label="Max New Tokens",
-                                value=512,
+                                value=1024,
                                 minimum=0,
-                                maximum=1024,
+                                maximum=2048,
                                 step=1,
                                 interactive=True,
                                 info="The Max number of new tokens to generate.",

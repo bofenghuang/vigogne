@@ -6,7 +6,7 @@
 Usage:
 export CUDA_VISIBLE_DEVICES=0
 
-python vigogne/demo/demo_instruct.py --base_model_name_or_path bofenghuang/vigogne-7b-instruct
+python vigogne/inference/gradio/demo_instruct.py --base_model_name_or_path bofenghuang/vigogne-2-7b-instruct
 """
 
 import logging
@@ -47,7 +47,7 @@ examples = [
 
 
 def main(
-    base_model_name_or_path: str = "bofenghuang/vigogne-7b-instruct",
+    base_model_name_or_path: str = "bofenghuang/vigogne-2-7b-instruct",
     lora_model_name_or_path: Optional[str] = None,
     load_8bit: bool = False,
     server_name: Optional[str] = "0.0.0.0",
@@ -55,7 +55,7 @@ def main(
     share: bool = True,
 ):
     tokenizer = AutoTokenizer.from_pretrained(base_model_name_or_path, padding_side="right", use_fast=False)
-    # tokenizer.pad_token = tokenizer.eos_token
+    tokenizer.pad_token = tokenizer.eos_token
 
     if device == "cuda":
         model = AutoModelForCausalLM.from_pretrained(
@@ -63,7 +63,7 @@ def main(
             torch_dtype=torch.float16,
             device_map="auto",
             load_in_8bit=load_8bit,
-            # trust_remote_code=True,
+            trust_remote_code=True,
         )
     elif device == "mps":
         model = AutoModelForCausalLM.from_pretrained(
@@ -112,6 +112,8 @@ def main(
             repetition_penalty=repetition_penalty,
             # no_repeat_ngram_size=no_repeat_ngram_size,
             max_new_tokens=max_new_tokens,
+            eos_token_id=tokenizer.eos_token_id,
+            pad_token_id=tokenizer.pad_token_id,
             **kwargs,
         )
 
@@ -125,8 +127,6 @@ def main(
                 generation_config=generation_config,
                 # return_dict_in_generate=True,
                 # output_scores=True,
-                # pad_token_id=tokenizer.eos_token_id,
-                # eos_token_id=tokenizer.eos_token_id,
             )
             t = Thread(target=model.generate, kwargs=generation_kwargs)
             t.start()
@@ -145,8 +145,6 @@ def main(
                 generation_config=generation_config,
                 return_dict_in_generate=True,
                 # output_scores=True,
-                # pad_token_id=tokenizer.eos_token_id,
-                # eos_token_id=tokenizer.eos_token_id,
             )
             generated_tokens = generated_outputs.sequences[0, input_length:]
             generated_text = tokenizer.decode(generated_tokens, skip_special_tokens=True)
@@ -161,7 +159,7 @@ def main(
         gr.Markdown(
             """<h1><center>🦙 Vigogne Instruction-following</center></h1>
 
-            This demo is of [Vigogne instruct models](https://huggingface.co/bofenghuang/vigogne-7b-instruct). It's based on [LLaMA-7B](https://github.com/facebookresearch/llama) finetuned to follow the French 🇫🇷 instructions.
+            This demo is of [Vigogne-Instruct](https://huggingface.co/models?search=bofenghuang+vigogne+instruct) models finetuned to follow the French 🇫🇷 instructions.
 
             For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.
     """
@@ -180,9 +178,9 @@ def main(
                             with gr.Row():
                                 max_new_tokens = gr.Slider(
                                     label="Max New Tokens",
-                                    value=512,
+                                    value=1024,
                                     minimum=0,
-                                    maximum=1024,
+                                    maximum=2048,
                                     step=1,
                                     interactive=True,
                                     info="The Max number of new tokens to generate.",
