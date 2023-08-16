@@ -18,7 +18,7 @@ def main(output_file):
     def process_function(example):
         # return {
         #     "instruction": example["conversations"][0]["value"],
-        #     "input": "",
+        #     # "input": "",
         #     "output": example["conversations"][1]["value"],
         # }
         return Instruct(

@@ -12,8 +12,9 @@ wget https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/main/2023-04-1
 # Requirement: Python 3.10, oasst-data (See https://github.com/LAION-AI/Open-Assistant/tree/main/oasst-data)
 
 python scripts/data_processing/prep_oasst.py \
-    --input_file path/to/2023-04-12_oasst_ready.trees.jsonl.gz \
+    --input_file path/to/2023-04-12_oasst_ready.trees.jsonl \
     --output_file data/oasst_20230412_fr_chat.jsonl \
+    --top_k 1 \
     --lang fr
 """
 
@@ -28,9 +29,10 @@ from oasst_data import ExportMessageNode, read_dataset_message_trees, read_messa
 from oasst_data.schemas import ExportMessageTree
 from torch import Generator
 from torch.utils.data import Dataset, random_split
+from tqdm import tqdm
 
-from vigogne.data_utils import Conversation, Role, Utterance
 from vigogne.file_utils import jsonl_dump
+from vigogne.preprocess import CONVERSATION_SYSTEM_MESSAGE_EN, CONVERSATION_SYSTEM_MESSAGE_FR
 
 
 class ListDataset(Dataset):
@@ -79,7 +81,7 @@ def load_oasst_export(
 
     threads_per_tree = []
     for tree in tree_iter:
-        if tree.tree_state != "ready_for_export" or not tree.prompt.review_result:
+        if tree.tree_state != "ready_for_export" or not tree.prompt.review_result or tree.prompt.lang not in lang_codes:
             continue
 
         if mode in ("sft", "rm"):
@@ -123,6 +125,8 @@ def load_oasst_export(
             elif mode == "rm":
                 # for reward models we use thread-fragments ending on prompter messages as prefix and
                 # their (ranked) replies as possible continuations.
+                if thread[-1].replies is None:
+                    return False
                 return (
                     thread[-1].role == "prompter"
                     and len([r for r in thread[-1].replies if r.rank is not None]) > 1
@@ -191,13 +195,13 @@ def load_oasst_export(
 def convert_to_chat(example_input, task_id_prefix):
     example_idx, example = example_input
 
-    conversation = Conversation(id=f"{task_id_prefix}-{example_idx:08d}", messages=[])
+    new_example = dict(id=f"{task_id_prefix}-{example_idx:08d}", messages=[])
 
     for idx in range(0, len(example), 2):
-        conversation.messages.append(Utterance(role=Role.user, content=example[idx]))
-        conversation.messages.append(Utterance(role=Role.assistant, content=example[idx + 1]))
+        new_example["messages"].append(dict(role="User", content=example[idx]))
+        new_example["messages"].append(dict(role="Assistant", content=example[idx + 1]))
 
-    return conversation.fully_model_dump()
+    return new_example
 
 
 def main(
@@ -206,10 +210,16 @@ def main(
     train_data, _ = load_oasst_export(
         input_file_path=input_file, hf_dataset_name=hf_dataset_name, val_split=val_split, lang=lang, top_k=top_k, mode="sft"
     )
+
     convert_to_chat_p = partial(convert_to_chat, task_id_prefix=task_id_prefix)
-    reformatted_data = list(map(convert_to_chat_p, enumerate(train_data)))
-    jsonl_dump(reformatted_data, output_file, mode="w")
-    print(f"Saved {len(reformatted_data)} examples into {output_file}")
+    processed_data = list(map(convert_to_chat_p, enumerate(tqdm(train_data))))
+
+    # tmp
+    for example in tqdm(processed_data, desc="add system message"):
+        example["system"] = CONVERSATION_SYSTEM_MESSAGE_EN if lang == "en" else CONVERSATION_SYSTEM_MESSAGE_FR
+
+    jsonl_dump(processed_data, output_file, mode="w")
+    print(f"Saved {len(processed_data)} examples into {output_file}")
 
 
 if __name__ == "__main__":
