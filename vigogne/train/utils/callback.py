@@ -48,9 +48,10 @@ class LoadBestPeftModelCallback(TrainerCallback):
         control: TrainerControl,
         **kwargs,
     ):
+        if state.best_model_checkpoint is None:
+            logger.error("Failed to load the best peft model")
+            return control
         logger.info(f"Loading best peft model from {state.best_model_checkpoint} (score: {state.best_metric}).")
-        print(state.best_model_checkpoint)
-        print(PEFT_WEIGHTS_NAME)
         best_adapter_model_path = os.path.join(state.best_model_checkpoint, PEFT_WEIGHTS_NAME)
         adapters_weights = torch.load(best_adapter_model_path)
         set_peft_model_state_dict(kwargs["model"], adapters_weights)
