@@ -15,15 +15,15 @@ class SFTMode(str, Enum):
 
 class Instruct(BaseModel):
     instruction: str
+    id: Optional[str] = None
     system: Optional[str] = None
     input: Optional[str] = None
     output: Optional[str] = None
 
 
 class Role(str, Enum):
-    user = "USER"
-    assistant = "ASSISTANT"
-    system = "SYSTEM"
+    user = "User"
+    assistant = "Assistant"
 
 
 class Utterance(BaseModel):
