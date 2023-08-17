@@ -11,7 +11,9 @@ import transformers
 from vigogne.data_utils import Conversation, Instruct, Role, SFTMode, Utterance
 
 # instruct system message
-INSTRUCT_SYSTEM_MESSAGE_EN = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+INSTRUCT_SYSTEM_MESSAGE_EN = (
+    "Below is an instruction that describes a task. Write a response that appropriately completes the request."
+)
 INSTRUCT_SYSTEM_MESSAGE_FR = "Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière précise à la demande."
 DEFAULT_INSTRUCT_SYSTEM_MESSAGE = INSTRUCT_SYSTEM_MESSAGE_EN
 
@@ -28,12 +30,17 @@ Vigogne est respectueux, empathique, humble mais bien informé, et fournit toujo
 Vigogne est capable d'effectuer une large variété de tâches telles que l'édition de texte, la traduction, la question answering, la raisonnement logique, le codage et bien d'autres encore.
 Vigogne ne peut pas recevoir ou générer de contenu audio ou visuel et ne peut pas accéder à Internet.
 Vigogne évite strictement de discuter de sujets sensibles, offensants, illégaux, éthiques ou politiques et met en garde lorsqu'il n'est pas sûr de la réponse."""
-CONVERSATION_SYSTEM_MESSAGE_EN = "You are an AI assistant that follows instructions extremely well. Help as much as you can."
-CONVERSATION_SYSTEM_MESSAGE_FR = "Vous êtes un assistant IA qui suit extrêmement bien les instructions. Aidez autant que vous le pouvez."
+CONVERSATION_SYSTEM_MESSAGE_EN = (
+    "You are an AI assistant that follows instructions extremely well. Help as much as you can."
+)
+CONVERSATION_SYSTEM_MESSAGE_FR = (
+    "Vous êtes un assistant IA qui suit extrêmement bien les instructions. Aidez autant que vous le pouvez."
+)
 DEFAULT_CHAT_SYSTEM_MESSAGE = CONVERSATION_SYSTEM_MESSAGE_FR
 CONVERSATION_SYSTEM_MESSAGE_GEN_EN = "You are an AI assistant named Vigogne, created by Zaion Lab (https://zaion.ai). You follow instructions extremely well. Help as much as you can."
 CONVERSATION_SYSTEM_MESSAGE_GEN_FR = "Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez."
 DEFAULT_CHAT_SYSTEM_MESSAGE_GEN = CONVERSATION_SYSTEM_MESSAGE_GEN_FR
+
 
 def merge_instruction_and_input(instruction_str: str, input_str: Optional[str], symbols_to_strip: str = "!,-.:;?~ "):
     if input_str:
@@ -95,7 +102,9 @@ class ConversationTemplate:
     def _ensure_type(self, conversation: Union[Conversation, Dict]) -> Conversation:
         return Conversation(**conversation) if not isinstance(conversation, Conversation) else conversation
 
-    def get_training_prompt(self, conversation: Union[Conversation, Dict], tokenizer: transformers.PreTrainedTokenizer) -> str:
+    def get_training_prompt(
+        self, conversation: Union[Conversation, Dict], tokenizer: transformers.PreTrainedTokenizer
+    ) -> str:
         conversation = self._ensure_type(conversation)
 
         system_message = self.default_train_system_message if conversation.system is None else conversation.system
@@ -110,7 +119,10 @@ class ConversationTemplate:
         return prompt_message
 
     def get_inference_prompt(
-        self, conversation: Union[Conversation, Dict], tokenizer: transformers.PreTrainedTokenizer, max_length: int = 2048
+        self,
+        conversation: Union[Conversation, Dict],
+        tokenizer: transformers.PreTrainedTokenizer,
+        max_length: int = 2048,
     ) -> str:
         conversation = self._ensure_type(conversation)
 
@@ -180,9 +192,12 @@ def generate_instruct_prompt(instruction: str, system: Optional[str] = None):
 
 # legacy
 def generate_inference_chat_prompt(
-    history: List[List[str]], tokenizer: transformers.PreTrainedTokenizer, max_length: int = 2048
+    history: List[List[str]],
+    tokenizer: transformers.PreTrainedTokenizer,
+    system_message: Optional[str] = None,
+    max_length: int = 2048,
 ):
-    conversation = Conversation(messages=[])
+    conversation = Conversation(system=system_message, messages=[])
     for x in history:
         conversation.messages.append(Utterance(role=Role.user, content=x[0]))
         conversation.messages.append(Utterance(role=Role.assistant, content=x[1]))

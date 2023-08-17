@@ -37,7 +37,7 @@ from transformers import (
 
 from vigogne.data_utils import Role
 from vigogne.inference.inference_utils import StopWordsCriteria
-from vigogne.preprocess import generate_inference_chat_prompt
+from vigogne.preprocess import DEFAULT_CHAT_SYSTEM_MESSAGE, generate_inference_chat_prompt
 
 # from uuid import uuid4
 
@@ -117,9 +117,7 @@ def main(
         )
     else:
         model = AutoModelForCausalLM.from_pretrained(
-            base_model_name_or_path,
-            device_map={"": device},
-            low_cpu_mem_usage=True
+            base_model_name_or_path, device_map={"": device}, low_cpu_mem_usage=True
         )
 
     if lora_model_name_or_path is not None:
@@ -136,13 +134,20 @@ def main(
     # NB
     stop_words = [f"<|{Role.assistant.value}|>", f"<|{Role.user.value}|>"]
     stop_words_criteria = StopWordsCriteria(stop_words=stop_words, tokenizer=tokenizer)
-    pattern_trailing_stop_words = re.compile(rf'(?:{"|".join([re.escape(stop_word) for stop_word in stop_words])})\W*$')
+    pattern_trailing_stop_words = re.compile(
+        rf'(?:{"|".join([re.escape(stop_word) for stop_word in stop_words])})\W*$'
+    )
 
-    def bot(history, max_new_tokens, temperature, top_p, top_k, repetition_penalty, conversation_id=None):
+    def bot(
+        history, max_new_tokens, temperature, top_p, top_k, repetition_penalty, system_message, conversation_id=None
+    ):
         # logger.info(f"History: {json.dumps(history, indent=4, ensure_ascii=False)}")
 
+        # NB: tmp fix
+        system_message = None if not system_message else system_message
+
         # Construct the input message string for the model by concatenating the current system message and conversation history
-        messages = generate_inference_chat_prompt(history, tokenizer)
+        messages = generate_inference_chat_prompt(history, tokenizer, system_message=system_message)
         logger.info(messages)
         assert messages is not None, "User input is too long!"
 
@@ -283,12 +288,22 @@ def main(
                         with gr.Row():
                             repetition_penalty = gr.Slider(
                                 label="Repetition Penalty",
-                                value=1.0,
+                                value=1.1,
                                 minimum=1.0,
                                 maximum=2.0,
                                 step=0.1,
                                 interactive=True,
                                 info="Penalize repetition — 1.0 to disable.",
+                            )
+                    with gr.Column():
+                        with gr.Row():
+                            system_message = gr.Textbox(
+                                value=None,
+                                label="System Message",
+                                placeholder=DEFAULT_CHAT_SYSTEM_MESSAGE,
+                                lines=5,
+                                interactive=True,
+                                info="The default system message will be utilized in case no custom message has been set.",
                             )
         with gr.Row():
             gr.Markdown(
@@ -315,6 +330,7 @@ def main(
                 top_p,
                 top_k,
                 repetition_penalty,
+                system_message,
                 # conversation_id,
             ],
             outputs=chatbot,
@@ -334,6 +350,7 @@ def main(
                 top_p,
                 top_k,
                 repetition_penalty,
+                system_message,
                 # conversation_id,
             ],
             outputs=chatbot,
