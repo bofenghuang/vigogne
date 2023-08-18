@@ -160,7 +160,7 @@ Here's an example to illustrate:
 }
 ```
 
-To achieve this, we first translated the instructions in the [Flan-v2](https://github.com/google-research/FLAN/tree/main/flan/v2) collection into French using the script available in [Dataset Translation](#dataset-translation). You can access the sub-collections, namely [COT](https://huggingface.co/datasets/conceptofmind/cot_submix_original), [NIV2](https://huggingface.co/datasets/conceptofmind/niv2_submix_original), [T0](https://huggingface.co/datasets/conceptofmind/t0_submix_original), and [FLAN 2021](https://huggingface.co/datasets/conceptofmind/flan2021_submix_original), provided by Enrico Shippole on the Hugging Face Hub.
+To achieve this, we first translated the instructions in the [Flan-v2](https://github.com/google-research/FLAN/tree/main/flan/v2) collection into French using the script available in [Dataset Translation](#dataset-translation). You can access the sub-collections, namely [COT](https://huggingface.co/datasets/conceptofmind/cot_submix_original), [NIV2](https://huggingface.co/datasets/conceptofmind/niv2_submix_original), [T0](https://huggingface.co/datasets/conceptofmind/t0_submix_original), and [FLAN 2021](https://huggingface.co/datasets/conceptofmind/flan2021_submix_original), provided by @conceptofmind on the Hugging Face Hub.
 
 Next, you can generate responses using the following script. Please note that the generation might take some time due to the rate limit, endpoint load, and the long text of query and response pairs.
 

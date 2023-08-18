@@ -34,7 +34,7 @@ The main contributions of this project include:
 - Open-sourced 🦙 Vigogne models for French instruction-following and chat
 - Efficient training code for fine-tuning LLMs such as [LLaMA](https://github.com/facebookresearch/llama), [Llama-2](https://ai.meta.com/llama), [Falcon](https://falconllm.tii.ae), and [FLAN-T5](https://huggingface.co/google/flan-t5-xl)
 - Generated, translated, and collected French instruction-following and dialogue datasets, along with the used scripts
-- Inference code, Gradio demo, and support for deploying within various ecosystems such as 🤗 Transformers, llama.cpp, FastChat, and vLLM
+- Inference code, Gradio demo, and support for deploying within various ecosystems such as 🤗 [Transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp), [FastChat](https://github.com/lm-sys/FastChat), and [vLLM](https://vllm.ai)
 
 💡 *The screencast below shows the current 🦙 Vigogne-7B-Chat model running on Apple M1 Pro using 4GB of weights (no sped up).*
 
@@ -99,19 +99,19 @@ pip install .
 
 The fine-tuned 🦙 Vigogne models come in two types: **instruction-following models** and **chat models**. The instruction-following models are optimized to generate concise and helpful responses to user instructions, similar to `text-davinci-003`. Meanwhile, the chat models are designed for multi-turn dialogues, but they also perform well in instruction-following tasks, similar to `gpt-3.5-turbo`.
 
-More information can be found in the [vigogne/model](docs/model.md).
+More information can be found in [vigogne/model](docs/model.md).
 
 ## Inference and Deployment
 
 This repository offers multiple options for inference and deployment, including Google Colab notebooks, Gradio demos, [FastChat](https://github.com/lm-sys/FastChat), and [vLLM](https://vllm.ai). It also offers guidance on conducting experiments using [llama.cpp](https://github.com/ggerganov/llama.cpp) on your personal computer.
 
-More information can be found in the [vigogne/inference](docs/inference.md).
+More information can be found in [vigogne/inference](docs/inference.md).
 
 ## Data
 
 The Vigogne models were trained on a variety of datasets, including open-source datasets, ChatGPT-distillation datasets (self-instruct, self-chat, and orca-style data), and translated datasets.
 
-More information can be found in the [vigogne/data](docs/data.md).
+More information can be found in [vigogne/data](docs/data.md).
 
 ## Training
 
@@ -121,7 +121,7 @@ Additionally, for practitioners without access to GPUs with ample memory, it's a
 
 We highly recommend the utilization of tools such as [DeepSpeed](https://github.com/microsoft/DeepSpeed) or [FSDP](https://pytorch.org/blog/introducing-pytorch-fully-sharded-data-parallel-api), particularly when engaged in distributed learning scenarios. When dealing with long sequences, [FlashAttention](https://arxiv.org/abs/2307.08691) becomes crucial to speed up training and reduce memory usage.
 
-More information can be found in the [vigogne/training](docs/training.md).
+More information can be found in [vigogne/training](docs/training.md).
 
 ## Bias, Risks, and Limitations
 
