@@ -54,6 +54,7 @@ The main contributions of this project include:
 
 ## Updates
 
+- [2023/08/17]: Introduced Vigogne-Chat-V2.0 models (learn more on our [blog](https://github.com/bofenghuang/vigogne/blob/main/blogs/2023-08-17-vigogne-chat-v2_0.md)).
 - [2023/08/16]: Added support for serving using [FastChat](https://github.com/lm-sys/FastChat) and [vLLM](https://vllm.ai).
 - [2023/08/02]: Implemented generation script for [Orca-style](https://arxiv.org/abs/2306.02707) data.
 - [2023/07/31]: Integrated [FlashAttention](https://arxiv.org/abs/2307.08691) support and implemented training example packing.
