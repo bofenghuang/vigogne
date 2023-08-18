@@ -34,7 +34,8 @@ The main contributions of this project include:
 - Open-sourced 🦙 Vigogne models for French instruction-following and chat
 - Efficient training code for fine-tuning LLMs such as [LLaMA](https://github.com/facebookresearch/llama), [Llama-2](https://ai.meta.com/llama), [Falcon](https://falconllm.tii.ae), and [FLAN-T5](https://huggingface.co/google/flan-t5-xl)
 - Generated, translated, and collected French instruction-following and dialogue datasets, along with the used scripts
-- Inference code, Gradio demo, and support for deploying within various ecosystems such as 🤗 [Transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp), [FastChat](https://github.com/lm-sys/FastChat), and [vLLM](https://vllm.ai)
+- Inference code, Gradio demo, and support for deploying within various libraries such as 🤗 [Transformers](https://github.com/huggingface/transformers), [llama.cpp](https://github.com/ggerganov/llama.cpp), [FastChat](https://github.com/lm-sys/FastChat), and [vLLM](https://vllm.ai)
+- Support diverse application ecosystems, including [LangChain](https://github.com/langchain-ai/langchain).
 
 💡 *The screencast below shows the current 🦙 Vigogne-7B-Chat model running on Apple M1 Pro using 4GB of weights (no sped up).*
 
@@ -46,6 +47,7 @@ The main contributions of this project include:
 - [Installation](#installation)
 - [🦙 Vigogne Models](#-vigogne-models)
 - [Inference and Deployment](#inference-and-deployment)
+- [Application](#application)
 - [Data](#data)
 - [Training](#training)
 - [Bias, Risks, and Limitations](#bias-risks-and-limitations)
@@ -54,6 +56,7 @@ The main contributions of this project include:
 
 ## Updates
 
+- [2023/08/18]: Included [LangChain](https://github.com/langchain-ai/langchain) integration.
 - [2023/08/17]: Introduced Vigogne-Chat-V2.0 models ([blog](https://github.com/bofenghuang/vigogne/blob/main/blogs/2023-08-17-vigogne-chat-v2_0.md)).
 - [2023/08/16]: Added support for serving using [FastChat](https://github.com/lm-sys/FastChat) and [vLLM](https://vllm.ai).
 - [2023/08/02]: Implemented generation script for [Orca-style](https://arxiv.org/abs/2306.02707) data.
@@ -107,6 +110,12 @@ More information can be found in [vigogne/model](docs/model.md).
 This repository offers multiple options for inference and deployment, including Google Colab notebooks, Gradio demos, [FastChat](https://github.com/lm-sys/FastChat), and [vLLM](https://vllm.ai). It also offers guidance on conducting experiments using [llama.cpp](https://github.com/ggerganov/llama.cpp) on your personal computer.
 
 More information can be found in [vigogne/inference](docs/inference.md).
+
+## Application
+
+This repository provides integration examples for incorporating Vigogne models into diverse application ecosystems, including [LangChain](https://github.com/langchain-ai/langchain).
+
+More information can be found in [vigogne/application](docs/application.md).
 
 ## Data
 
