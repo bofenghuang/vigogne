@@ -1,5 +1,5 @@
 <p align="center" width="100%">
-<img src="./assets/logo_v2.png" alt="Vigogne" style="width: 30%; min-width: 300px; display: block; margin: auto;">
+<img src="./assets/logo_v2.png" alt="Vigogne" style="width: 40%; min-width: 300px; display: block; margin: auto;">
 </p>
 
 # Vigogne 🦙: French Instruction-following and Chat Models
