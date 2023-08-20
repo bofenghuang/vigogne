@@ -206,6 +206,6 @@ Here's an example of how we utilized the script to reformat the [WMT14](https://
 
 ```bash
 python scripts/data_processing/prep_translation.py \
-    --instruction_file_path scripts/data_processing/prompt_translation_en.txt \
+    --instruction_file_path scripts/data_processing/prompt_translation_en_fr.txt \
     --output_file path/to/translation_task_wmt14_en_fr_cleaned.jsonl
 ```

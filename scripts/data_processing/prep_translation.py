@@ -2,16 +2,27 @@
 # coding=utf-8
 # Copyright 2023 Bofeng Huang
 
+"""
+Usage:
+python scripts/data_processing/prep_translation.py \
+    --instruction_file_path scripts/data_processing/prompt_translation_en_fr.txt \
+    --output_file path/to/translation_task_wmt14_en_fr_cleaned.jsonl \
+    --embedding_model_name_or_path paraphrase-multilingual-mpnet-base-v2 \
+    --embedding_batch_size 256
+"""
+
 import logging
 import os
 import random
 import urllib.request
+from typing import Optional
 
 import fasttext
 import fire
 import pandas as pd
 import regex as re
 from datasets import Dataset, load_dataset
+from scipy.spatial import distance
 
 from vigogne.data_utils import Conversation, Role, Utterance
 from vigogne.preprocess import CONVERSATION_SYSTEM_MESSAGE_EN, CONVERSATION_SYSTEM_MESSAGE_FR
@@ -62,16 +73,19 @@ def deduplicate_dataset(ds, field_name, num_proc=4):
 def filter_function(
     src_text,
     tgt_text,
+    src_embedding=None,
+    tgt_embedding=None,
     scripts_ok=["Latin", "Common"],
     scripts_nok=[],
-    n_tok_min=15,
-    n_tok_max=50,
+    min_tok=15,
+    max_tok=50,
     avg_tok_min=3,
     avg_tok_max=20,
     tok_max=20,
     src_tgt_ratio=2,
     allowed_src_lang_ids=["en"],
     allowed_tgt_lang_ids=["fr"],
+    min_similariry=0.8,
 ):
     n_src_words = len(src_text.split())
     n_tgt_words = len(tgt_text.split())
@@ -96,10 +110,11 @@ def filter_function(
     if re.search(r"(\ .*|.*\ )\1{2}", src_text) or re.search(r"(\ .*|.*\ )\1{2}", tgt_text):
         logger.debug("too many same word in src or tgt")
         return False
-    if n_src_words < n_tok_min or n_tgt_words < n_tok_min:
-        logger.debug(f"num of words < {n_tok_min}")
-    if n_src_words > n_tok_max or n_tgt_words > n_tok_max:
-        logger.debug(f"num of words > {n_tok_max}")
+    if n_src_words < min_tok or n_tgt_words < min_tok:
+        logger.debug(f"num of words < {min_tok}")
+        return False
+    if n_src_words > max_tok or n_tgt_words > max_tok:
+        logger.debug(f"num of words > {max_tok}")
         return False
     if len(src_text) / n_src_words < avg_tok_min or len(tgt_text) / n_tgt_words < avg_tok_min:
         logger.debug(f"avg token < {avg_tok_min}")
@@ -122,6 +137,13 @@ def filter_function(
     if n_src_words / n_tgt_words > src_tgt_ratio or n_src_words / n_tgt_words < 1 / src_tgt_ratio:
         logger.debug("src / tgt ratio ", n_src_words / n_tgt_words)
         return False
+    if (
+        src_embedding is not None
+        and tgt_embedding is not None
+        and 1 - distance.cosine(src_embedding, tgt_embedding) < min_similariry
+    ):
+        logger.debug(f"semantic similarity < {min_similariry}")
+        return False
 
     return True
 
@@ -133,7 +155,21 @@ def read_instruct(file_path, src="en", tgt="fr"):
     return ins_list
 
 
-def main(instruction_file_path, output_file, preprocessing_num_workers: int = 4):
+def main(
+    instruction_file_path: str,
+    output_file: str,
+    preprocessing_num_workers: int = 4,
+    embedding_model_name_or_path: Optional[str] = None,
+    embedding_batch_size: int = 64,
+):
+    if embedding_model_name_or_path is not None:
+        try:
+            from sentence_transformers import SentenceTransformer
+        except Exception:
+            raise ModuleNotFoundError(
+                "Please install sentence-transformers first, e.g., with `pip install -U sentence-transformers`"
+            )
+
     # Load from parallel files
     # source_lang_dataset = load_dataset("text", data_files=source_lang_file)["train"]
     # target_lang_dataset = load_dataset("text", data_files=target_lang_file)["train"]
@@ -156,8 +192,8 @@ def main(instruction_file_path, output_file, preprocessing_num_workers: int = 4)
     # raw_dataset = raw_dataset.select(range(10))
 
     # tmp
-    raw_dataset = raw_dataset.shuffle(seed=10).select(range(10_000_000))
-    # raw_dataset = raw_dataset.shuffle(seed=10).select(range(10_000_000, 20_000_000))
+    # raw_dataset = raw_dataset.shuffle(seed=10).select(range(1_000_000))
+    # raw_dataset = raw_dataset.shuffle(seed=10).select(range(1_000_000, 2_000_000))
     print(f"Sampled {raw_dataset.num_rows:,d} examples")
 
     # reformat
@@ -165,7 +201,7 @@ def main(instruction_file_path, output_file, preprocessing_num_workers: int = 4)
         lambda x: {"en_text": x["translation"]["en"], "fr_text": x["translation"]["fr"]},
         remove_columns=raw_dataset.column_names,
         num_proc=preprocessing_num_workers,
-        desc="preprocess data",
+        desc="reformat data",
     )
 
     # dedup by en_text
@@ -173,29 +209,58 @@ def main(instruction_file_path, output_file, preprocessing_num_workers: int = 4)
     print(f"Deduped to {processed_dataset.num_rows:,d}")
 
     # clean mt data
+    if embedding_model_name_or_path is not None:
+        # embedding model
+        model = SentenceTransformer(embedding_model_name_or_path)
+
+        processed_dataset = processed_dataset.map(
+            lambda example: {
+                "en_embedding": model.encode(
+                    example["en_text"], batch_size=embedding_batch_size, show_progress_bar=False
+                ),
+                "fr_embedding": model.encode(
+                    example["fr_text"], batch_size=embedding_batch_size, show_progress_bar=False
+                ),
+            },
+            batched=True,
+            batch_size=embedding_batch_size,
+            desc="compute embedding",
+        )
+
+    input_columns = ["en_text", "fr_text"]
+    if embedding_model_name_or_path is not None:
+        input_columns += ["en_embedding", "fr_embedding"]
     processed_dataset = processed_dataset.filter(
         filter_function,
-        input_columns=["en_text", "fr_text"],
+        input_columns=input_columns,
         # fn_kwargs=,
         num_proc=preprocessing_num_workers,
         desc="filter data",
     )
+
+    if embedding_model_name_or_path is not None:
+        processed_dataset = processed_dataset.remove_columns(["en_embedding", "fr_embedding"])
+
     print(f"Cleaned to {processed_dataset.num_rows:,d}")
 
     # format to chat
+    # todo
     instructions = read_instruct(instruction_file_path)
 
     def process_function(example):
+        # en -> fr
         instruction = random.choice(instructions) + "\n\n" + example["en_text"]
         conversation = Conversation(
             # id=example["id"],
-            system=CONVERSATION_SYSTEM_MESSAGE_EN,
+            # system=CONVERSATION_SYSTEM_MESSAGE_EN,
+            system=CONVERSATION_SYSTEM_MESSAGE_FR,
             messages=[
                 Utterance(role=Role.user, content=instruction),
                 Utterance(role=Role.assistant, content=example["fr_text"]),
             ],
         )
 
+        # fr -> en
         # instruction = random.choice(instructions) + "\n\n" + example["fr_text"]
         # conversation = Conversation(
         #     # id=example["id"],
