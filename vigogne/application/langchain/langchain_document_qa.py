@@ -24,7 +24,23 @@ logging.basicConfig(
 logger = logging.getLogger("__name__")
 
 # system_message = "Vous êtes un assistant IA qui répond à la question posée à la fin en utilisant le contexte suivant. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse."
-stuff_prompt_template = """<|system|>: Vous êtes un assistant IA qui répond à la question posée à la fin en utilisant le contexte suivant. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse.\n<|user|>: {context}\nQuestion: {question}\n<|assistant|>:"""
+stuff_prompt_template = """<|system|>: Vous êtes un assistant IA qui répond à la question posée à la fin en utilisant le contexte suivant. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse.
+<|user|>: {context}
+Question: {question}
+<|assistant|>:"""
+refine_initial_prompt_template = """<|system|>: Vous êtes un assistant IA qui répond à la question posée à la fin en utilisant le contexte suivant. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse.
+<|user|>: {context_str}
+Question: {question}
+<|assistant|>:"""
+refine_prompt_template = """<|system|>: Vous êtes un assistant IA qui répond à la question posée à la fin en utilisant le contexte suivant. Si vous ne connaissez pas la réponse, dites simplement que vous ne savez pas, n'essayez pas d'inventer une réponse.
+<|user|>: Question: {question}
+Réponse existante: {existing_answer}
+Vous avez la possibilité d'affiner la réponse existante (seulement si nécessaire) avec plus de contexte ci-dessous.
+------------
+{context_str}
+------------
+Veuillez affiner la réponse existante avec le contexte fournie. Si le contexte n'est pas utile, renvoyez la réponse existante.
+<|assistant|>:"""
 # stuff_prompt_template = partial(prompt_template.format, system_message=system_message)
 
 
@@ -33,26 +49,31 @@ def main(
     web_url: Optional[str] = None,
     chunk_size: int = 500,
     chunk_overlap: int = 0,
+    chain_type: str = "stuff",
     embedding_model_name_or_path: str = "dangvantuan/sentence-camembert-base",
     llm_model_name_or_path: str = "bofenghuang/vigogne-2-7b-chat",
     llm_revision: str = "main",
     initial_question: Optional[str] = None,
 ):
     """
-    Simple example for QA over Documents.
-    Check out for more details on https://python.langchain.com/docs/use_cases/question_answering
+    Simple example for QA over Documents. Check out for more details on https://python.langchain.com/docs/use_cases/question_answering
 
-    Arguments
-    ----------
-    input_file : str
-        Path to the input file.
-    embedding_model_name_or_path : str
-        Name or path to sentence-transformers embedding model.
-        - Multilingual: paraphrase-multilingual-mpnet-base-v2, paraphrase-multilingual-MiniLM-L12-v2
-        - French: dangvantuan/sentence-camembert-base, dangvantuan/sentence-camembert-large
-    llm_model_name_or_path : str
-        Name or path to Hugging Face LLM.
+    Args:
+        input_file (str):
+            Path to the input file.
+        chain_type (str):
+            Chain type for passing documents to LLM.
+            More details on https://python.langchain.com/docs/modules/chains/document
+        embedding_model_name_or_path (str):
+            Name or path to sentence-transformers embedding model.
+            - Multilingual: paraphrase-multilingual-mpnet-base-v2, paraphrase-multilingual-MiniLM-L12-v2
+            - French: dangvantuan/sentence-camembert-base, dangvantuan/sentence-camembert-large
+        llm_model_name_or_path (str):
+            Name or path to Hugging Face LLM.
     """
+
+    if chain_type not in {"stuff", "refine"}:
+        raise ValueError(f"Invalid value for chain_type: {chain_type}")
 
     # Step 1: load
     logger.info("Loading text...")
@@ -120,16 +141,34 @@ def main(
     # todo: load llm using llama.cpp
 
     # Step 4&5: retrieve and generate
-    prompt = PromptTemplate(template=stuff_prompt_template, input_variables=["context", "question"])
-    chain_type_kwargs = {"prompt": prompt}
-    # todo: add other method
-    qa_chain = RetrievalQA.from_chain_type(
-        llm=llm,
-        retriever=vectorstore.as_retriever(),
-        chain_type="stuff",
-        chain_type_kwargs=chain_type_kwargs,
-        return_source_documents=True,
-    )
+    if chain_type == "stuff":
+        prompt = PromptTemplate(template=stuff_prompt_template, input_variables=["context", "question"])
+        chain_type_kwargs = {"prompt": prompt}
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            retriever=vectorstore.as_retriever(),
+            chain_type="stuff",
+            chain_type_kwargs=chain_type_kwargs,
+            return_source_documents=True,
+        )
+    elif chain_type == "refine":
+        question_prompt = PromptTemplate(
+            template=refine_initial_prompt_template,
+            input_variables=["context_str", "question"],
+        )
+        refine_prompt = PromptTemplate(
+            template=refine_prompt_template,
+            input_variables=["question", "existing_answer", "context_str"],
+        )
+        chain_type_kwargs = {"question_prompt": question_prompt, "refine_prompt": refine_prompt}
+        qa_chain = RetrievalQA.from_chain_type(
+            llm=llm,
+            retriever=vectorstore.as_retriever(),
+            chain_type="refine",
+            chain_type_kwargs=chain_type_kwargs,
+            return_source_documents=True,
+            # return_intermediate_steps=True,
+        )
 
     if initial_question:
         result = qa_chain({"query": initial_question})
