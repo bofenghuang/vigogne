@@ -43,15 +43,16 @@ dependencies = [
     "peft@git+https://github.com/huggingface/peft.git",
     "gradio",
     "openai",
+    "pydantic",
     "rouge-score",
     "sentencepiece",
     "scipy",
     "tenacity",
+    "tensorboardX",
     "tiktoken",
     "torch",
     "transformers@git+https://github.com/huggingface/transformers.git",
     "wandb",
-    "tensorboardX",
 ]
 
 [project.optional-dependencies]
