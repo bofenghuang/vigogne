@@ -8,9 +8,9 @@ Generate Baize's style self-chat examples.
 Usage:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python scripts/data_generation/generate_conversations.py \
-    --input_json_file data/chat/subject_quora_fr_nllb3b3.jsonl \
-    --output_json_file data/chat/self_chat_data_quora_fr.jsonl \
+python scripts/data_generation/generate_self_chat.py \
+    --input_file data/chat/subject_quora_fr_nllb3b3.jsonl \
+    --output_file data/chat/self_chat_data_quora_fr.jsonl \
     --subject_field translated_subject \
     --output_subject_field subject \
     --id_prefix self-chat-quora- \
@@ -160,8 +160,8 @@ def process_item(
 
 
 def process_data(
-    input_json_file: str,
-    output_json_file: str,
+    input_file: str,
+    output_file: str,
     subject_field: str = "subject",
     output_subject_field: str = "subject",
     id_prefix: str = "",
@@ -169,8 +169,8 @@ def process_data(
     model: str = "gpt-3.5-turbo",
     max_parallel_requests: int = 4,
 ):
-    data = jsonl_load(input_json_file, "r")
-    print(f"Loaded {len(data)} subjects from {input_json_file}")
+    data = jsonl_load(input_file, "r")
+    print(f"Loaded {len(data)} subjects from {input_file}")
 
     seen = set()
     data = [example for example in data if not (example[subject_field] in seen or seen.add(example[subject_field]))]
@@ -199,10 +199,10 @@ def process_data(
     # data = data[end:]
 
     existing_data = []
-    if os.path.exists(output_json_file):
-        existing_data = jsonl_load(output_json_file, "r")
+    if os.path.exists(output_file):
+        existing_data = jsonl_load(output_file, "r")
         existing_data = [existing_example[output_subject_field] for existing_example in existing_data]
-        print(f"Found {len(existing_data)} existing conversations in {output_json_file}")
+        print(f"Found {len(existing_data)} existing conversations in {output_file}")
 
     start_time = time.perf_counter()
 
@@ -213,7 +213,7 @@ def process_data(
                 process_item,
                 item,
                 idx,
-                output_json_file,
+                output_file,
                 existing_data,
                 subject_field,
                 output_subject_field,
@@ -229,11 +229,11 @@ def process_data(
     # translated_data = [x for x in translated_data if x is not None]
 
     # Save the translated data to a new JSON file named 'translated_data.json'
-    # with open(output_json_file, "w") as f:
+    # with open(output_file, "w") as f:
     #     json.dump(translated_data, f, ensure_ascii=False, indent=4)
 
     print(
-        f"Generation completed in {time.strftime('%Hh%Mm%Ss', time.gmtime(time.perf_counter() - start_time))}. The generated data is saved in {output_json_file}"
+        f"Generation completed in {time.strftime('%Hh%Mm%Ss', time.gmtime(time.perf_counter() - start_time))}. The generated data is saved in {output_file}"
     )
 
 

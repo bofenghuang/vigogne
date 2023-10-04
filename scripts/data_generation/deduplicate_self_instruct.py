@@ -7,7 +7,7 @@ Modified from: https://github.com/tatsu-lab/stanford_alpaca/blob/main/generate_i
 Deduplicate self-instruct data by rouge score.
 
 Usage:
-python scripts/data_generation/deduplicate_instructions.py \
+python scripts/data_generation/deduplicate_self_instruct.py \
     --input_file ./data/machine_generated_data.jsonl \
     --output_file ./data/machine_generated_data_deduped.jsonl \
     --n_workers 64
