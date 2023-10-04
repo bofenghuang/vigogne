@@ -28,6 +28,10 @@ chat_processor = SUPPORTED_PROCESSOR_TEMPLATES["chat"]
 def main(
     input_file: str,
     output_file: str,
+    id_field: str = "id",
+    system_field: str = "system",
+    instruction_field: str = "instruction",
+    response_field: str = "output",
     # model_name_or_path: str = "meta-llama/Llama-2-7b-hf",
     # max_length: Optional[int] = None,
     preprocessing_num_workers: int = 4,
@@ -36,7 +40,7 @@ def main(
     # reformatted_data = list(map(convert_to_chat, data))
     # jsonl_dump(reformatted_data, output_file, mode="w")
 
-    raw_dataset = load_dataset("json", data_files=input_file)["train"]
+    raw_dataset = load_dataset("json", data_files=input_file, split="train")
     print(raw_dataset)
 
     # raw_dataset = Dataset.from_list(jload(input_file))
@@ -54,14 +58,14 @@ def main(
 
     def process_function(example):
         conversation = Conversation(
-            id=example["id"],
-            system=example["system"],
+            id=example[id_field],
+            system=example[system_field],
             # system=CONVERSATION_SYSTEM_MESSAGE_FR,
             # system=CONVERSATION_SYSTEM_MESSAGE_EN,
             messages=[
                 # Utterance(role=Role.user, content=merge_instruction_and_input(example["instruction"], example["input"])),
-                Utterance(role=Role.user, content=example["instruction"]),
-                Utterance(role=Role.assistant, content=example["output"]),
+                Utterance(role=Role.user, content=example[instruction_field]),
+                Utterance(role=Role.assistant, content=example[response_field]),
             ]
         )
         return conversation.fully_model_dump()

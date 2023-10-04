@@ -72,7 +72,7 @@ You can use the following script to generate the instruction-following data:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
 # num_instructions_to_generate is by worker
-python scripts/data_generation/generate_instructions.py \
+python scripts/data_generation/generate_self_instruct.py \
     --seed_tasks_path data/instruct/seed_tasks_vigogne.jsonl \
     --prompt_path data/instruct/prompt_vigogne.txt \
     --output_file data/instruct/self_instruct_data.jsonl \
@@ -116,9 +116,9 @@ Below is an example of a script we used to provide some translated subjects in [
 # Specify your OpenAI API key
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python scripts/data_generation/generate_conversations.py \
-    --input_json_file data/chat/subject_quora_fr_nllb3b3.jsonl \
-    --output_json_file data/chat/self_chat_data_quora_fr.jsonl \
+python scripts/data_generation/generate_self_chat.py \
+    --input_file data/chat/subject_quora_fr_nllb3b3.jsonl \
+    --output_file data/chat/self_chat_data_quora_fr.jsonl \
     --subject_field translated_subject \
     --output_subject_field subject \
     --id_prefix self-chat-quora- \
@@ -169,8 +169,8 @@ Next, you can generate responses using the following script. Please note that th
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
 python scripts/data_generation/generate_responses.py \
-    --input_json_file path/to/flanv2_translated.jsonl \
-    --output_json_file path/to/flanv2_translated_completed.jsonl \
+    --input_file path/to/flanv2_translated.jsonl \
+    --output_file path/to/flanv2_translated_completed.jsonl \
     --system_field system_prompt \
     --instruction_field translated_question \
     --response_field fr_response \
