@@ -6,13 +6,11 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
-
-# todo
-class SFTMode(str, Enum):
-    instruct = "instruct"
-    chat = "chat"
+# ignore index in loss
+IGNORE_INDEX = -100
 
 
+# instruction-following example's format
 class Instruct(BaseModel):
     instruction: str
     id: Optional[str] = None
@@ -21,16 +19,19 @@ class Instruct(BaseModel):
     output: Optional[str] = None
 
 
+# role in chat
 class Role(str, Enum):
     user = "User"
     assistant = "Assistant"
 
 
+# utterance in chat
 class Utterance(BaseModel):
     role: Role
     content: str
 
 
+# chat example's format
 class Conversation(BaseModel):
     messages: List[Utterance]
     id: Optional[str] = None
