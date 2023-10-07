@@ -18,7 +18,7 @@ name = "vigogne"
 authors = [
     {name = "Bofeng Huanng"},
 ]
-version = "0.2.0"
+version = "0.3.0"
 description = "Vigogne: A toolkit for training, serving, and evaluating French instruction-following models."
 readme = "README.md"
 requires-python = ">=3.8"
@@ -40,12 +40,10 @@ dependencies = [
     "einops",
     "fire",
     "loralib",
-    "nltk",
     "peft@git+https://github.com/huggingface/peft.git",
     "gradio",
     "openai",
     "pydantic",
-    "rouge-score",
     "sentencepiece",
     "scipy",
     "tenacity",
