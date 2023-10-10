@@ -198,8 +198,8 @@ def convert_to_chat(example_input, task_id_prefix):
     new_example = dict(id=f"{task_id_prefix}-{example_idx:08d}", messages=[])
 
     for idx in range(0, len(example), 2):
-        new_example["messages"].append(dict(role="User", content=example[idx]))
-        new_example["messages"].append(dict(role="Assistant", content=example[idx + 1]))
+        new_example["messages"].append(dict(role="user", content=example[idx]))
+        new_example["messages"].append(dict(role="assistant", content=example[idx + 1]))
 
     return new_example
 

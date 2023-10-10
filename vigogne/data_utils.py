@@ -21,8 +21,8 @@ class Instruct(BaseModel):
 
 # role in chat
 class Role(str, Enum):
-    user = "User"
-    assistant = "Assistant"
+    user = "user"
+    assistant = "assistant"
 
 
 # utterance in chat

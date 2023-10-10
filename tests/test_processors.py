@@ -180,9 +180,9 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_template_build_inference_prompt(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -201,9 +201,9 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_template_build_train_prompt(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -225,9 +225,9 @@ class TestConversationV2Processor(unittest.TestCase):
         example = {
             "system": "",
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -248,9 +248,9 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_processor_get_example_length(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -269,9 +269,9 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_processor_process_example(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -300,10 +300,10 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_template_build_inference_prompt_multi_turn(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Bonjour."},
-                {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                {"role": "User", "content": "Non, ça ne va pas."},
-                {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+                {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
             ]
         }
 
@@ -318,10 +318,10 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_template_build_train_prompt_multi_turn(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Bonjour."},
-                {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                {"role": "User", "content": "Non, ça ne va pas."},
-                {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+                {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
             ]
         }
 
@@ -336,10 +336,10 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_processor_process_example_multi_turn(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Bonjour."},
-                {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                {"role": "User", "content": "Non, ça ne va pas."},
-                {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+                {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
             ]
         }
 
@@ -360,9 +360,9 @@ class TestConversationV2Processor(unittest.TestCase):
     def test_compare_example_processing_and_promot_tokenization(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -380,13 +380,34 @@ class TestConversationV2Processor(unittest.TestCase):
         )["input_ids"]
         self.assertEqual(processed_input_ids, tokenized_input_ids)
 
+    # todo
+    # def test_compare_example_processing_and_chat_template(self):
+    #     example = {
+    #         "messages": [
+    #             {"role": "user", "content": "Bonjour."},
+    #             {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+    #             {"role": "user", "content": "Non, ça ne va pas."},
+    #             {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
+    #         ]
+    #     }
+    #     # processed_input_ids = vigogne_chat_v2_processor.process_example(example, self.tokenizer)["input_ids"]
+    #     processed_input_ids = self.tokenizer.tok(
+    #         vigogne_chat_v2_template.build_inference_prompt(example, self.tokenizer),
+    #         add_bos_token=True,
+    #         add_eos_token=False,
+    #     )["input_ids"]
+
+    #     self.tokenizer.chat_template = vigogne_chat_v2_processor.default_chat_template(use_train_system_prompt=True)
+    #     tokenized_input_ids = self.tokenizer.apply_chat_template(example["messages"], add_generation_prompt=True)
+    #     self.assertEqual(processed_input_ids, tokenized_input_ids)
+
     # def test_compare_example_processing_and_promot_tokenization_multi_turn(self):
     #     example = {
     #         "messages": [
-    #             {"role": "User", "content": "Bonjour."},
-    #             {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-    #             {"role": "User", "content": "Non, ça ne va pas."},
-    #             {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+    #             {"role": "user", "content": "Bonjour."},
+    #             {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+    #             {"role": "user", "content": "Non, ça ne va pas."},
+    #             {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
     #         ]
     #     }
 
@@ -419,9 +440,9 @@ class TestConversationV3Processor(unittest.TestCase):
     def test_template_build_inference_prompt(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -442,9 +463,9 @@ Donne trois conseils pour rester en bonne santé. [/INST]"""
     def test_template_build_train_prompt(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -468,9 +489,9 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
         example = {
             "system": "",
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -489,9 +510,9 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
     def test_processor_get_example_length(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -510,9 +531,9 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
     def test_processor_process_example(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -543,10 +564,10 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
     def test_template_build_inference_prompt_multi_turn(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Bonjour."},
-                {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                {"role": "User", "content": "Non, ça ne va pas."},
-                {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+                {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
             ]
         }
 
@@ -561,10 +582,10 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
     def test_template_build_train_prompt_multi_turn(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Bonjour."},
-                {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                {"role": "User", "content": "Non, ça ne va pas."},
-                {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+                {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
             ]
         }
 
@@ -579,10 +600,10 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
     def test_processor_process_example_multi_turn(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Bonjour."},
-                {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                {"role": "User", "content": "Non, ça ne va pas."},
-                {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+                {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
             ]
         }
 
@@ -603,9 +624,9 @@ Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST] Q
     def test_compare_example_processing_and_promot_tokenization(self):
         example = {
             "messages": [
-                {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                 {
-                    "role": "Assistant",
+                    "role": "assistant",
                     "content": (
                         "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                         " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -626,10 +647,10 @@ Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST] Q
     # def test_compare_example_processing_and_promot_tokenization_multi_turn(self):
     #     example = {
     #         "messages": [
-    #             {"role": "User", "content": "Bonjour."},
-    #             {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-    #             {"role": "User", "content": "Non, ça ne va pas."},
-    #             {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+    #             {"role": "user", "content": "Bonjour."},
+    #             {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+    #             {"role": "user", "content": "Non, ça ne va pas."},
+    #             {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
     #         ]
     #     }
 
@@ -644,9 +665,9 @@ Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST] Q
             {
                 "system": "",
                 "messages": [
-                    {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                    {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                     {
-                        "role": "Assistant",
+                        "role": "assistant",
                         "content": (
                             "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                             " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -658,10 +679,10 @@ Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST] Q
             {
                 "system": "",
                 "messages": [
-                    {"role": "User", "content": "Bonjour."},
-                    {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                    {"role": "User", "content": "Non, ça ne va pas."},
-                    {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                    {"role": "user", "content": "Bonjour."},
+                    {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                    {"role": "user", "content": "Non, ça ne va pas."},
+                    {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
                 ],
             },
         ]
@@ -698,9 +719,9 @@ Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST] Q
             {
                 "system": "",
                 "messages": [
-                    {"role": "User", "content": "Donne trois conseils pour rester en bonne santé."},
+                    {"role": "user", "content": "Donne trois conseils pour rester en bonne santé."},
                     {
-                        "role": "Assistant",
+                        "role": "assistant",
                         "content": (
                             "1. Mangez une alimentation équilibrée et assurez-vous d'inclure beaucoup de fruits et"
                             " légumes.\n2. Faites de l'exercice régulièrement pour maintenir votre corps actif et"
@@ -712,10 +733,10 @@ Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST] Q
             {
                 "system": "",
                 "messages": [
-                    {"role": "User", "content": "Bonjour."},
-                    {"role": "Assistant", "content": "Bonjour, tu vas bien ?"},
-                    {"role": "User", "content": "Non, ça ne va pas."},
-                    {"role": "Assistant", "content": "Qu'est-ce qui s'est passé ?"},
+                    {"role": "user", "content": "Bonjour."},
+                    {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                    {"role": "user", "content": "Non, ça ne va pas."},
+                    {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
                 ],
             },
         ]
