@@ -69,6 +69,49 @@ class AlpacaTemplate:
 
         return prompt_message
 
+    def default_chat_template(
+        self,
+        default_system_message: Optional[str] = None,
+        use_default_system_prompt: bool = True,
+    ):
+        default_system_message = (
+            default_system_message if default_system_message is not None else self.default_system_message
+        )
+
+        template = (
+            "{{ bos_token }}"
+            "{% if messages[0]['role'] == 'system' %}"
+            "{% set loop_messages = messages[1:] %}"  # Extract system message if it's present
+            "{% set system_message = messages[0]['content'] %}"
+            "{% elif USE_DEFAULT_PROMPT == true %}"
+            "{% set loop_messages = messages %}"  # Or use the default system message if the flag is set
+            "{% set system_message = 'DEFAULT_SYSTEM_MESSAGE' %}"
+            "{% else %}"
+            "{% set loop_messages = messages %}"
+            "{% set system_message = false %}"
+            "{% endif %}"
+            "{% if system_message != false %}"
+            "{{ '<|system|>: ' + system_message + '\\n' }}"
+            "{% endif %}"
+            "{% for message in loop_messages %}"  # Loop over all non-system messages
+            "{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}"
+            "{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}"
+            "{% endif %}"
+            "{% if message['role'] == 'user' %}"
+            "{{ '<|user|>: ' + message['content'].strip() + '\\n' }}"
+            "{% elif message['role'] == 'assistant' %}"
+            "{{ '<|assistant|>: ' + message['content'].strip() + eos_token + '\\n' }}"
+            "{% endif %}"
+            "{% endfor %}"
+            "{% if add_generation_prompt %}"
+            "{{ '<|assistant|>:' }}"  # Add generation prompt
+            "{% endif %}"
+        )
+        template = template.replace("USE_DEFAULT_PROMPT", "true" if use_default_system_prompt else "false")
+        default_message = default_system_message.replace("\n", "\\n").replace("'", "\\'")
+        template = template.replace("DEFAULT_SYSTEM_MESSAGE", default_message)
+        return template
+
     def to_dict(self) -> Dict[str, Any]:
         return {k: v for k, v in asdict(self).items()}
 
