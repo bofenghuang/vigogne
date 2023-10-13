@@ -99,17 +99,21 @@ def load_datasets(cfg: Any):
 
 
 def process_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict], tokenizer: transformers.PreTrainedTokenizerBase):
-    process_function = SUPPORTED_PROCESSORS.get(cfg.processor_style).process_example
+    processor = SUPPORTED_PROCESSORS.get(cfg.processor_style)
 
     with cfg.main_process_first():
         processed_dataset = dataset.map(
-            process_function,
+            processor.process_example,
             fn_kwargs={"tokenizer": tokenizer, "length_column_name": cfg.length_column_name},
             num_proc=cfg.preprocessing_num_workers,
             remove_columns=next(iter(dataset.values())).column_names,
             load_from_cache_file=not cfg.overwrite_cache,
             desc="process dataset",
         )
+
+    # assign for saving
+    if (default_chat_template := getattr(processor, "default_chat_template", None)) is not None:
+        tokenizer.chat_template = default_chat_template()
 
     return processed_dataset
 
