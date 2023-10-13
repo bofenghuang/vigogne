@@ -69,6 +69,7 @@ class VigogneTrainingArguments(TrainingArguments):
     lora_target_modules: Optional[List[str]] = field(
         default=None, metadata={"help": "The names of the modules to apply Lora to."}
     )
+    lora_task_type: str = field(default="CAUSAL_LM", metadata={"help": "The type of task to perform."})
     lora_fan_in_fan_out: bool = field(
         default=False,
         metadata={"help": "Set this to True if the layer to replace stores weight like (fan_in, fan_out)"},

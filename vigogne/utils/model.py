@@ -133,7 +133,7 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
         fan_in_fan_out=cfg.lora_fan_in_fan_out or False,
         modules_to_save=cfg.lora_modules_to_save or None,
         bias="none",
-        task_type="CAUSAL_LM",
+        task_type=cfg.lora_task_type,
         inference_mode=False,
     )
 
