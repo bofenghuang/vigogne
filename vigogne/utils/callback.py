@@ -1,7 +1,7 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-"""Training callbacks"""
+"""Training callbacks."""
 
 import contextlib
 import logging

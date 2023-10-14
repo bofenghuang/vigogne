@@ -1,11 +1,11 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-"""Training collators"""
+"""Training collators."""
 
 import math
 from dataclasses import dataclass
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, Optional, Sequence
 
 import torch
 import transformers

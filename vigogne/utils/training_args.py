@@ -1,7 +1,7 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-"""Training arguments"""
+"""Training arguments."""
 
 from dataclasses import dataclass, field
 from typing import List, Optional, Union
@@ -133,6 +133,7 @@ class VigogneTrainingArguments(TrainingArguments):
     # data arguments
     train_file: Optional[str] = field(default=None, metadata={"help": "The local path to the training file."})
     eval_file: Optional[str] = field(default=None, metadata={"help": "The local path to the evaluation file."})
+    eval_split_ratio: Optional[float] = field(default=None, metadata={"help": "The ratio of the evaluation split."})
     model_min_length: Optional[int] = field(
         default=None,
         metadata={"help": "The minimum sequence length. Sequences shorter than this will be filtered out."},

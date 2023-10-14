@@ -1,7 +1,7 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-"""Pack examples (TODO)"""
+"""Pack examples (TODO)."""
 
 from itertools import chain
 from collections import defaultdict
