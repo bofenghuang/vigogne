@@ -1,18 +1,19 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-"""Load and process datasets"""
+"""Load and process datasets."""
 
 import logging
 import random
 import sys
 from pathlib import Path
-from typing import Any, List, Union
+from typing import Any, Union
 
 import numpy as np
 import transformers
 from datasets import Dataset, DatasetDict, load_dataset
 
+from ..data_utils import IGNORE_INDEX
 from ..processors import SUPPORTED_PROCESSORS
 from .packing import ModerateConcatenator
 
@@ -25,9 +26,9 @@ def prepare_datasets(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
     # process datasets
     processed_dataset = process_datasets(cfg, dataset, tokenizer)
     # filter datasets
-    filtered_dataset = filter_datasets(cfg, processed_dataset, tokenizer)
+    filtered_dataset = filter_datasets(cfg, processed_dataset)
     # Count tokens
-    final_dataset = count_total_tokens(cfg, filtered_dataset)
+    final_dataset = get_num_tokens(cfg, filtered_dataset)
 
     train_dataset = final_dataset["train"]
     if cfg.max_train_samples is not None:
@@ -60,51 +61,71 @@ def prepare_datasets(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
     return train_dataset, eval_dataset
 
 
-def get_ds_type(file_path: str):
-    # extension = file_path.rsplit(".", 1)[-1]
-    extension = Path(file_path).suffix
-    if ".json" in extension or ".jsonl" in extension:
-        return "json"
-    elif ".parquet" in extension:
-        return "parquet"
-    elif ".arrow" in extension:
-        return "arrow"
-    elif ".csv" in extension:
-        return "csv"
-    elif ".txt" in extension:
-        return "text"
-    raise ValueError(f"Cannot handle file extension {extension}")
-
-
 def load_datasets(cfg: Any):
+    """Load datasets from local files."""
+
     # todo: add ds from hf hub
-    dataset = DatasetDict()
-    if cfg.train_file is not None:
-        ds_type = get_ds_type(cfg.train_file)
-        dataset["train"] = load_dataset(ds_type, data_files=cfg.train_file)["train"]
-    else:
-        raise ValueError("You have not specified any train file")
 
-    if cfg.eval_file is not None:
-        ds_type = get_ds_type(cfg.eval_file)
-        dataset["eval"] = load_dataset(ds_type, data_files=cfg.eval_file)["train"]
+    def _get_ds_type(file_path: str):
+        # extension = file_path.rsplit(".", 1)[-1]
+        extension = Path(file_path).suffix
+        if ".json" in extension or ".jsonl" in extension:
+            return "json"
+        elif ".parquet" in extension:
+            return "parquet"
+        elif ".arrow" in extension:
+            return "arrow"
+        elif ".csv" in extension:
+            return "csv"
+        elif ".txt" in extension:
+            return "text"
+        raise ValueError(f"Cannot handle file extension {extension}")
 
-    logger.info(f"Raw dataset: {dataset}")
+    logger.info("Loading datasets...")
+
+    with cfg.main_process_first():
+        dataset = DatasetDict()
+        if cfg.train_file is not None:
+            ds_type = _get_ds_type(cfg.train_file)
+            dataset["train"] = load_dataset(ds_type, data_files=cfg.train_file)["train"]
+        else:
+            raise ValueError("You have not specified any train file")
+
+        if cfg.eval_file is not None:
+            ds_type = _get_ds_type(cfg.eval_file)
+            dataset["eval"] = load_dataset(ds_type, data_files=cfg.eval_file)["train"]
+
+        elif cfg.eval_split_ratio is not None:
+            logger.info(f"Splitting train/eval set with a eval_split_ratio of {cfg.eval_split_ratio}")
+            dataset = dataset["train"].train_test_split(test_size=cfg.eval_split_ratio, shuffle=True, seed=cfg.seed)
+            dataset["eval"] = dataset.pop("test")
+
+    logger.info(
+        f'Training set -> num_rows: {dataset["train"].num_rows:,d}, features: {", ".join(dataset["train"].column_names)}'
+    )
+    if "eval" in dataset:
+        logger.info(
+            f'Eval     set -> num_rows: {dataset["eval"].num_rows:,d}, features: {", ".join(dataset["eval"].column_names)}'
+        )
 
     # Log a few random samples from the training set
-    for index in random.sample(range(len(dataset["train"])), 3):
+    for index in random.sample(range(len(dataset["train"])), 1):
         logger.info(f'Sample {index} of the training set: {dataset["train"][index]}.')
 
     return dataset
 
 
 def process_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict], tokenizer: transformers.PreTrainedTokenizerBase):
+    """Process datasets by processor."""
+
+    logger.info(f"Processing datasets with {cfg.processor_style} prompter...")
+
     processor = SUPPORTED_PROCESSORS.get(cfg.processor_style)
 
     with cfg.main_process_first():
         processed_dataset = dataset.map(
             processor.process_example,
-            fn_kwargs={"tokenizer": tokenizer, "length_column_name": cfg.length_column_name},
+            fn_kwargs={"tokenizer": tokenizer},
             num_proc=cfg.preprocessing_num_workers,
             remove_columns=next(iter(dataset.values())).column_names,
             load_from_cache_file=not cfg.overwrite_cache,
@@ -118,7 +139,23 @@ def process_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict], tokenizer: 
     return processed_dataset
 
 
-def filter_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict], tokenizer: transformers.PreTrainedTokenizerBase):
+def get_example_length_in_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict]):
+    """Get examples' lengths in datasets."""
+
+    logger.info("Get example lengths in datasets...")
+
+    with cfg.main_process_first():
+        processed_dataset = dataset.map(
+            lambda example: {cfg.length_column_name: len(example["input_ids"])},
+            num_proc=cfg.preprocessing_num_workers,
+            load_from_cache_file=not cfg.overwrite_cache,
+            desc="get example length",
+        )
+
+    return processed_dataset
+
+
+def filter_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict]):
     """Filter data that is shorter than model_min_length or longer than model_max_length."""
 
     def _in_length_range(length):
@@ -130,10 +167,12 @@ def filter_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict], tokenizer: t
             is_in_range &= length < cfg.model_max_length
         return is_in_range
 
-    if (cfg.model_min_length is None and cfg.model_max_length is None) or (
-        cfg.length_column_name not in next(iter(dataset.values())).column_names
-    ):
+    if cfg.model_min_length is None and cfg.model_max_length is None:
         return dataset
+
+    dataset = get_example_length_in_datasets(cfg, dataset)
+
+    logger.info("Filtering datasets by length...")
 
     with cfg.main_process_first():
         processed_dataset = dataset.filter(
@@ -144,20 +183,47 @@ def filter_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict], tokenizer: t
             desc="filter dataset",
         )
 
-        logger.info(f"Filtered dataset: {processed_dataset}")
+        # Remove length column
+        processed_dataset = processed_dataset.remove_columns(cfg.length_column_name)
+
+        logger.info(f'Filtered training set to {processed_dataset["train"].num_rows} rows')
+        if "eval" in processed_dataset:
+            logger.info(f'Filtered eval set to {processed_dataset["eval"].num_rows} rows')
 
     return processed_dataset
 
 
-def count_total_tokens(cfg: Any, dataset: Union[Dataset, DatasetDict]):
-    training_num_tokens = np.sum(dataset["train"][cfg.length_column_name])
-    logger.info(f"Total tokens in training set: {training_num_tokens:,d}")
+def get_num_tokens(cfg: Any, dataset: Union[Dataset, DatasetDict]):
+    """Counting number of tokens and supervised tokens."""
 
-    if (eval_dataset := dataset.get("eval")) is not None:
-        eval_num_tokens = np.sum(eval_dataset[cfg.length_column_name])
-        logger.info(f"Total tokens in eval set: {eval_num_tokens:,d}")
+    def _process_function(example):
+        return {
+            "num_tokens": len(example["input_ids"]),
+            "num_supervised_tokens": sum(np.array(example["labels"]) != IGNORE_INDEX),
+        }
 
-    # Remove length column
-    processed_dataset = dataset.remove_columns(cfg.length_column_name)
+    logger.info("Counting total number of tokens...")
 
-    return processed_dataset
+    length_data = dataset.map(
+        _process_function,
+        num_proc=cfg.preprocessing_num_workers,
+        remove_columns=next(iter(dataset.values())).column_names,
+        load_from_cache_file=not cfg.overwrite_cache,
+        desc="get example length",
+    )
+
+    cfg.num_training_tokens = np.sum(length_data["train"]["num_tokens"])
+    cfg.num_training_supervised_tokens = np.sum(length_data["train"]["num_supervised_tokens"])
+
+    logger.info(
+        f"Training set -> num_tokens: {cfg.num_training_tokens:,d}, num_supervised_tokens:"
+        f" {cfg.num_training_supervised_tokens:,d}"
+    )
+    if "eval" in dataset:
+        cfg.num_eval_tokens = np.sum(length_data["eval"]["num_tokens"])
+        cfg.num_eval_supervised_tokens = np.sum(length_data["eval"]["num_supervised_tokens"])
+        logger.info(
+            f"Eval     set -> num_tokens: {cfg.num_eval_tokens:,d}, num_supervised_tokens: {cfg.num_eval_supervised_tokens:,d}"
+        )
+
+    return dataset
