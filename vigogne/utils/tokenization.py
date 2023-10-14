@@ -1,19 +1,23 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-"""Load tokenizers"""
+"""Load tokenizers."""
 
-from typing import Any, List, Union
+import logging
+from typing import Any
 
-import transformers
+# import transformers
 from transformers import AutoTokenizer
 
+logger = logging.getLogger(__name__)
+
+
 # tokenizer default
-DEFAULT_PAD_TOKEN = "[PAD]"
-# DEFAULT_PAD_TOKEN = "<pad>"
-DEFAULT_EOS_TOKEN = "</s>"
-DEFAULT_BOS_TOKEN = "<s>"
-DEFAULT_UNK_TOKEN = "<unk>"
+# DEFAULT_PAD_TOKEN = "[PAD]"
+# # DEFAULT_PAD_TOKEN = "<pad>"
+# DEFAULT_EOS_TOKEN = "</s>"
+# DEFAULT_BOS_TOKEN = "<s>"
+# DEFAULT_UNK_TOKEN = "<unk>"
 
 
 def tok(self, text: str, add_bos_token: bool = True, add_eos_token: bool = True, **kwargs):
@@ -21,11 +25,7 @@ def tok(self, text: str, add_bos_token: bool = True, add_eos_token: bool = True,
 
     max_length = kwargs.get("max_length", None) or self.model_max_length
 
-    if (
-        add_bos_token
-        and len(tokenized_outputs["input_ids"]) > 0
-        and tokenized_outputs["input_ids"][0] != self.bos_token_id
-    ):
+    if add_bos_token and len(tokenized_outputs["input_ids"]) > 0 and tokenized_outputs["input_ids"][0] != self.bos_token_id:
         tokenized_outputs["input_ids"].insert(0, self.bos_token_id)
         tokenized_outputs["attention_mask"].insert(0, 1)
 
@@ -62,6 +62,8 @@ def tok(self, text: str, add_bos_token: bool = True, add_eos_token: bool = True,
 
 
 def load_tokenizer(cfg: Any):
+    logger.info("Loading tokenizer...")
+
     tokenizer_kwargs = {
         "revision": cfg.tokenizer_revision,
         # True is the default w/ https://github.com/huggingface/transformers/pull/25224
@@ -108,5 +110,10 @@ def load_tokenizer(cfg: Any):
     # tokenizer.__call__ = tok.__get__(tokenizer, tokenizer.__class__)
     tokenizer.tok = tok.__get__(tokenizer, tokenizer.__class__)
     # or monkey patching
+
+    logger.info(f"bos_token: {tokenizer.bos_token} / bos_token_id: {tokenizer.bos_token_id}")
+    logger.info(f"eos_token: {tokenizer.eos_token} / eos_token_id: {tokenizer.eos_token_id}")
+    logger.info(f"pad_token: {tokenizer.pad_token} / pad_token_id: {tokenizer.pad_token_id}")
+    logger.info(f"unk_token: {tokenizer.unk_token} / unk_token_id: {tokenizer.unk_token_id}")
 
     return tokenizer
