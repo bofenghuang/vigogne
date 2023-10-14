@@ -1,7 +1,7 @@
 # coding=utf-8
 # Copyright 2023  Bofeng Huang
 
-"""Load models"""
+"""Load models."""
 
 import logging
 import os
@@ -10,7 +10,7 @@ from typing import Any, Dict
 import bitsandbytes as bnb
 import torch
 import transformers
-from peft import AutoPeftModelForCausalLM, LoraConfig, TaskType, get_peft_model, prepare_model_for_kbit_training
+from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from peft.tuners.lora import QuantLinear
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
 
@@ -18,6 +18,10 @@ logger = logging.getLogger(__name__)
 
 
 def load_model(cfg: Any):
+    """Load Transformer models."""
+
+    logger.info("Loading model...")
+
     model_kwargs = {
         "revision": cfg.model_revision,
     }
@@ -27,6 +31,9 @@ def load_model(cfg: Any):
     # todo: add GTPQ
 
     torch_dtype = getattr(torch, cfg.torch_dtype)
+
+    if torch_dtype == torch.float16 and torch.cuda.get_device_capability()[0] >= 8:
+        logger.warning("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
 
     # BitsAndBytesConfig support
     if cfg.load_in_8bit:
@@ -51,6 +58,7 @@ def load_model(cfg: Any):
         **model_kwargs,
     )
 
+    # Resize token_embeddings to 32x
     # embeddings_len = (
     #     math.ceil(len(tokenizer) / 32) * 32
     #     if cfg.resize_token_embeddings_to_32x
@@ -62,8 +70,21 @@ def load_model(cfg: Any):
     #     model.tie_weights()
 
     if cfg.load_in_8bit or (cfg.adapter == "qlora" and cfg.load_in_4bit):
-        # Cast the small parameters (e.g. layernorm) to fp32 for stability
+        # Freeze base model
+        # Cast all non INT8 parameters (e.g. layernorm) to fp32 for stability
+        # Make embedding layer's output require grads for backward compatibility
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=cfg.gradient_checkpointing)
+
+    # Post cast
+    # LlamaRMSNorm layers are in fp32 after prepare_model_for_kbit_training() or full finetune,
+    # so we need to convert them back to fp16/bf16 for flash-attn compatibility
+    # if needs_fa2_dtype or (cfg.flash_attention and cfg.is_llama_derived_model):
+    #     for name, module in model.named_modules():
+    #         if "norm" in name:
+    #             module.to(torch_dtype)
+    #         if "lm_head" in name or "embed_tokens" in name:
+    #             if hasattr(module, "weight"):
+    #                 module.to(torch_dtype)
 
     # Load adapter
     if cfg.adapter:
@@ -84,10 +105,13 @@ def load_model(cfg: Any):
 
 
 def load_adapter(model: transformers.PreTrainedModel, cfg: Any, inference: bool = False):
+    """Load adapter."""
+
     if cfg.gradient_checkpointing and hasattr(model, "enable_input_require_grads"):
         # When using PEFT + gradient checkpointing + Trainer we need to make sure the input has requires_grad=True
         # When training with PEFT, only LoRA layers will have requires grad set to True, but the output of frozen layers need to propagate
         # the gradients to make sure the gradient flows.
+        # This might have been already done in prepare_model_for_kbit_training()
         # See https://github.com/huggingface/peft/blob/85013987aa82aa1af3da1236b6902556ce3e483e/src/peft/peft_model.py#L334
         # and https://github.com/huggingface/transformers/blob/ca7912d191cad41f3a212ce491736d9dc4cb812b/src/transformers/modeling_utils.py#L1830-L1835
         # and https://github.com/huggingface/peft/issues/137
@@ -100,6 +124,8 @@ def load_adapter(model: transformers.PreTrainedModel, cfg: Any, inference: bool 
 
 # Copied and modified from https://github.com/artidoro/qlora/blob/main/qlora.py
 def find_all_linear_names(model: transformers.PreTrainedModel):
+    """Find all linear layers to apply LoRA."""
+
     cls = (bnb.nn.Linear4bit, bnb.nn.Linear8bitLt, torch.nn.Linear, QuantLinear)
 
     lora_module_names = set()
@@ -115,6 +141,10 @@ def find_all_linear_names(model: transformers.PreTrainedModel):
 
 
 def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = False):
+    """Apply LoRA layers to base model."""
+
+    logger.info("Loading LoRA layers...")
+
     lora_target_modules = cfg.lora_target_modules or []
 
     if cfg.lora_target_all_linear_layers:
@@ -144,7 +174,9 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
 
 
 def merge_lora(cfg: Any):
-    logger.info("Merging LoRA with base model")
+    """Remerge LoRA layers with base model."""
+
+    logger.info("Merging LoRA with base model...")
 
     model = AutoPeftModelForCausalLM.from_pretrained(
         cfg.output_dir,
