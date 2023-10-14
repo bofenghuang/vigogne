@@ -18,8 +18,7 @@ DEFAULT_SYSTEM_MESSAGE = (
     "Vous êtes un assistant IA qui suit extrêmement bien les instructions. Aidez autant que vous le pouvez."
 )
 DEFAULT_SYSTEM_MESSAGE_GEN = (
-    "Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). Vous suivez extrêmement bien les"
-    " instructions. Aidez autant que vous le pouvez."
+    "Vous êtes Vigogne, l'assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez."
 )
 
 
