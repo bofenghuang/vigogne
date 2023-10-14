@@ -25,6 +25,10 @@ output_dir=outputs/$run_name
 per_device_train_batch_size=8
 gradient_accumulation_steps=8
 
+# Further optimization
+# DeepSpeed Stage 2
+# --deepspeed vigogne/configs/ds_config_zero2_no_offload.json \
+
 torchrun \
     vigogne/train_sft.py \
     --model_name_or_path $model_name_or_path \
@@ -36,6 +40,7 @@ torchrun \
     --run_name $run_name \
     --processor_style "vigogne_chat_v3" \
     --model_max_length $model_max_length \
+    --eval_split_ratio "0.01" \
     --preprocessing_num_workers "8" \
     --dataloader_num_workers "1" \
     --adapter "qlora" \
