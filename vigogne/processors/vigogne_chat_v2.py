@@ -194,7 +194,6 @@ class VigogneChatV2Processor(VigogneChatV2Template):
         example: Dict,
         tokenizer: transformers.PreTrainedTokenizer,
         model_max_length: Optional[int] = None,
-        length_column_name: Optional[str] = None,
         do_mask_input: bool = True,
     ):
         conversation = self._ensure_type(example)
@@ -253,7 +252,5 @@ class VigogneChatV2Processor(VigogneChatV2Template):
             labels = input_ids.copy()
 
         processed_example = {"input_ids": input_ids, "labels": labels}
-        if length_column_name is not None:
-            processed_example[length_column_name] = len(input_ids)
 
         return processed_example
