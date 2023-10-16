@@ -105,8 +105,9 @@ def load_tokenizer(cfg: Any):
     # )
 
     # todo: better handle
-    # Replace the instance method
-    # cannot override __call__ of instance
+    # Override instance method
+    # Cannot override special method (e.g., __call__) of instance
+    # See https://stackoverflow.com/questions/60062100/is-it-possible-to-override-a-class-call-method
     # tokenizer.__call__ = tok.__get__(tokenizer, tokenizer.__class__)
     tokenizer.tok = tok.__get__(tokenizer, tokenizer.__class__)
     # or monkey patching
