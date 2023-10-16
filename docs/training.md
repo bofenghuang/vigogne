@@ -10,41 +10,4 @@ We highly recommend the utilization of tools such as [DeepSpeed](https://github.
 
 More examples can be found in [examples](https://github.com/bofenghuang/vigogne/blob/main/examples/train).
 
-The following command shows how to fine-tune the Llama 2 7B model on a single GPU using LoRA and LLM.int8().
-
-```bash
-python vigogne/train/train_sft.py \
-    --model_name_or_path "meta-llama/Llama-2-7b-hf" \
-    --train_file "/path/to/train/instruct/file.jsonl" \
-    --output_dir "outputs/llama-2-7b-sft-instruct-lora-int8" \
-    --overwrite_output_dir \
-    --mode "instruct" \
-    --preprocessing_num_workers "8" \
-    --dataloader_num_workers "1" \
-    --pack_into_block \
-    --block_size "2048" \
-    --load_in_8bit \
-    --lora_r "64" \
-    --lora_alpha "16" \
-    --lora_dropout "0.05" \
-    --target_modules "q_proj" "v_proj" "k_proj" "o_proj" "gate_proj" "up_proj" "down_proj" \
-    --per_device_train_batch_size "8" \
-    --per_device_eval_batch_size "4" \
-    --num_train_epochs "3" \
-    --learning_rate "1e-4" \
-    --warmup_ratio "0.03" \
-    --lr_scheduler_type "cosine" \
-    --weight_decay "0" \
-    --torch_compile \
-    --fp16 \
-    --gradient_checkpointing \
-    --ddp_find_unused_parameters false \
-    --log_level "info" \
-    --logging_steps "10" \
-    --logging_first_step true \
-    --save_strategy "steps" \
-    --save_steps "100" \
-    --save_total_limit "3" \
-    --report_to "tensorboard" "wandb" \
-    --do_train
-```
+Since version 3.0, I've refactored the training code, incorporating specific elements inspired by the fantastic training framework [Axolotl](https://github.com/OpenAccess-AI-Collective/axolotl). Thanks to the Axolotl team for their valuable contributions to the open-source community! The primary motivation behind maintaining my own framework is to have full control over the entire training process and customize it to my specific needs. I highly recommend using their framework for additional features.

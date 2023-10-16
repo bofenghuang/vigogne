@@ -147,6 +147,7 @@ Our project builds upon the following open-source projects for further developme
 - [Alpaca-LoRA by @tloen](https://github.com/tloen/alpaca-lora)
 - [Baize](https://github.com/project-baize/baize-chatbot)
 - [llama.cpp by @ggerganov](https://github.com/ggerganov/llama.cpp)
+- [Axolotl by @OpenAccess-AI-Collective](https://github.com/OpenAccess-AI-Collective/axolotl)
 
 ## Citation
 
