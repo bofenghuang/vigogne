@@ -10,6 +10,7 @@ import transformers
 from transformers import DataCollatorForSeq2Seq, Trainer
 
 from ..data_utils import IGNORE_INDEX
+from .callback import SaveConfigtoFileCallback
 
 
 def setup_trainer(
@@ -32,5 +33,7 @@ def setup_trainer(
         eval_dataset=eval_dataset,
         tokenizer=tokenizer,
     )
+
+    trainer.add_callback(SaveConfigtoFileCallback(cfg.config_path))
 
     return trainer

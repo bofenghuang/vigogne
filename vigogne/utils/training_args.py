@@ -3,12 +3,15 @@
 
 """Training arguments."""
 
+import os
 from dataclasses import dataclass, field
 from typing import List, Optional, Union
 
 from transformers import TrainingArguments
 
 from ..processors import SUPPORTED_PROCESSORS
+
+CONFIG_FILENAME = "hparams.json"
 
 
 @dataclass
@@ -50,9 +53,7 @@ class VigogneTrainingArguments(TrainingArguments):
     )
     use_flash_attention_2: bool = field(
         default=False,
-        metadata={
-            "help": "Whether or not to use the flash_attention implemented in Huggingface's transformer repository."
-        },
+        metadata={"help": "Whether or not to use the flash_attention implemented in Huggingface's transformer repository."},
     )
     load_in_8bit: bool = field(
         default=False, metadata={"help": "Whether or not to convert the loaded model into mixed-8bit quantized model."}
@@ -76,14 +77,14 @@ class VigogneTrainingArguments(TrainingArguments):
     )
     lora_modules_to_save: Optional[List[str]] = field(
         default=None,
-        metadata={
-            "help": "List of modules apart from LoRA layers to be set as trainable and saved in the final checkpoint."
-        },
+        metadata={"help": "List of modules apart from LoRA layers to be set as trainable and saved in the final checkpoint."},
     )
     lora_target_all_linear_layers: bool = field(
         default=False, metadata={"help": "Whether or not to target all linear layers."}
     )
-    do_merge_lora: bool = field(default=False, metadata={"help": "Whether or not to merge LoRA weights to the base model after training."})
+    do_merge_lora: bool = field(
+        default=False, metadata={"help": "Whether or not to merge LoRA weights to the base model after training."}
+    )
 
     # model saving arguments
     max_shard_size: str = field(
@@ -108,9 +109,7 @@ class VigogneTrainingArguments(TrainingArguments):
     )
     tokenizer_revision: Optional[str] = field(
         default=None,
-        metadata={
-            "help": "The specific tokenizer version to use. It can be a branch name, a tag name, or a commit id."
-        },
+        metadata={"help": "The specific tokenizer version to use. It can be a branch name, a tag name, or a commit id."},
     )
     tokenizer_use_fast: bool = field(
         default=True,
@@ -146,8 +145,7 @@ class VigogneTrainingArguments(TrainingArguments):
         default=None,
         metadata={
             "help": (
-                "For debugging purposes or quicker training, truncate the number of training examples to this "
-                "value if set."
+                "For debugging purposes or quicker training, truncate the number of training examples to this value if set."
             )
         },
     )
@@ -155,14 +153,11 @@ class VigogneTrainingArguments(TrainingArguments):
         default=None,
         metadata={
             "help": (
-                "For debugging purposes or quicker training, truncate the number of evaluation examples to this "
-                "value if set."
+                "For debugging purposes or quicker training, truncate the number of evaluation examples to this value if set."
             )
         },
     )
-    overwrite_cache: bool = field(
-        default=False, metadata={"help": "Overwrite the cached training and evaluation sets"}
-    )
+    overwrite_cache: bool = field(default=False, metadata={"help": "Overwrite the cached training and evaluation sets"})
     preprocessing_num_workers: Optional[int] = field(
         default=None, metadata={"help": "The number of processes to use for the preprocessing."}
     )
@@ -184,13 +179,14 @@ class VigogneTrainingArguments(TrainingArguments):
     # packing arguments
     pack_into_block: bool = field(
         default=False,
-        metadata={
-            "help": "Whether to pack examples into blocks for faster training. Note this might affect performance."
-        },
+        metadata={"help": "Whether to pack examples into blocks for faster training. Note this might affect performance."},
     )
     block_size: int = field(
         default=1024, metadata={"help": "Block size for packed examples. Only used when `pack_into_block` is True."}
     )
+
+    # others
+    config_path: Optional[str] = field(default=None, metadata={"help": "The file path to save config."})
 
     def __post_init__(self):
         super().__post_init__()
@@ -203,3 +199,5 @@ class VigogneTrainingArguments(TrainingArguments):
         assert (
             self.processor_style in SUPPORTED_PROCESSORS.keys()
         ), f"Specified processor_style {self.processor_style} doesn't exist in {SUPPORTED_PROCESSORS}"
+
+        self.config_path = self.config_path if self.config_path is not None else os.path.join(self.output_dir, CONFIG_FILENAME)
