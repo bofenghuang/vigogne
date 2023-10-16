@@ -42,6 +42,8 @@ def load_model(cfg: Any):
         logger.warning("Your GPU supports bfloat16, you can accelerate training with the argument --bf16")
 
     # BitsAndBytesConfig support
+    # todo: fast peft without kaiming init
+    # https://twitter.com/jeremyphoward/status/1709601456620515638
     if cfg.load_in_8bit:
         model_kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
     if cfg.adapter == "qlora" and cfg.load_in_4bit:
@@ -179,8 +181,8 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
     return model
 
 
-def move_peft_files(cfg: Any):
-    """Move PEFT files"""
+def move_adapter_files(cfg: Any):
+    """Move adapter files."""
 
     adapter_dir = os.path.join(cfg.output_dir, PEFT_FOLDER_NAME)
     os.makedirs(adapter_dir, exist_ok=True)
@@ -204,7 +206,7 @@ def merge_lora(cfg: Any):
     )
     model = model.merge_and_unload()
     model.save_pretrained(cfg.output_dir, safe_serialization=cfg.save_safetensors, max_shard_size=cfg.max_shard_size)
-    move_peft_files(cfg)
+    move_adapter_files(cfg)
 
 
 # Deprecated
