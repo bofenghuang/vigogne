@@ -8,17 +8,18 @@ Referring to https://github.com/facebookresearch/llama/blob/1a240688810f8036049e
 
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import transformers
 
-from vigogne.data_utils import IGNORE_INDEX, Conversation, Role, Utterance
+from vigogne.data_utils import IGNORE_INDEX, Conversation, Role
 
 DEFAULT_SYSTEM_MESSAGE = (
     "Vous êtes un assistant IA qui suit extrêmement bien les instructions. Aidez autant que vous le pouvez."
 )
 DEFAULT_SYSTEM_MESSAGE_GEN = (
-    "Vous êtes Vigogne, l'assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez."
+    "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que"
+    " vous le pouvez."
 )
 
 
@@ -42,21 +43,13 @@ class VigogneChatV3Template:
         system_message = (
             conversation.system
             if conversation.system is not None
-            else (
-                self.default_train_system_message
-                if use_train_system_message
-                else self.default_inference_system_message
-            )
+            else (self.default_train_system_message if use_train_system_message else self.default_inference_system_message)
         )
         if system_message:
-            conversation.messages[0].content = (
-                self.b_sys + system_message + self.e_sys + conversation.messages[0].content
-            )
+            conversation.messages[0].content = self.b_sys + system_message + self.e_sys + conversation.messages[0].content
         return conversation
 
-    def _build_prompt_by_round(
-        self, conversation: Union[Conversation, Dict], tokenizer: transformers.PreTrainedTokenizer
-    ):
+    def _build_prompt_by_round(self, conversation: Union[Conversation, Dict], tokenizer: transformers.PreTrainedTokenizer):
         # Add eos_token after assistant utterance
         # NB: eos_token might be splitted when concatenating with other characters, depending on tokenizer
         # See https://huggingface.co/mistralai/Mistral-7B-v0.1/discussions/26
@@ -116,9 +109,7 @@ class VigogneChatV3Template:
                 break
 
         final_prompt_message = (
-            f"{first_round_prompt_message} {prompt_message}"
-            if first_round_prompt_message is not None
-            else prompt_message
+            f"{first_round_prompt_message} {prompt_message}" if first_round_prompt_message is not None else prompt_message
         )
 
         return final_prompt_message or None
@@ -132,9 +123,7 @@ class VigogneChatV3Template:
         default_system_message = (
             default_system_message
             if default_system_message is not None
-            else (
-                self.default_train_system_message if use_train_system_prompt else self.default_inference_system_message
-            )
+            else (self.default_train_system_message if use_train_system_prompt else self.default_inference_system_message)
         )
 
         template = (
@@ -194,9 +183,7 @@ class VigogneChatV3Processor(VigogneChatV3Template):
 
         for utterance in conversation.messages:
             utterance_text = (
-                f"{self.b_inst} {utterance.content} {self.e_inst}"
-                if utterance.role == Role.user
-                else utterance.content
+                f"{self.b_inst} {utterance.content} {self.e_inst}" if utterance.role == Role.user else utterance.content
             )
 
             # w/o bos_token

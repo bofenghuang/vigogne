@@ -4,11 +4,11 @@
 """Template and processor for Vigogne Chat V2 models."""
 
 from dataclasses import asdict, dataclass
-from typing import Any, Dict, List, Optional, Union
+from typing import Any, Dict, Optional, Union
 
 import transformers
 
-from vigogne.data_utils import IGNORE_INDEX, Conversation, Role, Utterance
+from vigogne.data_utils import IGNORE_INDEX, Conversation, Role
 
 # conversation system message v1
 SYSTEM_MESSAGE_EN_V1 = """Below is a conversation between a user and an AI assistant named Vigogne.
@@ -25,17 +25,14 @@ Vigogne ne peut pas recevoir ou générer de contenu audio ou visuel et ne peut 
 Vigogne évite strictement de discuter de sujets sensibles, offensants, illégaux, éthiques ou politiques et met en garde lorsqu'il n'est pas sûr de la réponse."""
 # conversation system message v2
 SYSTEM_MESSAGE_EN_V2 = "You are an AI assistant that follows instructions extremely well. Help as much as you can."
-SYSTEM_MESSAGE_FR_V2 = (
-    "Vous êtes un assistant IA qui suit extrêmement bien les instructions. Aidez autant que vous le pouvez."
-)
+SYSTEM_MESSAGE_FR_V2 = "Vous êtes un assistant IA qui suit extrêmement bien les instructions. Aidez autant que vous le pouvez."
 DEFAULT_SYSTEM_MESSAGE = SYSTEM_MESSAGE_FR_V2
 SYSTEM_MESSAGE_GEN_EN_V2 = (
-    "You are an AI assistant named Vigogne, created by Zaion Lab (https://zaion.ai). You follow instructions extremely"
-    " well. Help as much as you can."
+    "You are Vigogne, an AI assistant created by Zaion Lab. You follow instructions extremely well. Help as much as you can."
 )
 SYSTEM_MESSAGE_GEN_FR_V2 = (
-    "Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). Vous suivez extrêmement bien les"
-    " instructions. Aidez autant que vous le pouvez."
+    "Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que"
+    " vous le pouvez."
 )
 DEFAULT_SYSTEM_MESSAGE_GEN = SYSTEM_MESSAGE_GEN_FR_V2
 
@@ -55,26 +52,18 @@ class VigogneChatV2Template:
         ), "Conversation should start with User, then Assistant, and alter User/Assistant/User/Assistant/User...)"
         return conversation
 
-    def _embed_system_message(
-        self, conversation: Union[Conversation, Dict], use_train_system_message: bool = True
-    ) -> str:
+    def _embed_system_message(self, conversation: Union[Conversation, Dict], use_train_system_message: bool = True) -> str:
         system_message = (
             conversation.system
             if conversation.system is not None
-            else (
-                self.default_train_system_message
-                if use_train_system_message
-                else self.default_inference_system_message
-            )
+            else (self.default_train_system_message if use_train_system_message else self.default_inference_system_message)
         )
         system_header_text = f"{self.system_prefix}: {system_message}"
         # Remove whole line if empty system_message
         # system_header_text = f"{self.system_prefix}: {system_message}" if system_message else ""
         return system_header_text
 
-    def _build_prompt_by_round(
-        self, conversation: Union[Conversation, Dict], tokenizer: transformers.PreTrainedTokenizer
-    ):
+    def _build_prompt_by_round(self, conversation: Union[Conversation, Dict], tokenizer: transformers.PreTrainedTokenizer):
         # Add eos_token after assistant utterance
         # NB: eos_token might be splitted when concatenating with other characters, depending on tokenizer
         # See https://huggingface.co/mistralai/Mistral-7B-v0.1/discussions/26
@@ -114,9 +103,7 @@ class VigogneChatV2Template:
         prompts_by_round = self._build_prompt_by_round(conversation, tokenizer)
 
         # last user utterance
-        last_user_utterance_text = (
-            f"\n{self.user_prefix}: {conversation.messages[-1].content}\n{self.assistant_prefix}:"
-        )
+        last_user_utterance_text = f"\n{self.user_prefix}: {conversation.messages[-1].content}\n{self.assistant_prefix}:"
 
         prompt_message = last_user_utterance_text
         # reverse
@@ -144,9 +131,7 @@ class VigogneChatV2Template:
         default_system_message = (
             default_system_message
             if default_system_message is not None
-            else (
-                self.default_train_system_message if use_train_system_prompt else self.default_inference_system_message
-            )
+            else (self.default_train_system_message if use_train_system_prompt else self.default_inference_system_message)
         )
 
         template = (
@@ -205,12 +190,10 @@ class VigogneChatV2Processor(VigogneChatV2Template):
 
         # user/assistant prefix tokens
         # w/o bos_token or eos_token
-        user_prefix_input_ids = tokenizer.tok(f"\n{self.user_prefix}:", add_bos_token=False, add_eos_token=False)[
+        user_prefix_input_ids = tokenizer.tok(f"\n{self.user_prefix}:", add_bos_token=False, add_eos_token=False)["input_ids"]
+        assistant_prefix_input_ids = tokenizer.tok(f"\n{self.assistant_prefix}:", add_bos_token=False, add_eos_token=False)[
             "input_ids"
         ]
-        assistant_prefix_input_ids = tokenizer.tok(
-            f"\n{self.assistant_prefix}:", add_bos_token=False, add_eos_token=False
-        )["input_ids"]
 
         # NB: might be incorrect for other tokenizers than llama depending on config
         # tmp fix for llama-2
@@ -229,9 +212,7 @@ class VigogneChatV2Processor(VigogneChatV2Template):
                 utterance.content, add_bos_token=False, add_eos_token=utterance.role == Role.assistant
             )["input_ids"]
 
-            prefix_input_ids = (
-                assistant_prefix_input_ids if utterance.role == Role.assistant else user_prefix_input_ids
-            )
+            prefix_input_ids = assistant_prefix_input_ids if utterance.role == Role.assistant else user_prefix_input_ids
             input_ids += prefix_input_ids + utterance_input_ids
 
             # note token indexes for reponse
