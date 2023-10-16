@@ -94,9 +94,7 @@ Explique pourquoi la fraction suivante est équivalente à 1/4 : 4/16
             ),
         }
 
-        example_length = alpaca_processor.process_example(example, self.tokenizer, length_column_name="example_length")[
-            "example_length"
-        ]
+        example_length = len(alpaca_processor.process_example(example, self.tokenizer)["input_ids"])
         expected_example_length = 128
         self.assertEqual(example_length, expected_example_length)
 
@@ -156,4 +154,3 @@ Donne trois conseils pour rester en bonne santé.
 ### Response:
 """
         self.assertEqual(generated_text, expected_text)
-

@@ -39,7 +39,7 @@ class TestConversationV3Processor(unittest.TestCase):
 
         generated_text = vigogne_chat_v3_template.build_inference_prompt(example, self.tokenizer)
         expected_text = """[INST] <<SYS>>
-Vous êtes Vigogne, l'assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
+Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
 <</SYS>>
 
 Donne trois conseils pour rester en bonne santé. [/INST]"""
@@ -107,9 +107,7 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
             ]
         }
 
-        example_length = vigogne_chat_v3_processor.process_example(
-            example, self.tokenizer, length_column_name="example_length"
-        )["example_length"]
+        example_length = len(vigogne_chat_v3_processor.process_example(example, self.tokenizer)["input_ids"])
         expected_example_length = 147
         self.assertEqual(example_length, expected_example_length)
 
@@ -158,7 +156,7 @@ Donne trois conseils pour rester en bonne santé. [/INST] 1. Mangez une alimenta
 
         generated_text = vigogne_chat_v3_template.build_inference_prompt(example, self.tokenizer)
         expected_text = """[INST] <<SYS>>
-Vous êtes Vigogne, l'assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
+Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
 <</SYS>>
 
 Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST]"""

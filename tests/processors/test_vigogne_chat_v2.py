@@ -36,7 +36,7 @@ class TestConversationV2Processor(unittest.TestCase):
         }
 
         generated_text = vigogne_chat_v2_template.build_inference_prompt(example, self.tokenizer)
-        expected_text = """<|system|>: Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
+        expected_text = """<|system|>: Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
 <|user|>: Donne trois conseils pour rester en bonne santé.
 <|assistant|>:"""
         self.assertEqual(generated_text, expected_text)
@@ -103,9 +103,12 @@ class TestConversationV2Processor(unittest.TestCase):
             ]
         }
 
-        example_length = vigogne_chat_v2_processor.process_example(
-            example, self.tokenizer, length_column_name="example_length"
-        )["example_length"]
+        example_length = len(
+            vigogne_chat_v2_processor.process_example(
+                example,
+                self.tokenizer,
+            )["input_ids"]
+        )
         expected_example_length = 145
         self.assertEqual(example_length, expected_example_length)
 
@@ -151,7 +154,7 @@ class TestConversationV2Processor(unittest.TestCase):
         }
 
         generated_text = vigogne_chat_v2_template.build_inference_prompt(example, self.tokenizer)
-        expected_text = """<|system|>: Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
+        expected_text = """<|system|>: Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
 <|user|>: Bonjour.
 <|assistant|>: Bonjour, tu vas bien ?</s>
 <|user|>: Non, ça ne va pas.
@@ -264,7 +267,7 @@ class TestConversationV2Processor(unittest.TestCase):
         history = [["Donne trois conseils pour rester en bonne santé.", ""]]
 
         generated_text = generate_inference_chat_prompt(history, self.tokenizer)
-        expected_text = """<|system|>: Vous êtes l'assistant IA nommé Vigogne, créé par Zaion Lab (https://zaion.ai). Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
+        expected_text = """<|system|>: Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
 <|user|>: Donne trois conseils pour rester en bonne santé.
 <|assistant|>:"""
         self.assertEqual(generated_text, expected_text)
