@@ -61,25 +61,25 @@ def prepare_datasets(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
     return train_dataset, eval_dataset
 
 
+def _get_ds_type(file_path: str):
+    # extension = file_path.rsplit(".", 1)[-1]
+    extension = Path(file_path).suffix
+    if ".json" in extension or ".jsonl" in extension:
+        return "json"
+    elif ".parquet" in extension:
+        return "parquet"
+    elif ".arrow" in extension:
+        return "arrow"
+    elif ".csv" in extension:
+        return "csv"
+    elif ".txt" in extension:
+        return "text"
+    raise ValueError(f"Cannot handle file extension {extension}")
+
 def load_datasets(cfg: Any):
     """Load datasets from local files."""
 
     # todo: add ds from hf hub
-
-    def _get_ds_type(file_path: str):
-        # extension = file_path.rsplit(".", 1)[-1]
-        extension = Path(file_path).suffix
-        if ".json" in extension or ".jsonl" in extension:
-            return "json"
-        elif ".parquet" in extension:
-            return "parquet"
-        elif ".arrow" in extension:
-            return "arrow"
-        elif ".csv" in extension:
-            return "csv"
-        elif ".txt" in extension:
-            return "text"
-        raise ValueError(f"Cannot handle file extension {extension}")
 
     logger.info("Loading datasets...")
 
@@ -186,9 +186,9 @@ def filter_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict]):
         # Remove length column
         processed_dataset = processed_dataset.remove_columns(cfg.length_column_name)
 
-        logger.info(f'Filtered training set to {processed_dataset["train"].num_rows:,d} rows')
-        if "eval" in processed_dataset:
-            logger.info(f'Filtered evaluation set to {processed_dataset["eval"].num_rows:,d} rows')
+    logger.info(f'Filtered training set to {processed_dataset["train"].num_rows:,d} rows')
+    if "eval" in processed_dataset:
+        logger.info(f'Filtered evaluation set to {processed_dataset["eval"].num_rows:,d} rows')
 
     return processed_dataset
 
@@ -204,13 +204,14 @@ def get_num_tokens(cfg: Any, dataset: Union[Dataset, DatasetDict]):
 
     logger.info("Counting total number of tokens...")
 
-    length_data = dataset.map(
-        _process_function,
-        num_proc=cfg.preprocessing_num_workers,
-        remove_columns=next(iter(dataset.values())).column_names,
-        load_from_cache_file=not cfg.overwrite_cache,
-        desc="get example length",
-    )
+    with cfg.main_process_first():
+        length_data = dataset.map(
+            _process_function,
+            num_proc=cfg.preprocessing_num_workers,
+            remove_columns=next(iter(dataset.values())).column_names,
+            load_from_cache_file=not cfg.overwrite_cache,
+            desc="get example length",
+        )
 
     cfg.num_training_tokens = np.sum(length_data["train"]["num_tokens"])
     cfg.num_training_supervised_tokens = np.sum(length_data["train"]["num_supervised_tokens"])
