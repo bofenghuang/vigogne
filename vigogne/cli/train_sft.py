@@ -13,12 +13,17 @@ logger = logging.getLogger(__name__)
 
 
 def main():
-    # def train(args):
-    # HF parser
+    # Parse args
     parser = HfArgumentParser(VigogneTrainingArguments)
     (training_args,) = parser.parse_args_into_dataclasses()
-    # debug
-    # (training_args,) = parser.parse_args_into_dataclasses(args=args)
+
+    train(training_args)
+
+
+def debug(args):
+    # Parse args
+    parser = HfArgumentParser(VigogneTrainingArguments)
+    (training_args,) = parser.parse_args_into_dataclasses(args=args)
 
     train(training_args)
 
