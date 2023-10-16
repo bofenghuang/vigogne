@@ -105,7 +105,7 @@ def load_datasets(cfg: Any):
     )
     if "eval" in dataset:
         logger.info(
-            f'Eval     set -> num_rows: {dataset["eval"].num_rows:,d}, features: {", ".join(dataset["eval"].column_names)}'
+            f'Evaluation set -> num_rows: {dataset["eval"].num_rows:,d}, features: {", ".join(dataset["eval"].column_names)}'
         )
 
     # Log a few random samples from the training set
@@ -186,9 +186,9 @@ def filter_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict]):
         # Remove length column
         processed_dataset = processed_dataset.remove_columns(cfg.length_column_name)
 
-        logger.info(f'Filtered training set to {processed_dataset["train"].num_rows} rows')
+        logger.info(f'Filtered training set to {processed_dataset["train"].num_rows:,d} rows')
         if "eval" in processed_dataset:
-            logger.info(f'Filtered eval set to {processed_dataset["eval"].num_rows} rows')
+            logger.info(f'Filtered evaluation set to {processed_dataset["eval"].num_rows:,d} rows')
 
     return processed_dataset
 
@@ -223,7 +223,7 @@ def get_num_tokens(cfg: Any, dataset: Union[Dataset, DatasetDict]):
         cfg.num_eval_tokens = np.sum(length_data["eval"]["num_tokens"])
         cfg.num_eval_supervised_tokens = np.sum(length_data["eval"]["num_supervised_tokens"])
         logger.info(
-            f"Eval     set -> num_tokens: {cfg.num_eval_tokens:,d}, num_supervised_tokens: {cfg.num_eval_supervised_tokens:,d}"
+            f"Evaluation set -> num_tokens: {cfg.num_eval_tokens:,d}, num_supervised_tokens: {cfg.num_eval_supervised_tokens:,d}"
         )
 
     return dataset
