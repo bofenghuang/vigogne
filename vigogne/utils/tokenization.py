@@ -7,7 +7,7 @@ import logging
 from typing import Any
 
 # import transformers
-from transformers import AutoTokenizer
+from transformers import AddedToken, AutoTokenizer
 
 logger = logging.getLogger(__name__)
 
@@ -104,6 +104,20 @@ def load_tokenizer(cfg: Any):
     #     model=model,
     # )
 
+    # Add tokens
+    if cfg.add_tokens:
+        tokenizer.add_tokens([AddedToken(token, rstrip=False, lstrip=False, normalized=False) for token in cfg.add_tokens])
+        logger.info(f"Added tokens: {cfg.add_tokens}")
+    if cfg.add_special_tokens:
+        for k, v in cfg.add_special_tokens.items():
+            tokenizer.add_special_tokens({k: AddedToken(v, rstrip=False, lstrip=False, normalized=False)})
+        logger.info(f"Added special tokens: {cfg.add_special_tokens}")
+
+    logger.info(f"bos_token: {tokenizer.bos_token} / bos_token_id: {tokenizer.bos_token_id}")
+    logger.info(f"eos_token: {tokenizer.eos_token} / eos_token_id: {tokenizer.eos_token_id}")
+    logger.info(f"pad_token: {tokenizer.pad_token} / pad_token_id: {tokenizer.pad_token_id}")
+    logger.info(f"unk_token: {tokenizer.unk_token} / unk_token_id: {tokenizer.unk_token_id}")
+
     # todo: better handle
     # Override instance method
     # Cannot override special method (e.g., __call__) of instance
@@ -111,10 +125,5 @@ def load_tokenizer(cfg: Any):
     # tokenizer.__call__ = tok.__get__(tokenizer, tokenizer.__class__)
     tokenizer.tok = tok.__get__(tokenizer, tokenizer.__class__)
     # or monkey patching
-
-    logger.info(f"bos_token: {tokenizer.bos_token} / bos_token_id: {tokenizer.bos_token_id}")
-    logger.info(f"eos_token: {tokenizer.eos_token} / eos_token_id: {tokenizer.eos_token_id}")
-    logger.info(f"pad_token: {tokenizer.pad_token} / pad_token_id: {tokenizer.pad_token_id}")
-    logger.info(f"unk_token: {tokenizer.unk_token} / unk_token_id: {tokenizer.unk_token_id}")
 
     return tokenizer

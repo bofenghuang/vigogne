@@ -48,7 +48,7 @@ def train(cfg: Any):
     train_dataset, eval_dataset = prepare_datasets(cfg, tokenizer)
 
     # Load model
-    model = load_model(cfg)
+    model = load_model(cfg, tokenizer)
 
     # Setup trainer
     trainer = setup_trainer(cfg, model, tokenizer, train_dataset, eval_dataset)

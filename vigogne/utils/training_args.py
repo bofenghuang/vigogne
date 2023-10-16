@@ -3,9 +3,10 @@
 
 """Training arguments."""
 
+import json
 import os
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from transformers import TrainingArguments
 
@@ -128,6 +129,14 @@ class VigogneTrainingArguments(TrainingArguments):
             )
         },
     )
+    add_tokens: Optional[str] = field(
+        default=None,
+        metadata={"help": "The extra tokens to add to tokenier."},
+    )
+    add_special_tokens: Optional[str] = field(
+        default=None,
+        metadata={"help": "The special tokens to add to tokenier."},
+    )
 
     # data arguments
     train_file: Optional[str] = field(default=None, metadata={"help": "The local path to the training file."})
@@ -191,13 +200,22 @@ class VigogneTrainingArguments(TrainingArguments):
     def __post_init__(self):
         super().__post_init__()
 
+        # tokenizer
         self.tokenizer_name_or_path = self.tokenizer_name_or_path or self.model_name_or_path
         self.tokenizer_revision = self.tokenizer_revision or self.model_revision
+        # todo: better handle
+        self.add_tokens = json.loads(self.add_tokens) if self.add_tokens is not None else None
+        self.add_special_tokens = json.loads(self.add_special_tokens) if self.add_special_tokens is not None else None
+
+        # model
         assert not (
             self.load_in_8bit and self.load_in_4bit
         ), "You can't pass `load_in_8bit=True` and `load_in_4bit=True` at the same time"
+
+        # data
         assert (
             self.processor_style in SUPPORTED_PROCESSORS.keys()
         ), f"Specified processor_style {self.processor_style} doesn't exist in {SUPPORTED_PROCESSORS}"
 
+        # config
         self.config_path = self.config_path if self.config_path is not None else os.path.join(self.output_dir, CONFIG_FILENAME)

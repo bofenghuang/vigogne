@@ -23,7 +23,7 @@ PEFT_FOLDER_NAME = "adapter"
 logger = logging.getLogger(__name__)
 
 
-def load_model(cfg: Any):
+def load_model(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
     """Load Transformer models."""
 
     logger.info("Loading model...")
@@ -66,16 +66,22 @@ def load_model(cfg: Any):
         **model_kwargs,
     )
 
-    # Resize token_embeddings to 32x
-    # embeddings_len = (
-    #     math.ceil(len(tokenizer) / 32) * 32
-    #     if cfg.resize_token_embeddings_to_32x
-    #     else len(tokenizer)
-    # )
-    # if model.get_input_embeddings().num_embeddings < embeddings_len:
-    #     model.resize_token_embeddings(embeddings_len)
-    # else:
-    #     model.tie_weights()
+    # Resize token_embeddings
+    # todo: to 32x
+    # todo: model.tie_weights()
+    if (num_new_tokens := len(tokenizer) - model.get_input_embeddings().num_embeddings) > 0:
+        model.resize_token_embeddings(len(tokenizer))
+
+        input_embeddings = model.get_input_embeddings().weight.data
+        output_embeddings = model.get_output_embeddings().weight.data
+
+        input_embeddings_avg = input_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
+        output_embeddings_avg = output_embeddings[:-num_new_tokens].mean(dim=0, keepdim=True)
+
+        input_embeddings[-num_new_tokens:] = input_embeddings_avg
+        output_embeddings[-num_new_tokens:] = output_embeddings_avg
+
+        logger.info(f"Added {num_new_tokens} new special tokens to the model")
 
     if cfg.load_in_8bit or (cfg.adapter == "qlora" and cfg.load_in_4bit):
         # Freeze base model
@@ -157,7 +163,7 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
 
     if cfg.lora_target_all_linear_layers:
         linear_target_modules = find_all_linear_names(model)
-        logger.info(f"Found linear modules: {repr(linear_target_modules)}")
+        logger.info(f"Apply LoRA on all linear layers: {repr(linear_target_modules)}")
         lora_target_modules = list(set(lora_target_modules + linear_target_modules))
 
     if not lora_target_modules:
