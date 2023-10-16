@@ -5,6 +5,7 @@
 
 import logging
 import os
+import shutil
 from typing import Any, Dict
 
 import bitsandbytes as bnb
@@ -12,7 +13,12 @@ import torch
 import transformers
 from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model, prepare_model_for_kbit_training
 from peft.tuners.lora import QuantLinear
+from peft.utils import CONFIG_NAME as PEFT_CONFIG_NAME
+from peft.utils import SAFETENSORS_WEIGHTS_NAME as PEFT_SAFETENSORS_WEIGHTS_NAME
+from peft.utils import WEIGHTS_NAME as PEFT_WEIGHTS_NAME
 from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+
+PEFT_FOLDER_NAME = "adapter"
 
 logger = logging.getLogger(__name__)
 
@@ -173,6 +179,17 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
     return model
 
 
+def move_peft_files(cfg: Any):
+    """Move PEFT files"""
+
+    adapter_dir = os.path.join(cfg.output_dir, PEFT_FOLDER_NAME)
+    os.makedirs(adapter_dir, exist_ok=True)
+
+    for filename in [PEFT_CONFIG_NAME, PEFT_WEIGHTS_NAME, PEFT_SAFETENSORS_WEIGHTS_NAME]:
+        if os.path.exists(file_path := os.path.join(cfg.output_dir, filename)):
+            shutil.move(file_path, os.path.join(adapter_dir, filename))
+
+
 def merge_lora(cfg: Any):
     """Remerge LoRA layers with base model."""
 
@@ -180,13 +197,14 @@ def merge_lora(cfg: Any):
 
     model = AutoPeftModelForCausalLM.from_pretrained(
         cfg.output_dir,
-        device_map="auto",
+        device_map="auto",  # todo: cpu
         # torch_dtype=torch.bfloat16
         torch_dtype=torch.float16,
         low_cpu_mem_usage=True,
     )
     model = model.merge_and_unload()
     model.save_pretrained(cfg.output_dir, safe_serialization=cfg.save_safetensors, max_shard_size=cfg.max_shard_size)
+    move_peft_files(cfg)
 
 
 # Deprecated
