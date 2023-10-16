@@ -23,6 +23,7 @@ output_dir=outputs/$run_name
 
 # Might need to adjust the batch size and other hyperparameters by yourself
 per_device_train_batch_size=8
+per_device_eval_batch_size=4
 gradient_accumulation_steps=8
 
 # Further optimization
@@ -34,7 +35,7 @@ gradient_accumulation_steps=8
 # --optim "adamw_bnb_8bit" \
 
 torchrun \
-    vigogne/train_sft.py \
+    vigogne/cli/train_sft.py \
     --model_name_or_path $model_name_or_path \
     --tokenizer_use_fast false \
     --tokenizer_padding_side "right" \
@@ -53,9 +54,10 @@ torchrun \
     --lora_dropout "0.05" \
     --lora_target_modules "q_proj" "v_proj" "k_proj" "o_proj" "gate_proj" "up_proj" "down_proj" \
     --do_merge_lora \
-    --per_device_train_batch_size $per_device_train_batch_size \
-    --gradient_accumulation_steps $gradient_accumulation_steps \
     --num_train_epochs "3" \
+    --per_device_train_batch_size $per_device_train_batch_size \
+    --per_device_eval_batch_size $per_device_eval_batch_size \
+    --gradient_accumulation_steps $gradient_accumulation_steps \
     --learning_rate "1e-4" \
     --warmup_ratio "0.03" \
     --lr_scheduler_type "cosine" \
@@ -69,4 +71,6 @@ torchrun \
     --save_strategy "steps" \
     --save_steps "100" \
     --save_total_limit "3" \
+    --evaluation_strategy "steps" \
+    --eval_steps "100" \
     --report_to "tensorboard" "wandb"
