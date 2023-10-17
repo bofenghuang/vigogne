@@ -6,6 +6,9 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel
 
+# model types
+SUPPORTED_MODEL_TYPES = [DECODER := "decoder-only", SEQ2SEQ := "seq2seq"]
+
 # ignore index in loss
 IGNORE_INDEX = -100
 

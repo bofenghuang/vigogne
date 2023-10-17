@@ -7,9 +7,9 @@ from typing import Any, Optional
 
 import torch
 import transformers
-from transformers import DataCollatorForSeq2Seq, Trainer
+from transformers import DataCollatorForSeq2Seq, Seq2SeqTrainer, Trainer
 
-from ..data_utils import IGNORE_INDEX
+from ..data_utils import DECODER, IGNORE_INDEX
 from .callback import SaveConfigtoFileCallback
 
 
@@ -25,7 +25,8 @@ def setup_trainer(
     data_collator = DataCollatorForSeq2Seq(tokenizer, label_pad_token_id=IGNORE_INDEX, pad_to_multiple_of=64)
 
     # Init trainer
-    trainer = Trainer(
+    trainer_cls = Trainer if cfg.model_type == DECODER else Seq2SeqTrainer
+    trainer = trainer_cls(
         model=model,
         args=cfg,
         data_collator=data_collator,

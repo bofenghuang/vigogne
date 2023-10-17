@@ -8,8 +8,9 @@ import os
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Union
 
-from transformers import TrainingArguments
+from transformers import Seq2SeqTrainingArguments, TrainingArguments
 
+from ..data_utils import DECODER, SUPPORTED_MODEL_TYPES
 from ..processors import SUPPORTED_PROCESSORS
 
 CONFIG_FILENAME = "hparams.json"
@@ -33,6 +34,7 @@ class VigogneTrainingArguments(TrainingArguments):
         default=None,
         metadata={"help": "The specific model version to use. It can be a branch name, a tag name, or a commit id."},
     )
+    model_type: str = field(default=DECODER, metadata={"help": "The type of the model architecture."})
     torch_dtype: str = field(
         default="float16",
         metadata={
@@ -211,6 +213,9 @@ class VigogneTrainingArguments(TrainingArguments):
         assert not (
             self.load_in_8bit and self.load_in_4bit
         ), "You can't pass `load_in_8bit=True` and `load_in_4bit=True` at the same time"
+        assert (
+            self.model_type in SUPPORTED_MODEL_TYPES
+        ), f"Specified model_type {self.model_type} doesn't exist in {SUPPORTED_MODEL_TYPES}"
 
         # data
         assert (
@@ -219,3 +224,8 @@ class VigogneTrainingArguments(TrainingArguments):
 
         # config
         self.config_path = self.config_path if self.config_path is not None else os.path.join(self.output_dir, CONFIG_FILENAME)
+
+
+@dataclass
+class VigogneSeq2SeqTrainingArguments(VigogneTrainingArguments, Seq2SeqTrainingArguments):
+    ...

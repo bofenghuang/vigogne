@@ -16,7 +16,9 @@ from peft.tuners.lora import QuantLinear
 from peft.utils import CONFIG_NAME as PEFT_CONFIG_NAME
 from peft.utils import SAFETENSORS_WEIGHTS_NAME as PEFT_SAFETENSORS_WEIGHTS_NAME
 from peft.utils import WEIGHTS_NAME as PEFT_WEIGHTS_NAME
-from transformers import AutoModelForCausalLM, BitsAndBytesConfig
+from transformers import AutoModelForCausalLM, AutoModelForSeq2SeqLM, BitsAndBytesConfig
+
+from vigogne.data_utils import DECODER
 
 PEFT_FOLDER_NAME = "adapter"
 
@@ -58,7 +60,8 @@ def load_model(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
         )
 
     # Load model
-    model = AutoModelForCausalLM.from_pretrained(
+    model_cls = AutoModelForCausalLM if cfg.model_type == DECODER else AutoModelForSeq2SeqLM
+    model = model_cls.from_pretrained(
         cfg.model_name_or_path,
         torch_dtype=torch_dtype,
         trust_remote_code=cfg.trust_remote_code,
@@ -163,7 +166,7 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
 
     if cfg.lora_target_all_linear_layers:
         linear_target_modules = find_all_linear_names(model)
-        logger.info(f"Apply LoRA on all linear layers: {repr(linear_target_modules)}")
+        logger.info(f'Apply LoRA on all linear layers: {", ".join(linear_target_modules)}')
         lora_target_modules = list(set(lora_target_modules + linear_target_modules))
 
     if not lora_target_modules:
