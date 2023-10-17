@@ -64,7 +64,7 @@ torchrun \
     --gradient_checkpointing \
     --ddp_find_unused_parameters false \
     --log_level "info" \
-    --logging_steps "10" \
+    --logging_steps "1" \
     --logging_first_step \
     --save_strategy "steps" \
     --save_steps "100" \
