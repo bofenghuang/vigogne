@@ -12,14 +12,12 @@ import transformers
 from vigogne.data_utils import IGNORE_INDEX, Instruct
 
 # instruct system message
-SYSTEM_MESSAGE_EN = (
-    "Below is an instruction that describes a task. Write a response that appropriately completes the request."
-)
+SYSTEM_MESSAGE_EN = "Below is an instruction that describes a task. Write a response that appropriately completes the request."
 SYSTEM_MESSAGE_FR = (
     "Ci-dessous se trouve une instruction qui décrit une tâche à accomplir. Rédigez une réponse qui répond de manière"
     " précise à la demande."
 )
-DEFAULT_SYSTEM_MESSAGE = SYSTEM_MESSAGE_EN
+DEFAULT_SYSTEM_MESSAGE = SYSTEM_MESSAGE_FR
 
 
 def merge_instruction_and_input(instruction_text: str, input_text: Optional[str], symbols_to_strip: str = "!,-.:;?~ "):
@@ -74,9 +72,7 @@ class AlpacaTemplate:
         default_system_message: Optional[str] = None,
         use_default_system_prompt: bool = True,
     ):
-        default_system_message = (
-            default_system_message if default_system_message is not None else self.default_system_message
-        )
+        default_system_message = default_system_message if default_system_message is not None else self.default_system_message
 
         template = (
             "{{ bos_token }}"
@@ -91,20 +87,20 @@ class AlpacaTemplate:
             "{% set system_message = false %}"
             "{% endif %}"
             "{% if system_message != false %}"
-            "{{ '<|system|>: ' + system_message + '\\n' }}"
+            "{{ '### System:\\n' + system_message }}"
             "{% endif %}"
             "{% for message in loop_messages %}"  # Loop over all non-system messages
             "{% if (message['role'] == 'user') != (loop.index0 % 2 == 0) %}"
             "{{ raise_exception('Conversation roles must alternate user/assistant/user/assistant/...') }}"
             "{% endif %}"
             "{% if message['role'] == 'user' %}"
-            "{{ '<|user|>: ' + message['content'].strip() + '\\n' }}"
+            "{{ '\\n\\n### Instruction:\\n' + message['content'].strip() }}"
             "{% elif message['role'] == 'assistant' %}"
-            "{{ '<|assistant|>: ' + message['content'].strip() + eos_token + '\\n' }}"
+            "{{ '\\n\\n### Response:\\n' + message['content'].strip() + eos_token }}"
             "{% endif %}"
             "{% endfor %}"
             "{% if add_generation_prompt %}"
-            "{{ '<|assistant|>:' }}"  # Add generation prompt
+            "{{ '\\n\\n### Response:\\n' }}"  # Add generation prompt
             "{% endif %}"
         )
         template = template.replace("USE_DEFAULT_PROMPT", "true" if use_default_system_prompt else "false")
@@ -144,9 +140,7 @@ class AlpacaProcessor(AlpacaTemplate):
             user_prompt = self.build_inference_prompt(example)
 
             # Get prompt length for masking
-            len_user_prompt_tokens = len(
-                tokenizer.tok(user_prompt, add_bos_token=True, add_eos_token=False)["input_ids"]
-            )
+            len_user_prompt_tokens = len(tokenizer.tok(user_prompt, add_bos_token=True, add_eos_token=False)["input_ids"])
 
             labels = [IGNORE_INDEX] * len_user_prompt_tokens + input_ids[len_user_prompt_tokens:]
         else:
