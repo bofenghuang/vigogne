@@ -8,35 +8,34 @@ from typing import List, Optional
 import fire
 from transformers import HfArgumentParser
 
-from vigogne.data_utils import DECODER, SUPPORTED_MODEL_TYPES
+from vigogne.data_utils import SEQ2SEQ
 from vigogne.train_sft import train
 from vigogne.utils import VigogneSeq2SeqTrainingArguments, VigogneTrainingArguments
 
 logger = logging.getLogger(__name__)
 
 
-def main(model_type: str = DECODER):
-    assert model_type in SUPPORTED_MODEL_TYPES, f"Specified model_type {model_type} doesn't exist in {SUPPORTED_MODEL_TYPES}"
-    TrainingArgs = VigogneTrainingArguments if model_type == DECODER else VigogneSeq2SeqTrainingArguments
-
+def main():
     # Parse args
-    parser = HfArgumentParser(TrainingArgs)
+    parser = HfArgumentParser(VigogneTrainingArguments)
     (training_args,) = parser.parse_args_into_dataclasses()
 
-    training_args.model_type = model_type
+    # todo: better handle conflict between hf argparse and fire
+    if training_args.model_type == SEQ2SEQ:
+        parser = HfArgumentParser(VigogneSeq2SeqTrainingArguments)
+        (training_args,) = parser.parse_args_into_dataclasses()
 
     train(training_args)
 
-
-def debug(model_type: str = DECODER, args: Optional[List[str]] = None):
-    assert model_type in SUPPORTED_MODEL_TYPES, f"Specified model_type {model_type} doesn't exist in {SUPPORTED_MODEL_TYPES}"
-    TrainingArgs = VigogneTrainingArguments if model_type == DECODER else VigogneSeq2SeqTrainingArguments
-
+def debug(args: Optional[List[str]] = None):
     # Parse args
-    parser = HfArgumentParser(TrainingArgs)
+    parser = HfArgumentParser(VigogneTrainingArguments)
     (training_args,) = parser.parse_args_into_dataclasses(args=args)
 
-    training_args.model_type = model_type
+    # todo: better handle conflict between hf argparse and fire
+    if training_args.model_type == SEQ2SEQ:
+        parser = HfArgumentParser(VigogneSeq2SeqTrainingArguments)
+        (training_args,) = parser.parse_args_into_dataclasses(args=args)
 
     train(training_args)
 
