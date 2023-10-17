@@ -351,3 +351,22 @@ Bonjour. [/INST] Bonjour, tu vas bien ?</s> [INST] Non, ça ne va pas. [/INST] Q
         self.assertEqual(self.tokenizer.decode([l if l != IGNORE_INDEX else 0 for l in labels[1]]), expected_text)
 
         self.tokenizer.padding_side = "right"
+
+    def test_chat_template(self):
+        example = {
+            "messages": [
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+            ]
+        }
+
+        self.tokenizer.chat_template = vigogne_chat_v3_template.default_chat_template()
+        generated_text = self.tokenizer.apply_chat_template(example["messages"], add_generation_prompt=True, tokenize=False)
+
+        expected_text = """<s>[INST] <<SYS>>
+Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
+<</SYS>>
+
+Bonjour. [/INST] Bonjour, tu vas bien ? </s>[INST] Non, ça ne va pas. [/INST]"""
+        self.assertEqual(generated_text, expected_text)

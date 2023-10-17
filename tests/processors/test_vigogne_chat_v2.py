@@ -226,27 +226,6 @@ class TestConversationV2Processor(unittest.TestCase):
         )["input_ids"]
         self.assertEqual(processed_input_ids, tokenized_input_ids)
 
-    # todo
-    # def test_compare_example_processing_and_chat_template(self):
-    #     example = {
-    #         "messages": [
-    #             {"role": "user", "content": "Bonjour."},
-    #             {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
-    #             {"role": "user", "content": "Non, ça ne va pas."},
-    #             {"role": "assistant", "content": "Qu'est-ce qui s'est passé ?"},
-    #         ]
-    #     }
-    #     # processed_input_ids = vigogne_chat_v2_processor.process_example(example, self.tokenizer)["input_ids"]
-    #     processed_input_ids = self.tokenizer.tok(
-    #         vigogne_chat_v2_template.build_inference_prompt(example, self.tokenizer),
-    #         add_bos_token=True,
-    #         add_eos_token=False,
-    #     )["input_ids"]
-
-    #     self.tokenizer.chat_template = vigogne_chat_v2_processor.default_chat_template(use_train_system_prompt=True)
-    #     tokenized_input_ids = self.tokenizer.apply_chat_template(example["messages"], add_generation_prompt=True)
-    #     self.assertEqual(processed_input_ids, tokenized_input_ids)
-
     # def test_compare_example_processing_and_promot_tokenization_multi_turn(self):
     #     example = {
     #         "messages": [
@@ -269,5 +248,24 @@ class TestConversationV2Processor(unittest.TestCase):
         generated_text = generate_inference_chat_prompt(history, self.tokenizer)
         expected_text = """<|system|>: Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
 <|user|>: Donne trois conseils pour rester en bonne santé.
+<|assistant|>:"""
+        self.assertEqual(generated_text, expected_text)
+
+    def test_chat_template(self):
+        example = {
+            "messages": [
+                {"role": "user", "content": "Bonjour."},
+                {"role": "assistant", "content": "Bonjour, tu vas bien ?"},
+                {"role": "user", "content": "Non, ça ne va pas."},
+            ]
+        }
+
+        self.tokenizer.chat_template = vigogne_chat_v2_template.default_chat_template()
+        generated_text = self.tokenizer.apply_chat_template(example["messages"], add_generation_prompt=True, tokenize=False)
+
+        expected_text = """<s><|system|>: Vous êtes Vigogne, un assistant IA créé par Zaion Lab. Vous suivez extrêmement bien les instructions. Aidez autant que vous le pouvez.
+<|user|>: Bonjour.
+<|assistant|>: Bonjour, tu vas bien ?</s>
+<|user|>: Non, ça ne va pas.
 <|assistant|>:"""
         self.assertEqual(generated_text, expected_text)
