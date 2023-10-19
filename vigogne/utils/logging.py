@@ -14,6 +14,7 @@ from logging import Formatter
 from logging.config import dictConfig
 from typing import Any, Dict
 
+# import transformers
 from colorama import Fore, Style, init
 
 
@@ -41,7 +42,7 @@ class ColorfulFormatter(Formatter):
 
     def format(self, record):
         # todo: torch.distributed.get_rank()
-        record.rank = int(os.getenv("LOCAL_RANK", "0"))
+        # record.rank = int(os.getenv("LOCAL_RANK", "0"))
         log_message = super().format(record)
         return self.colors.get(record.levelname, "") + log_message + Fore.RESET
 
@@ -56,7 +57,8 @@ LOGGING_CONFIG: Dict[str, Any] = {
         },
         "colorful": {
             "()": ColorfulFormatter,
-            "format": "[%(asctime)s] [%(levelname)s] [%(name)s.%(funcName)s:%(lineno)d] [RANK:%(rank)d] %(message)s",
+            # "format": "[%(asctime)s] [%(levelname)s] [%(name)s.%(funcName)s:%(lineno)d] [RANK:%(rank)d] %(message)s",
+            "format": "[%(asctime)s] [%(levelname)s] [%(name)s.%(funcName)s:%(lineno)d] %(message)s",
             "datefmt": "%m/%d/%Y %H:%M:%S",
         },
     },
@@ -83,6 +85,11 @@ LOGGING_CONFIG: Dict[str, Any] = {
         "vigogne": {
             "handlers": ["color_console"],
             "level": "INFO",
+            "propagate": False,
+        },
+        "transformers": {
+            "handlers": ["color_console"],
+            "level": "WARNING",
             "propagate": False,
         },
     },
