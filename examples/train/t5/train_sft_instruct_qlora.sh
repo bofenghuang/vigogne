@@ -7,11 +7,11 @@ export WANDB_PROJECT="llm-sft-instruct"
 export OMP_NUM_THREADS="1"
 export TOKENIZERS_PARALLELISM="false"
 export BITSANDBYTES_NOWELCOME="1"
-# export CUDA_VISIBLE_DEVICES="0"
+export CUDA_VISIBLE_DEVICES="0"
 
 # Model
-# model_name_or_path=google/mt5-large
-# model_name_or_path=google/flan-t5-large
+# model_name_or_path=moussaKam/mbarthez
+# model_name_or_path=google/mt5-xxl
 model_name_or_path=google/flan-t5-xl
 # model_name_or_path=google/flan-t5-xxl
 
@@ -33,6 +33,8 @@ gradient_accumulation_steps=8
 # DeepSpeed Stage 2
 # --deepspeed vigogne/configs/ds_config_zero2_no_offload.json \
 
+# Some layers of T5 are kept in float32 for stability purposes.
+
 torchrun \
     vigogne/cli/train_sft.py \
     --model_type "seq2seq" \
@@ -52,8 +54,8 @@ torchrun \
     --adapter "qlora" \
     --load_in_4bit \
     --optim "paged_adamw_32bit" \
-    --lora_r "64" \
-    --lora_alpha "16" \
+    --lora_r "16" \
+    --lora_alpha "32" \
     --lora_dropout "0.05" \
     --lora_target_all_linear_layers \
     --do_merge_lora \
@@ -61,11 +63,10 @@ torchrun \
     --per_device_train_batch_size $per_device_train_batch_size \
     --per_device_eval_batch_size $per_device_eval_batch_size \
     --gradient_accumulation_steps $gradient_accumulation_steps \
-    --learning_rate "1e-4" \
+    --learning_rate "3e-4" \
     --warmup_ratio "0.03" \
     --lr_scheduler_type "cosine" \
     --weight_decay "0" \
-    --fp16 \
     --gradient_checkpointing \
     --ddp_find_unused_parameters false \
     --log_level "info" \
