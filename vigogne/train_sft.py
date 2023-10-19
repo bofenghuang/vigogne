@@ -69,5 +69,6 @@ def train(cfg: Any):
         # clear memory
         del model
         torch.cuda.empty_cache()
+
         # merge lora weights
         merge_lora(cfg)

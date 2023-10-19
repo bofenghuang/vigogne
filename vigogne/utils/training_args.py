@@ -58,11 +58,25 @@ class VigogneTrainingArguments(TrainingArguments):
         default=False,
         metadata={"help": "Whether or not to use the flash_attention implemented in Huggingface's transformer repository."},
     )
+
+    # quantiation arguments
     load_in_8bit: bool = field(
         default=False, metadata={"help": "Whether or not to convert the loaded model into mixed-8bit quantized model."}
     )
     load_in_4bit: bool = field(
         default=False, metadata={"help": "Whether or not to convert the loaded model into mixed-4bit quantized model."}
+    )
+    bnb_4bit_quant_type: str = field(
+        default="nf4", metadata={"help": "The quantization data type in the bnb.nn.Linear4Bit layers. Options are fp4 or nf4."}
+    )
+    bnb_4bit_use_double_quant: bool = field(
+        default=True,
+        metadata={
+            "help": (
+                "Whether or not to quantize again the quantization constants from the first quantization in nested"
+                " quantization."
+            )
+        },
     )
 
     # peft arguments
@@ -73,7 +87,6 @@ class VigogneTrainingArguments(TrainingArguments):
     lora_target_modules: Optional[List[str]] = field(
         default=None, metadata={"help": "The names of the modules to apply Lora to."}
     )
-    lora_task_type: str = field(default="CAUSAL_LM", metadata={"help": "The type of task to perform."})
     lora_fan_in_fan_out: bool = field(
         default=False,
         metadata={"help": "Set this to True if the layer to replace stores weight like (fan_in, fan_out)"},

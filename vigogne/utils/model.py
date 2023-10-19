@@ -6,12 +6,20 @@
 import logging
 import os
 import shutil
+from collections import defaultdict
 from typing import Any, Dict
 
 import bitsandbytes as bnb
 import torch
 import transformers
-from peft import AutoPeftModelForCausalLM, LoraConfig, get_peft_model, prepare_model_for_kbit_training
+from peft import (
+    AutoPeftModelForCausalLM,
+    AutoPeftModelForSeq2SeqLM,
+    LoraConfig,
+    TaskType,
+    get_peft_model,
+    prepare_model_for_kbit_training,
+)
 from peft.tuners.lora import QuantLinear
 from peft.utils import CONFIG_NAME as PEFT_CONFIG_NAME
 from peft.utils import SAFETENSORS_WEIGHTS_NAME as PEFT_SAFETENSORS_WEIGHTS_NAME
@@ -45,18 +53,19 @@ def load_model(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
 
     # BitsAndBytesConfig support
     # todo: fast peft without kaiming init
-    # https://twitter.com/jeremyphoward/status/1709601456620515638
+    # See https://twitter.com/jeremyphoward/status/1709601456620515638
     if cfg.load_in_8bit:
-        model_kwargs["quantization_config"] = BitsAndBytesConfig(load_in_8bit=True)
-    if cfg.adapter == "qlora" and cfg.load_in_4bit:
-        # todo: customize 4bit config
         model_kwargs["quantization_config"] = BitsAndBytesConfig(
-            load_in_4bit=True,
+            load_in_8bit=True,
             # llm_int8_threshold=6.0,
             # llm_int8_has_fp16_weight=False,
+        )
+    if cfg.adapter == "qlora" and cfg.load_in_4bit:
+        model_kwargs["quantization_config"] = BitsAndBytesConfig(
+            load_in_4bit=True,
             bnb_4bit_compute_dtype=torch_dtype,
-            bnb_4bit_use_double_quant=True,
-            bnb_4bit_quant_type="nf4",
+            bnb_4bit_quant_type=cfg.bnb_4bit_quant_type,
+            bnb_4bit_use_double_quant=cfg.bnb_4bit_use_double_quant,
         )
 
     # Load model
@@ -84,7 +93,7 @@ def load_model(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
         input_embeddings[-num_new_tokens:] = input_embeddings_avg
         output_embeddings[-num_new_tokens:] = output_embeddings_avg
 
-        logger.info(f"Added {num_new_tokens} new special tokens to the model")
+        logger.info(f"Resized model embedding layers to {len(tokenizer)}")
 
     if cfg.load_in_8bit or (cfg.adapter == "qlora" and cfg.load_in_4bit):
         # Freeze base model
@@ -157,6 +166,39 @@ def find_all_linear_names(model: transformers.PreTrainedModel):
     return list(lora_module_names)
 
 
+# Adapted from https://github.com/bofenghuang/vigogne/blob/76e1cd0b35fd4f9e360aecdf7130c998459df0ff/vigogne/train/utils/peft.py#L13
+def print_trainable_parameters(model: transformers.PreTrainedModel):
+    """Returns the number of trainable parameters and number of all parameters in the model."""
+    trainable_params = 0
+    total_params = 0
+    params_by_dtype = defaultdict(int)
+
+    for _, param in model.named_parameters():
+        num_params = param.numel()
+        # if using DS Zero 3 and the weights are initialized empty
+        if num_params == 0 and hasattr(param, "ds_numel"):
+            num_params = param.ds_numel
+
+        # Due to the design of 4bit linear layers from bitsandbytes
+        # one needs to multiply the number of parameters by 2 to get
+        # the correct number of parameters
+        if param.__class__.__name__ == "Params4bit":
+            num_params = num_params * 2
+
+        total_params += num_params
+        if param.requires_grad:
+            trainable_params += num_params
+
+        params_by_dtype[param.dtype] += num_params
+
+    logger.info(
+        f"trainable params: {trainable_params:,d} || all params: {total_params:,d} || percentage:"
+        f" {100 * trainable_params / total_params:.2f}%"
+    )
+    for k, v in params_by_dtype.items():
+        logger.info(f"dtype: {k} || num: {v:,d} || percentage: {100 * v / total_params:.2f}%")
+
+
 def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = False):
     """Apply LoRA layers to base model."""
 
@@ -166,11 +208,12 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
 
     if cfg.lora_target_all_linear_layers:
         linear_target_modules = find_all_linear_names(model)
-        logger.info(f'Apply LoRA on all linear layers: {", ".join(linear_target_modules)}')
         lora_target_modules = list(set(lora_target_modules + linear_target_modules))
 
     if not lora_target_modules:
         raise ValueError("Found empty lora_target_modules and lora_target_all_linear_layers is set False")
+
+    logger.info(f'Apply LoRA on layers: {", ".join(lora_target_modules)}')
 
     lora_config = LoraConfig(
         r=cfg.lora_r,
@@ -180,12 +223,14 @@ def load_lora(model: transformers.PreTrainedModel, cfg: Any, inference: bool = F
         fan_in_fan_out=cfg.lora_fan_in_fan_out or False,
         modules_to_save=cfg.lora_modules_to_save or None,
         bias="none",
-        task_type=cfg.lora_task_type,
+        task_type=TaskType.CAUSAL_LM if cfg.model_type == DECODER else TaskType.SEQ_2_SEQ_LM,
         inference_mode=False,
     )
 
     model = get_peft_model(model, lora_config)
-    model.print_trainable_parameters()
+
+    # model.print_trainable_parameters()
+    print_trainable_parameters(model)
 
     return model
 
@@ -206,7 +251,8 @@ def merge_lora(cfg: Any):
 
     logger.info("Merging LoRA with base model...")
 
-    model = AutoPeftModelForCausalLM.from_pretrained(
+    model_cls = AutoPeftModelForCausalLM if cfg.model_type == DECODER else AutoPeftModelForSeq2SeqLM
+    model = model_cls.from_pretrained(
         cfg.output_dir,
         device_map="auto",  # todo: cpu
         # torch_dtype=torch.bfloat16
@@ -215,6 +261,7 @@ def merge_lora(cfg: Any):
     )
     model = model.merge_and_unload()
     model.save_pretrained(cfg.output_dir, safe_serialization=cfg.save_safetensors, max_shard_size=cfg.max_shard_size)
+
     move_adapter_files(cfg)
 
 
