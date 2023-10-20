@@ -2,7 +2,7 @@
 # Copyright 2023  Bofeng Huang
 
 from enum import Enum
-from typing import Any, List, Optional
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
 
@@ -40,7 +40,7 @@ class Conversation(BaseModel):
     id: Optional[str] = None
     system: Optional[str] = None
 
-    def fully_model_dump(self, **kwargs) -> dict[str, Any]:
+    def fully_model_dump(self, **kwargs) -> Dict[str, Any]:
         dumped_dict = super().model_dump(**kwargs)
         for utterance in dumped_dict["messages"]:
             utterance["role"] = utterance["role"].value
