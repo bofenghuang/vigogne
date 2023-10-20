@@ -10,9 +10,11 @@ You can access the weights for these models on the 🤗 Hugging Face Hub. For fu
 
 Here is a list of recommended models for this project. These models have been trained using more diverse and higher-quality data, along with an optimized training process. It is advisable to use these models as a priority for your project. For alternative models, please refer to the [Other Models](#other-models) section.
 
-|                                     Model                                      | Type  |            Foundation model             |      Data      |                                                          Description                                                           |
-| :----------------------------------------------------------------------------: | :---: | :-------------------------------------: | :------------: | :----------------------------------------------------------------------------------------------------------------------------: |
-| [Vigogne-2-7B-Chat-V2.0](https://huggingface.co/bofenghuang/vigogne-2-7b-chat) | Chat  | [Llama-2-7B](https://ai.meta.com/llama) | 520K chat data | Check out our [blog](https://github.com/bofenghuang/vigogne/blob/main/blogs/2023-08-17-vigogne-chat-v2_0.md) for more details. |
+|                                     Model                                      | Type  |                         Foundation model                         |      Data      |                                                          Description                                                           |
+| :----------------------------------------------------------------------------: | :---: | :--------------------------------------------------------------: | :------------: | :----------------------------------------------------------------------------------------------------------------------------: |
+|   [Vigostral-7B-Chat](https://huggingface.co/bofenghuang/vigostral-7b-chat)    | Chat  | [Mistral-7B-v0.1](https://mistral.ai/news/announcing-mistral-7b) |                |                                                                                                                                |
+| [Vigogne-2-7B-Chat-V2.0](https://huggingface.co/bofenghuang/vigogne-2-7b-chat) | Chat  |             [Llama-2-7B](https://ai.meta.com/llama)              | 520K chat data | Check out our [blog](https://github.com/bofenghuang/vigogne/blob/main/blogs/2023-08-17-vigogne-chat-v2_0.md) for more details. |
+|  [Vigogne-2-13B-Chat](https://huggingface.co/bofenghuang/vigogne-2-13b-chat)   | Chat  |             [Llama-2-13B](https://ai.meta.com/llama)             | 520K chat data | Check out our [blog](https://github.com/bofenghuang/vigogne/blob/main/blogs/2023-08-17-vigogne-chat-v2_0.md) for more details. |
 
 ### Legacy Models
 
