@@ -210,7 +210,7 @@ def get_num_tokens(cfg: Any, dataset: Union[Dataset, DatasetDict]):
             num_proc=cfg.preprocessing_num_workers,
             remove_columns=next(iter(dataset.values())).column_names,
             load_from_cache_file=not cfg.overwrite_cache,
-            desc="get example length",
+            desc="count tokens",
         )
 
     cfg.num_training_tokens = np.sum(length_data["train"]["num_tokens"])

@@ -34,6 +34,7 @@ gradient_accumulation_steps=8
 # --deepspeed vigogne/configs/ds_config_zero2_no_offload.json \
 
 # Some layers of T5 are kept in float32 for stability purposes.
+# https://github.com/huggingface/transformers/issues/20287
 
 torchrun \
     vigogne/cli/train_sft.py \
