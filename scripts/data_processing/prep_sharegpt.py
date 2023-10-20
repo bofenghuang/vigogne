@@ -100,7 +100,7 @@ def filter_function(example, validated_languages, only_first_split=False, only_u
     if any(bool(re.search(r"(\d)\1{8}", turn["content"])) for turn in example["messages"]):
         return False
 
-    # if example["messages"][0]["role"] != "User":
+    # if example["messages"][0]["role"] != "user":
     #     return False
 
     if only_first_split and not example["id"].endswith("_0"):
@@ -108,7 +108,7 @@ def filter_function(example, validated_languages, only_first_split=False, only_u
 
     if only_uncensored:
         for turn in example["messages"]:
-            if turn["role"] == "Assistant" and not uncensor_filter_function(turn["content"]):
+            if turn["role"] == "assistant" and not uncensor_filter_function(turn["content"]):
                 return False
 
     return True

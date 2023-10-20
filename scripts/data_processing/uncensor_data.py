@@ -7,10 +7,11 @@
 import re
 
 import fire
-from datasets import Dataset, load_dataset
+from datasets import load_dataset
 
-# # Regexes used to filter responses, mostly common words and phrases used in refusals.
+# Regexes used to filter responses, mostly common words and phrases used in refusals.
 # Adapted from https://github.com/jondurbin/airoboros/blob/3d42fb0aff543182bd75707ff298fdbe591dc3b9/example-config.yaml#L27C1-L42C13
+# todo
 filter_words = [
     # English
     "my programming",
@@ -28,6 +29,7 @@ filter_words = [
     "violates my",
     "i (can('t| ?not)|w(on't|will not)|am (not |un)able.?).{0,30}(you are|you're|your )",
     "flesch",
+    "September 2021",
     # French
     "je suis désolé",
     "en tant qu('|e )(ia|assistant|modèle|gpt|bot)",
@@ -36,6 +38,7 @@ filter_words = [
     "j(e n)?'ai pas (l'|le |la |d'|de )?(accès|capacité|sentiment|personnalité)",
 ]
 
+# Compile patterns
 filter_patterns = [re.compile(x, re.I) for x in filter_words]
 
 def filter_function(s):
@@ -50,14 +53,17 @@ def main(
     response_field: str = "output",
     preprocessing_num_workers: int = 4,
 ):
-    raw_dataset = load_dataset("json", data_files=input_file)["train"]
-    print(raw_dataset)
+    # load
+    dataset = load_dataset("json", data_files=input_file, split="train")
+    print(f"Loaded {dataset.num_rows:,d} examples from {input_file}")
 
-    processed_dataset = raw_dataset.filter(filter_function, input_columns=response_field, num_proc=preprocessing_num_workers)
-    print(processed_dataset)
+    # filter
+    processed_dataset = dataset.filter(filter_function, input_columns=response_field, num_proc=preprocessing_num_workers)
+    print(f"Filtered to {processed_dataset.num_rows:,d} examples")
 
+    # export
     processed_dataset.to_json(output_file, orient="records", lines=True, force_ascii=False)
-    print(f"The processed data is saved into {output_file}")
+    print(f"Saved into {output_file}")
 
 
 if __name__ == "__main__":

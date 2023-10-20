@@ -3,6 +3,8 @@
 # Copyright 2023  Bofeng Huang
 
 """
+Gradio demo in streaming mode.
+
 Modified from: https://huggingface.co/spaces/mosaicml/mpt-7b-chat/raw/main/app.py
 
 Usage:
@@ -35,9 +37,9 @@ from transformers import (
     TextIteratorStreamer,
 )
 
-from vigogne.data_utils import Role
-from vigogne.inference.inference_utils import StopWordsCriteria
-from vigogne.preprocess import DEFAULT_CHAT_SYSTEM_MESSAGE, generate_inference_chat_prompt
+# from vigogne.data_utils import Role
+# from vigogne.inference.inference_utils import StopWordsCriteria
+# from vigogne.preprocess import generate_inference_chat_prompt
 
 # from uuid import uuid4
 
@@ -116,40 +118,54 @@ def main(
             device_map={"": device},
         )
     else:
-        model = AutoModelForCausalLM.from_pretrained(
-            base_model_name_or_path, device_map={"": device}, low_cpu_mem_usage=True
-        )
+        model = AutoModelForCausalLM.from_pretrained(base_model_name_or_path, device_map={"": device}, low_cpu_mem_usage=True)
 
     if lora_model_name_or_path is not None:
         model = PeftModel.from_pretrained(model, lora_model_name_or_path)
 
-    if not load_8bit and device != "cpu":
-        model.half()  # seems to fix bugs for some users.
+    # if not load_8bit and device != "cpu":
+    #     model.half()  # seems to fix bugs for some users.
 
-    model.eval()
+    # model.eval()
 
-    if torch.__version__ >= "2" and sys.platform != "win32":
-        model = torch.compile(model)
+    # if torch.__version__ >= "2" and sys.platform != "win32":
+    #     model = torch.compile(model)
 
     # NB
-    stop_words = [f"<|{Role.assistant.value}|>", f"<|{Role.user.value}|>"]
-    stop_words_criteria = StopWordsCriteria(stop_words=stop_words, tokenizer=tokenizer)
-    pattern_trailing_stop_words = re.compile(
-        rf'(?:{"|".join([re.escape(stop_word) for stop_word in stop_words])})\W*$'
-    )
+    # stop_words = [f"<|{Role.assistant.value}|>", f"<|{Role.user.value}|>"]
+    # stop_words_criteria = StopWordsCriteria(stop_words=stop_words, tokenizer=tokenizer)
+    # pattern_trailing_stop_words = re.compile(rf'(?:{"|".join([re.escape(stop_word) for stop_word in stop_words])})\W*$')
 
     def bot(
-        history, max_new_tokens, temperature, top_p, top_k, repetition_penalty, system_message, conversation_id=None
+        history: List[List[str]],
+        max_new_tokens: int,
+        temperature: float,
+        top_p: float,
+        top_k: int,
+        repetition_penalty: float,
+        system_message: Optional[str] = None,
+        # conversation_id: Optional[str] = None,
     ):
         # logger.info(f"History: {json.dumps(history, indent=4, ensure_ascii=False)}")
 
-        # NB: tmp fix
-        system_message = None if not system_message else system_message
-
         # Construct the input message string for the model by concatenating the current system message and conversation history
-        messages = generate_inference_chat_prompt(history, tokenizer, system_message=system_message)
+        # system_message = None if not system_message else system_message
+        # messages = generate_inference_chat_prompt(history, tokenizer, system_message=system_message)
+        system_utterance = (
+            [{"role": "system", "content": system_message}] if system_message is not None and system_message else []
+        )
+        conversation = sum(
+            [
+                [{"role": "user", "content": speaking_turn[0]}, {"role": "user", "content": speaking_turn[1]}]
+                for speaking_turn in history
+            ],
+            system_utterance,
+        )
+        # strip last empty assistant utterance
+        del conversation[-1]
+        # Apply the chat template
+        messages = tokenizer.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
         logger.info(messages)
-        assert messages is not None, "User input is too long!"
 
         # Tokenize the messages string
         input_ids = tokenizer(messages, return_tensors="pt")["input_ids"].to(device)
@@ -167,7 +183,7 @@ def main(
                 pad_token_id=tokenizer.pad_token_id,
             ),
             streamer=streamer,
-            stopping_criteria=StoppingCriteriaList([stop_words_criteria]),
+            # stopping_criteria=StoppingCriteriaList([stop_words_criteria]),
         )
 
         # stream_complete = Event()
@@ -200,7 +216,7 @@ def main(
         partial_text = ""
         for new_text in streamer:
             # NB
-            new_text = pattern_trailing_stop_words.sub("", new_text)
+            # new_text = pattern_trailing_stop_words.sub("", new_text)
 
             partial_text += new_text
             history[-1][1] = partial_text
@@ -213,14 +229,12 @@ def main(
         css=".disclaimer {font-variant-caps: all-small-caps;}",
     ) as demo:
         # conversation_id = gr.State(get_uuid)
-        gr.Markdown(
-            """<h1><center>🦙 Vigogne Chat</center></h1>
+        gr.Markdown("""<h1><center>🦙 Vigogne Chat</center></h1>
 
             This demo is of [Vigogne-Chat](https://huggingface.co/models?search=bofenghuang+vigogne+chat) models finetuned to conduct French 🇫🇷 dialogues between a user and an AI assistant.
 
             For more information, please visit the [Github repo](https://github.com/bofenghuang/vigogne) of the Vigogne project.
-    """
-        )
+    """)
         chatbot = gr.Chatbot().style(height=500)
         with gr.Row():
             with gr.Column():
@@ -300,19 +314,26 @@ def main(
                             system_message = gr.Textbox(
                                 value=None,
                                 label="System Message",
-                                placeholder=DEFAULT_CHAT_SYSTEM_MESSAGE,
+                                # placeholder=DEFAULT_CHAT_SYSTEM_MESSAGE,
                                 lines=5,
                                 interactive=True,
                                 info="The default system message will be utilized in case no custom message has been set.",
                             )
         with gr.Row():
             gr.Markdown(
-                "Disclaimer: Vigogne is still under development, and there are many limitations that have to be addressed. Please note that it is possible that the model generates harmful or biased content, incorrect information or generally unhelpful answers.",
+                (
+                    "Disclaimer: Vigogne is still under development, and there are many limitations that have to be addressed."
+                    " Please note that it is possible that the model generates harmful or biased content, incorrect"
+                    " information or generally unhelpful answers."
+                ),
                 elem_classes=["disclaimer"],
             )
         with gr.Row():
             gr.Markdown(
-                "Acknowledgements: This demo is built on top of [MPT-7B-Chat](https://huggingface.co/spaces/mosaicml/mpt-7b-chat). Thanks for their contribution!",
+                (
+                    "Acknowledgements: This demo is built on top of"
+                    " [MPT-7B-Chat](https://huggingface.co/spaces/mosaicml/mpt-7b-chat). Thanks for their contribution!"
+                ),
                 elem_classes=["disclaimer"],
             )
 

@@ -16,3 +16,6 @@ export CUDA_VISIBLE_DEVICES="0"
 python -m vllm.entrypoints.openai.api_server \
     --model bofenghuang/vigogne-2-7b-chat \
     --host "0.0.0.0"
+
+# Then send request using the following script
+# python vigogne/inference/vllm/client_openai_chatcompletion.py
