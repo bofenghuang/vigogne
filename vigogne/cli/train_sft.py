@@ -5,7 +5,6 @@
 import logging
 from typing import List, Optional
 
-import fire
 from transformers import HfArgumentParser
 
 from vigogne.data_utils import SEQ2SEQ
@@ -27,6 +26,7 @@ def main():
 
     train(training_args)
 
+
 def debug(args: Optional[List[str]] = None):
     # Parse args
     parser = HfArgumentParser(VigogneTrainingArguments)
@@ -41,4 +41,4 @@ def debug(args: Optional[List[str]] = None):
 
 
 if __name__ == "__main__":
-    fire.Fire(main)
+    main()

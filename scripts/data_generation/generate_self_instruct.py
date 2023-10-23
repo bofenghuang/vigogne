@@ -32,7 +32,7 @@ import string
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
-from typing import Optional, Sequence, Union
+from typing import Dict, Optional, Sequence, Union
 
 import fire
 import openai
@@ -74,7 +74,7 @@ class OpenAIDecodingArguments(object):
 
 
 def openai_completion(
-    prompts: Union[str, Sequence[str], Sequence[dict[str, str]], dict[str, str]],
+    prompts: Union[str, Sequence[str], Sequence[Dict[str, str]], Dict[str, str]],
     decoding_args: OpenAIDecodingArguments,
     api="completion",
     model_name="text-davinci-003",

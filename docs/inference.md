@@ -2,7 +2,13 @@
 
 This repository offers multiple options for inference and deployment, including Google Colab notebooks, Gradio demos, [FastChat](https://github.com/lm-sys/FastChat), and [vLLM](https://vllm.ai). It also offers guidance on conducting experiments using [llama.cpp](https://github.com/ggerganov/llama.cpp) on your personal computer.
 
-Thanks to the contributions by [TheBloke](https://huggingface.co/TheBloke), some of Vigogne models have been quantized to [GGML](https://github.com/ggerganov/ggml) format (compatible with [llama.cpp](https://github.com/ggerganov/llama.cpp), [text-generation-webui](https://github.com/oobabooga/text-generation-webui), [ctransformers](https://github.com/marella/ctransformers), etc.) and [GTPQ](https://github.com/IST-DASLab/gptq) format (compatible with [GPTQ-for-LLaMA](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ)). These formats facilitate testing and development. You can find these models on the [Hugging Face Hub](https://huggingface.co/models?sort=trending&search=TheBloke+vigogne).
+## Quantized Models
+
+The quantized versions of certain models are generously provided by [TheBloke](https://huggingface.co/TheBloke)!
+
+These versions facilitate testing and development with various popular frameworks, including [AutoAWQ](https://github.com/casper-hansen/AutoAWQ), [vLLM](https://github.com/vllm-project/vllm), [AutoGPTQ](https://github.com/PanQiWei/AutoGPTQ), [GPTQ-for-LLaMa](https://github.com/qwopqwop200/GPTQ-for-LLaMa), [llama.cpp](https://github.com/ggerganov/llama.cpp), [text-generation-webui](https://github.com/oobabooga/text-generation-webui), and more.
+
+You can find these models on the [Hugging Face Hub](https://huggingface.co/models?search=TheBloke/vigo).
 
 ## Google Colab Notebook
 
