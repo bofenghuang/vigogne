@@ -72,11 +72,14 @@ class AlpacaSeq2SeqTemplate:
         self,
         default_system_message: Optional[str] = None,
         use_default_system_prompt: bool = True,
+        add_bos_token: bool = True,
     ):
         default_system_message = default_system_message if default_system_message is not None else self.default_system_message
 
         template = (
+            "{% if ADD_BOS_TOKEN == true %}"
             "{{ bos_token }}"
+            "{% endif %}"
             "{% if messages[0]['role'] == 'system' %}"
             "{% set loop_messages = messages[1:] %}"  # Extract system message if it's present
             "{% set system_message = messages[0]['content'] %}"
@@ -104,6 +107,7 @@ class AlpacaSeq2SeqTemplate:
             "{{ '\\n\\n### Response:\\n' }}"  # Add generation prompt
             "{% endif %}"
         )
+        template = template.replace("ADD_BOS_TOKEN", "true" if add_bos_token else "false")
         template = template.replace("USE_DEFAULT_PROMPT", "true" if use_default_system_prompt else "false")
         default_message = default_system_message.replace("\n", "\\n").replace("'", "\\'")
         template = template.replace("DEFAULT_SYSTEM_MESSAGE", default_message)
@@ -121,12 +125,13 @@ class AlpacaSeq2SeqProcessor(AlpacaSeq2SeqTemplate):
         tokenizer: transformers.PreTrainedTokenizer,
         max_source_length: Optional[int] = None,
         max_target_length: Optional[int] = None,
+        add_bos_token: bool = True,
     ):
         # Format prompt
         prompt, output = self.build_training_prompt(example)
 
         # Tokenize
-        input_ids = tokenizer.tok(prompt, add_bos_token=True, add_eos_token=False)["input_ids"]
+        input_ids = tokenizer.tok(prompt, add_bos_token=add_bos_token, add_eos_token=False)["input_ids"]
         # todo: add bos?
         labels = tokenizer.tok(output, add_bos_token=False, add_eos_token=True)["input_ids"]
 

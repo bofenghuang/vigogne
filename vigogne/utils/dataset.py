@@ -76,6 +76,7 @@ def _get_ds_type(file_path: str):
         return "text"
     raise ValueError(f"Cannot handle file extension {extension}")
 
+
 def load_datasets(cfg: Any):
     """Load datasets from local files."""
 
@@ -109,8 +110,9 @@ def load_datasets(cfg: Any):
         )
 
     # Log a few random samples from the training set
-    for index in random.sample(range(len(dataset["train"])), 1):
-        logger.info(f'Sample {index} of the training set: {dataset["train"][index]}.')
+    cfg.sample_indexes = random.sample(range(len(dataset["train"])), 1)
+    for index in cfg.sample_indexes:
+        logger.info(f'Sample {index} of the training set:\n{dataset["train"][index]}')
 
     return dataset
 
@@ -125,16 +127,25 @@ def process_datasets(cfg: Any, dataset: Union[Dataset, DatasetDict], tokenizer: 
     with cfg.main_process_first():
         processed_dataset = dataset.map(
             processor.process_example,
-            fn_kwargs={"tokenizer": tokenizer},
+            fn_kwargs={"tokenizer": tokenizer, "add_bos_token": cfg.add_bos_token},
             num_proc=cfg.preprocessing_num_workers,
             remove_columns=next(iter(dataset.values())).column_names,
             load_from_cache_file=not cfg.overwrite_cache,
             desc="process dataset",
         )
 
+    # Log a few random samples from the training set
+    # for index in cfg.sample_indexes:
+    #     logger.info(
+    #         f"Sample {index} of the training set:"
+    #         f"\ninput_ids:\n{tokenizer.decode(processed_dataset['train'][index]['input_ids'])}"
+    #         "\nlabels (unk_token representing masked"
+    #         f" tokens):\n{tokenizer.decode([l if l != IGNORE_INDEX else tokenizer.unk_token_id for l in processed_dataset['train'][index]['labels']])}"
+    #     )
+
     # assign for saving
     if (default_chat_template := getattr(processor, "default_chat_template", None)) is not None:
-        tokenizer.chat_template = default_chat_template()
+        tokenizer.chat_template = default_chat_template(add_bos_token=cfg.add_bos_token)
 
     return processed_dataset
 
@@ -224,7 +235,8 @@ def get_num_tokens(cfg: Any, dataset: Union[Dataset, DatasetDict]):
         cfg.num_eval_tokens = np.sum(length_data["eval"]["num_tokens"])
         cfg.num_eval_supervised_tokens = np.sum(length_data["eval"]["num_supervised_tokens"])
         logger.info(
-            f"Evaluation set -> num_tokens: {cfg.num_eval_tokens:,d}, num_supervised_tokens: {cfg.num_eval_supervised_tokens:,d}"
+            f"Evaluation set -> num_tokens: {cfg.num_eval_tokens:,d}, num_supervised_tokens:"
+            f" {cfg.num_eval_supervised_tokens:,d}"
         )
 
     return dataset

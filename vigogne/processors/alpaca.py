@@ -71,11 +71,14 @@ class AlpacaTemplate:
         self,
         default_system_message: Optional[str] = None,
         use_default_system_prompt: bool = True,
+        add_bos_token: bool = True,
     ):
         default_system_message = default_system_message if default_system_message is not None else self.default_system_message
 
         template = (
+            "{% if ADD_BOS_TOKEN == true %}"
             "{{ bos_token }}"
+            "{% endif %}"
             "{% if messages[0]['role'] == 'system' %}"
             "{% set loop_messages = messages[1:] %}"  # Extract system message if it's present
             "{% set system_message = messages[0]['content'] %}"
@@ -103,6 +106,7 @@ class AlpacaTemplate:
             "{{ '\\n\\n### Response:\\n' }}"  # Add generation prompt
             "{% endif %}"
         )
+        template = template.replace("ADD_BOS_TOKEN", "true" if add_bos_token else "false")
         template = template.replace("USE_DEFAULT_PROMPT", "true" if use_default_system_prompt else "false")
         default_message = default_system_message.replace("\n", "\\n").replace("'", "\\'")
         template = template.replace("DEFAULT_SYSTEM_MESSAGE", default_message)
@@ -120,6 +124,7 @@ class AlpacaProcessor(AlpacaTemplate):
         tokenizer: transformers.PreTrainedTokenizer,
         model_max_length: Optional[int] = None,
         do_mask_input: bool = True,
+        add_bos_token: bool = True,
     ):
         """
         input_tokens = [tokenizer.bos_token] + prompt_tokens + completion_tokens + [tokenizer.eos_token]
@@ -129,7 +134,7 @@ class AlpacaProcessor(AlpacaTemplate):
         full_prompt = self.build_training_prompt(example)
 
         # Tokenize
-        input_ids = tokenizer.tok(full_prompt, add_bos_token=True, add_eos_token=True)["input_ids"]
+        input_ids = tokenizer.tok(full_prompt, add_bos_token=add_bos_token, add_eos_token=True)["input_ids"]
 
         if model_max_length is not None:
             input_ids = input_ids[:model_max_length]
@@ -140,7 +145,9 @@ class AlpacaProcessor(AlpacaTemplate):
             user_prompt = self.build_inference_prompt(example)
 
             # Get prompt length for masking
-            len_user_prompt_tokens = len(tokenizer.tok(user_prompt, add_bos_token=True, add_eos_token=False)["input_ids"])
+            len_user_prompt_tokens = len(
+                tokenizer.tok(user_prompt, add_bos_token=add_bos_token, add_eos_token=False)["input_ids"]
+            )
 
             labels = [IGNORE_INDEX] * len_user_prompt_tokens + input_ids[len_user_prompt_tokens:]
         else:

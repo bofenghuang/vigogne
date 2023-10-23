@@ -76,6 +76,7 @@ class VigogneChatV3Template:
         conversation: Union[Conversation, Dict],
         tokenizer: transformers.PreTrainedTokenizer,
         max_length: int = 2048,
+        add_bos_token: bool = True,
     ) -> str:
         conversation = self._ensure_type(conversation)
         conversation = self._embed_system_message(conversation, use_train_system_message=False)
@@ -99,7 +100,7 @@ class VigogneChatV3Template:
             if (
                 len(
                     tokenizer.tok(
-                        f"{first_round_prompt_message} {x} {prompt_message}", add_bos_token=True, add_eos_token=False
+                        f"{first_round_prompt_message} {x} {prompt_message}", add_bos_token=add_bos_token, add_eos_token=False
                     )["input_ids"]
                 )
                 < max_length
@@ -119,6 +120,7 @@ class VigogneChatV3Template:
         default_system_message: Optional[str] = None,
         use_default_system_prompt: bool = True,
         use_train_system_prompt: bool = False,
+        add_bos_token: bool = True,
     ):
         default_system_message = (
             default_system_message
@@ -127,7 +129,9 @@ class VigogneChatV3Template:
         )
 
         template = (
+            "{% if ADD_BOS_TOKEN == true %}"
             "{{ bos_token }}"
+            "{% endif %}"
             "{% if messages[0]['role'] == 'system' %}"
             "{% set loop_messages = messages[1:] %}"  # Extract system message if it's present
             "{% set system_message = messages[0]['content'] %}"
@@ -157,6 +161,7 @@ class VigogneChatV3Template:
             "{% endif %}"
             "{% endfor %}"
         )
+        template = template.replace("ADD_BOS_TOKEN", "true" if add_bos_token else "false")
         template = template.replace("USE_DEFAULT_PROMPT", "true" if use_default_system_prompt else "false")
         default_message = default_system_message.replace("\n", "\\n").replace("'", "\\'")
         template = template.replace("DEFAULT_SYSTEM_MESSAGE", default_message)
@@ -174,11 +179,12 @@ class VigogneChatV3Processor(VigogneChatV3Template):
         tokenizer: transformers.PreTrainedTokenizer,
         model_max_length: Optional[int] = None,
         do_mask_input: bool = True,
+        add_bos_token: bool = True,
     ):
         conversation = self._ensure_type(example)
         conversation = self._embed_system_message(conversation)
 
-        input_ids = [tokenizer.bos_token_id]
+        input_ids = [tokenizer.bos_token_id] if add_bos_token else []
         non_ignore_indexes = []
 
         for utterance in conversation.messages:

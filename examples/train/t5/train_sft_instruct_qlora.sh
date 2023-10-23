@@ -42,12 +42,12 @@ torchrun \
     --model_name_or_path $model_name_or_path \
     --tokenizer_use_fast false \
     --tokenizer_padding_side "right" \
-    --add_special_tokens '{"bos_token":"<s>"}' \
     --train_file $train_file \
     --output_dir $output_dir \
     --overwrite_output_dir \
     --run_name $run_name \
     --processor_style "alpaca_seq2seq" \
+    --add_bos_token false \
     --model_max_length $model_max_length \
     --eval_split_ratio "0.01" \
     --preprocessing_num_workers "8" \

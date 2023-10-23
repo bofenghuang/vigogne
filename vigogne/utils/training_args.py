@@ -199,6 +199,9 @@ class VigogneTrainingArguments(TrainingArguments):
 
     # processor augments
     processor_style: str = field(default="vigogne_chat_v3", metadata={"help": "The processor applied to dataset."})
+    add_bos_token: bool = field(
+        default=True, metadata={"help": "Whether or not to include bos_token at the start of sequence."}
+    )
 
     # packing arguments
     pack_into_block: bool = field(
