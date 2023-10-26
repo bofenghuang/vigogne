@@ -4,31 +4,39 @@
 
 """Filter unwanted examples from self-instruct datasets."""
 
-import fire
 import re
 
-from vigogne.file_utils import jsonl_load, jsonl_dump
+import fire
+from datasets import load_dataset
 
 
-def main(input_file, valid_output_file, invalid_output_file, instruction_field="instruction"):
-    data = jsonl_load(input_file)
+def filter_function(s):
+    # remove all summarization task: only titles or web page or short articles are given
+    if re.search(r"résumé|résume|article", s, flags=re.IGNORECASE):
+        return False
+    if re.search(r"\bhttps\b", s):
+        return False
+    if re.search(r"préféré", s, flags=re.IGNORECASE):
+        return False
+    if re.search(r"donner|recommande|recommandation", s, flags=re.IGNORECASE) and re.search(
+        r"restaurant|resto", s, flags=re.IGNORECASE
+    ):
+        return False
 
-    validated_data, unvalidated_data = [], []
-    for example in data:
-        # summarize web page
-        # if re.search(r"résumez|résume|résumes|résumer", example[instruction_field], flags=re.IGNORECASE):
-        #     if re.search(r"\bhttps\b", example[instruction_field]):
-        #         unvalidated_data.append(example)
-        # remove all summarization task: only titles are given
-        if re.search(r"résumez|résume|résumes|résumer", example[instruction_field], flags=re.IGNORECASE):
-            unvalidated_data.append(example)
-        if re.search(r"préféré", example[instruction_field], flags=re.IGNORECASE):
-            unvalidated_data.append(example)
-        else:
-            validated_data.append(example)
+    return True
 
-    jsonl_dump(validated_data, valid_output_file, mode="w")
-    jsonl_dump(unvalidated_data, invalid_output_file, mode="w")
+
+def main(input_file, output_file, instruction_field="instruction"):
+    dataset = load_dataset("json", data_files=input_file, split="train")
+    print(f"Loaded {dataset.num_rows:,d} examples from {input_file}")
+
+    processed_dataset = dataset.filter(filter_function, input_columns=instruction_field, num_proc=8)
+    print(f"Filtered to {processed_dataset.num_rows:,d} examples")
+
+    # export
+    processed_dataset = processed_dataset.shuffle(10)
+    processed_dataset.to_json(output_file, orient="records", lines=True, force_ascii=False)
+    print(f"Saved data into {output_file}")
 
 
 if __name__ == "__main__":
