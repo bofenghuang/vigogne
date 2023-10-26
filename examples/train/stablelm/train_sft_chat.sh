@@ -24,7 +24,7 @@ output_dir=outputs/$run_name
 # Might need to adjust the batch size and other hyperparameters by yourself
 per_device_train_batch_size=8
 per_device_eval_batch_size=4
-gradient_accumulation_steps=2
+gradient_accumulation_steps=8
 
 torchrun \
     --nproc_per_node 4 \
@@ -44,14 +44,14 @@ torchrun \
     --eval_split_ratio "0.01" \
     --preprocessing_num_workers "8" \
     --dataloader_num_workers "1" \
-    --num_train_epochs "3" \
+    --num_train_epochs "5" \
     --per_device_train_batch_size $per_device_train_batch_size \
     --per_device_eval_batch_size $per_device_eval_batch_size \
     --gradient_accumulation_steps $gradient_accumulation_steps \
     --learning_rate "2.5e-5" \
     --warmup_ratio "0.03" \
     --lr_scheduler_type "cosine" \
-    --weight_decay "0" \
+    --weight_decay "0.01" \
     --fp16 \
     --gradient_checkpointing \
     --ddp_find_unused_parameters false \
