@@ -168,7 +168,7 @@ Next, you can generate responses using the following script. Please note that th
 # Specify your OpenAI API key
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python scripts/data_generation/generate_responses.py \
+python scripts/data_generation/generate_response.py \
     --input_file path/to/flanv2_translated.jsonl \
     --output_file path/to/flanv2_translated_completed.jsonl \
     --system_field system_prompt \

@@ -3,17 +3,18 @@
 # Copyright 2023  Bofeng Huang
 
 """
-Generate Orca's style instruction-following examples.
+Invoke OpenAI's API to generate responses based on provided instructions.
+With the option to customize the system message in the style of Orca.
 
 Usage:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
-python scripts/data_generation/generate_responses.py \
+python scripts/data_generation/generate_response.py \
     --input_file data/instruct/openorca_gpt4_1m_translated.jsonl \
     --output_file data/instruct/openorca_gpt4_1m_translated_completed.jsonl \
     --system_field system_prompt \
     --instruction_field translated_question \
-    --response_field fr_response \
+    --response_field response_on_translated_question \
     --model gpt-4 \
     --max_parallel_requests 1 \
     --max_samples 1
@@ -27,6 +28,7 @@ from typing import Any, Dict, List, Optional
 
 import fire
 import openai
+from datasets import load_dataset
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 from tqdm import tqdm
 
@@ -93,7 +95,11 @@ def process_item(
     model: str = "gpt-4",
     **kwargs,
 ):
-    request_messages = generate_messages(item[instruction_field], system_message=item[system_field])
+    gen_kwargs = {}
+    if (system_message := item.get(system_field)) is not None:
+        gen_kwargs["system_message"] = system_message
+
+    request_messages = generate_messages(item[instruction_field], **gen_kwargs)
     response = call_endpoint(request_messages, model, **kwargs)
     final_item = post_process_response(item, response, response_field)
 
@@ -113,8 +119,9 @@ def process_data(
     max_parallel_requests: int = 4,
     **kwargs,
 ):
-    data = jsonl_load(input_file)
-    print(f"Loaded {len(data):,d} instructions from {input_file}")
+    # data = jsonl_load(input_file)
+    dataset = load_dataset("json", data_files=input_file, split="train")
+    print(f"Loaded {dataset.num_rows:,d} examples from {input_file}")
 
     # dedup by instruction
     # seen = set()
@@ -122,19 +129,28 @@ def process_data(
     # print(f"Deduped to {len(data):,d} instructions")
 
     if max_samples is not None:
-        data = data[:max_samples]
-        print(f"Sampled the first {max_samples:,d} instructions")
+        # data = data[:max_samples]
+        dataset = dataset.select(range(max_samples))
+        print(f"Sampled the first {dataset.num_rows:,d} examples")
 
     # debug
     # data = data[:10]
+    # dataset = dataset.select(range(10))
 
     if os.path.exists(output_file):
-        existing_data = jsonl_load(output_file)
-        existing_instructions = {existing_example[instruction_field] for existing_example in existing_data}
-        print(f"Found {len(existing_instructions):,d} existing examples in {output_file}")
+        # existing_data = jsonl_load(output_file)
+        # existing_instructions = {existing_example[instruction_field] for existing_example in existing_data}
+        # print(f"Found {len(existing_instructions):,d} existing examples in {output_file}")
 
-        data = [example for example in data if example[instruction_field] not in existing_instructions]
-        print(f"Filtered to {len(data):,d} examples")
+        # data = [example for example in data if example[instruction_field] not in existing_instructions]
+        # print(f"Filtered to {len(data):,d} examples")
+        existing_dataset = load_dataset("json", data_files=output_file, split="train")
+        existing_values = existing_dataset.unique(instruction_field)
+        existing_values = set(existing_values)
+        print(f"Found {len(existing_values):,d} existing examples in {output_file}")
+
+        dataset = dataset.filter(lambda x: x not in existing_values, input_columns=instruction_field, num_proc=4)
+        print(f"Filtered to {dataset.num_rows:,d} examples")
 
     start_time = time.perf_counter()
 
@@ -157,7 +173,7 @@ def process_data(
     #     for future in tqdm(as_completed(futures), total=len(futures), desc="Generating"):
     #         translated_data.append(future.result())
 
-    with tqdm(total=len(data), desc="Translating") as pbar:
+    with tqdm(total=dataset.num_rows, desc="Genrating") as pbar:
         with ThreadPoolExecutor(max_workers=max_parallel_requests) as executor:
             futures = {
                 executor.submit(
@@ -170,7 +186,7 @@ def process_data(
                     model,
                     **kwargs,
                 ): item
-                for item in data
+                for item in dataset
             }
             for future in as_completed(futures):
                 translated_data.append(future.result())
@@ -183,7 +199,8 @@ def process_data(
     #     json.dump(translated_data, f, ensure_ascii=False, indent=4)
 
     print(
-        f"Generation completed in {time.strftime('%Hh%Mm%Ss', time.gmtime(time.perf_counter() - start_time))}. The generated data is saved in {output_file}"
+        f"Generation completed in {time.strftime('%Hh%Mm%Ss', time.gmtime(time.perf_counter() - start_time))}. The generated"
+        f" data is saved in {output_file}"
     )
 
 
