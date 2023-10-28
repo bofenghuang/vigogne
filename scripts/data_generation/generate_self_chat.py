@@ -3,7 +3,7 @@
 # Copyright 2023  Bofeng Huang
 
 """
-Generate Baize's style self-chat examples.
+Generate self-chat examples in Baize's style.
 
 Usage:
 export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN

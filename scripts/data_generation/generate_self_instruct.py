@@ -13,8 +13,8 @@ export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
 # num_instructions_to_generate is by worker
 python scripts/data_generation/generate_self_instruct.py \
-    --seed_tasks_path data/instruct/seed_tasks_vigogne.jsonl \
-    --prompt_path data/instruct/prompt_vigogne.txt \
+    --seed_tasks_path data/generation/self_instruct/seed_tasks.jsonl \
+    --prompt_path data/generation/self_instruct/prompt.txt \
     --output_file data/instruct/self_instruct_data.jsonl \
     --num_instructions_to_generate 1 \
     --n_workers 1

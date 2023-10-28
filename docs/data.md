@@ -60,8 +60,8 @@ python scripts/data_generation/translate_alpaca.py \
 
 Since the quality of instruction-following tasks translated from English to French is not ideal, we also generated some French instruction-following tasks directly using the data generation pipeline from the [self-instruct paper](https://arxiv.org/abs/2212.10560) and [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca). 
 
-- We manually translated the [175 English seed tasks](https://github.com/tatsu-lab/stanford_alpaca/blob/main/seed_tasks.jsonl) from Stanford Alpaca into French, and also made efforts to remove cultural biases in the translations. For example, in the instruction "Suggest some games that can be played by a group of people.", we replaced the list of games (e.g., Balderdash, Pictionary) with games more commonly played in France (e.g., Menteur, Trivial Pursuit). You can find the translated seed tasks in [`seed_tasks_vigogne.jsonl`](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/seed_tasks_vigogne.jsonl).
-- We translated and adapted the prompt ([`prompt_vigogne.txt`](https://github.com/bofenghuang/vigogne/blob/main/data/instruct/prompt_vigogne.txt)) that specifies the requirements for instruction-following data generation to `gpt-3.5-turbo`.
+- We manually translated the [175 English seed tasks](https://github.com/tatsu-lab/stanford_alpaca/blob/main/seed_tasks.jsonl) from Stanford Alpaca into French, and also made efforts to remove cultural biases in the translations. For example, in the instruction "Suggest some games that can be played by a group of people.", we replaced the list of games (e.g., Balderdash, Pictionary) with games more commonly played in France (e.g., Menteur, Trivial Pursuit). You can find the translated seed tasks in [`seed_tasks_vigogne.jsonl`](https://github.com/bofenghuang/vigogne/blob/main/data/generation/self_instruct/seed_tasks.jsonl).
+- We translated and adapted the prompt ([`prompt_vigogne.txt`](https://github.com/bofenghuang/vigogne/blob/main/data/generation/self_instruct/prompt.txt)) that specifies the requirements for instruction-following data generation to `gpt-3.5-turbo`.
 - We adopted batch generation to reduce the API cost by randomly sampling 3 seed tasks and generating 17 additional instruction-following tasks.
 - Launch with multiple threads to speed up the process, but keep in mind the [upper limit](https://platform.openai.com/docs/guides/rate-limits/overview) of the OpenAI API.
 
@@ -73,8 +73,8 @@ export OPENAI_API_KEY=YOUR/OPENAI/API/TOKEN
 
 # num_instructions_to_generate is by worker
 python scripts/data_generation/generate_self_instruct.py \
-    --seed_tasks_path data/instruct/seed_tasks_vigogne.jsonl \
-    --prompt_path data/instruct/prompt_vigogne.txt \
+    --seed_tasks_path data/generation/self_instruct/seed_tasks.jsonl \
+    --prompt_path data/generation/self_instruct/prompt.txt \
     --output_file data/instruct/self_instruct_data.jsonl \
     --num_instructions_to_generate 1 \
     --n_workers 1
