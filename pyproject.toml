@@ -43,20 +43,19 @@ dependencies = [
     "loralib",
     "peft@git+https://github.com/huggingface/peft.git",
     "gradio",
-    "openai",
     "pydantic",
     "sentencepiece",
     "scipy",
-    "tenacity",
     "tensorboardX",
-    "tiktoken",
     "torch",
     "transformers@git+https://github.com/huggingface/transformers.git",
     "wandb",
 ]
 
 [project.optional-dependencies]
-dev = ["black==23.3.0", "pylint==2.8.2"]
+dev = ["black", "pylint"]
+data = ["mistralai", "openai", "tenacity", "tiktoken"]
+playground = ["ipympl", "ipywidgets", "jupyterlab"]
 
 [project.urls]
 "Homepage" = "https://github.com/bofenghuang/vigogne"
