@@ -36,7 +36,7 @@ Below is a non-exhaustive list of datasets containing 🇫🇷 French instructio
 
 ## Data Generation
 
-### Translate Alpaca Data
+### ~~Translate Alpaca Data~~
 
 We used the [cleaned version](https://github.com/gururise/AlpacaDataCleaned) of the [Stanford Alpaca](https://github.com/tatsu-lab/stanford_alpaca) dataset and translated it into French using `gpt-3.5-turbo` through the chat completion API. The entire translation process cost about $40.
 
