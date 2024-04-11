@@ -22,68 +22,19 @@ python scripts/data_generation/generate_response.py \
 
 import os
 import re
+import sys
 import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from typing import Any, Dict, List, Optional
 
 import fire
-import openai
 from datasets import load_dataset
-from tenacity import retry, stop_after_attempt, wait_random_exponential
 from tqdm import tqdm
 
 from vigogne.file_utils import jsonl_load, thread_safe_jsonl_dump
+from vigogne.data.get_api_answer import set_global_api
 
-# Replace 'your_api_key' with your actual API key
-openai.api_key = os.getenv("OPENAI_API_KEY")
-# openai.organization = os.getenv("OPENAI_ORG")
-
-
-def generate_messages(prompt: str, system_message: str = "You are a helpful assistant."):
-    return [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": prompt},
-    ]
-
-
-# Add exponential backoff to mitigate openai.error.RateLimitError
-# See: https://platform.openai.com/docs/guides/rate-limits/error-mitigation
-@retry(wait=wait_random_exponential(min=1, max=60), stop=stop_after_attempt(6))
-def call_endpoint(
-    messages: List[Dict],
-    model: str = "gpt-4",
-    max_tokens: int = 1024,
-    temperature: float = 0.7,
-):
-    # print(locals())
-    # quit()
-
-    return openai.ChatCompletion.create(
-        model=model,
-        messages=messages,
-        max_tokens=max_tokens,
-        temperature=temperature,
-        # logit_bias={"50256": -100},  # prevent the <|endoftext|> token from being generated
-    )
-
-
-def post_process_response(item: Dict, response: Any, response_field: str = "output"):
-    parsed_response = {
-        response_field: response.choices[0]["message"]["content"],
-        # "created": response["created"],
-        "model": response["model"],
-        "finish_reason": response.choices[0]["finish_reason"],
-        "prompt_tokens": response["usage"]["prompt_tokens"],
-        "completion_tokens": response["usage"]["completion_tokens"],
-        "total_tokens": response["usage"]["total_tokens"],
-    }
-
-    item.update(parsed_response)
-
-    if parsed_response["finish_reason"] == "length":
-        print("max_tokens reached")
-
-    return item
+# generate_api_messages, call_endpoint, process_api_response = None, None, None
 
 
 def process_item(
@@ -99,16 +50,19 @@ def process_item(
     if (system_message := item.get(system_field)) is not None:
         gen_kwargs["system_message"] = system_message
 
-    request_messages = generate_messages(item[instruction_field], **gen_kwargs)
+    request_messages = generate_api_messages(item[instruction_field], **gen_kwargs)
     response = call_endpoint(request_messages, model, **kwargs)
-    final_item = post_process_response(item, response, response_field)
+    result = process_api_response(response)
 
-    thread_safe_jsonl_dump(final_item, output_file, mode="a")
+    result[response_field] = result.pop("output")
+    item.update(result)
 
-    return final_item
+    thread_safe_jsonl_dump(item, output_file, mode="a")
+
+    return item
 
 
-def process_data(
+def main(
     input_file: str,
     output_file: str,
     system_field: str = "system",
@@ -119,6 +73,10 @@ def process_data(
     max_parallel_requests: int = 4,
     **kwargs,
 ):
+    global generate_api_messages
+    global call_endpoint
+    global process_api_response
+
     # data = jsonl_load(input_file)
     dataset = load_dataset("json", data_files=input_file, split="train")
     print(f"Loaded {dataset.num_rows:,d} examples from {input_file}")
@@ -151,6 +109,12 @@ def process_data(
 
         dataset = dataset.filter(lambda x: x not in existing_values, input_columns=instruction_field, num_proc=4)
         print(f"Filtered to {dataset.num_rows:,d} examples")
+
+    if "mistral" in model:
+        generate_api_messages, call_endpoint, process_api_response = set_global_api("mistral")
+    else:
+        generate_api_messages, call_endpoint, process_api_response = set_global_api("openai")
+        # raise ValueError(f"Invalid model name: {model}")
 
     start_time = time.perf_counter()
 
@@ -205,4 +169,4 @@ def process_data(
 
 
 if __name__ == "__main__":
-    fire.Fire(process_data)
+    fire.Fire(main)
