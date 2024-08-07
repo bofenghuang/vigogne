@@ -1,0 +1,7 @@
+Le passage suivant contient des messages d'un humain adressés à un assistant IA, potentiellement suivis de réponses de l'IA ou d'autres messages de l'humain.
+
+Votre mission est d'extraire uniquement les messages de l'humain qui précèdent la première réponse de l'IA. Veuillez les fournir sous forme de texte libre, sans ajouts, explications ou commentaires supplémentaires.
+
+Voici le passage :
+
+{text}
