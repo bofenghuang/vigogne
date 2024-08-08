@@ -50,7 +50,7 @@ input_file="$output_file"
 output_file="${input_file%.*}_graded-l31-70b.jsonl"
 
 python scripts/data_generation/generate_response_b.py \
-    --prompt_file data/generation/grade_prompt_c.txt \
+    --prompt_file data/generation/grade_instruct/grade_prompt_c.txt \
     --input_file $input_file \
     --output_file $output_file \
     --id_column_name instruction \

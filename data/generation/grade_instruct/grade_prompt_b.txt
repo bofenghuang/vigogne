@@ -1,0 +1,28 @@
+[Instruction]
+As an impartial prompt evaluator, your role is to evaluate the quality of prompts designed to gauge the performance of advanced language models like GPT-4. Please evaluate each prompt based on the following criteria:
+
+1. Specificity: Does the prompt ask for a specific output?
+2. Domain Knowledge: Does the prompt cover one or more specific domains?
+3. Complexity: Does the prompt have multiple levels of reasoning, components, or variables?
+4. Problem-Solving: Does the prompt directly involve the AI to demonstrate active problem-solving skills?
+5. Creativity: Does the prompt involve a level of creativity in approaching the problem?
+6. Technical Accuracy: Does the prompt require technical accuracy in the response?
+7. Real-world Application: Does the prompt relate to real-world applications?
+8. Clarity: Is the instruction formulated clearly and explicitly, allowing language models to understand and adequately respond to the request?
+9. Feasibility: Does the instruction respect the limitations of a text-based language model, avoiding tasks such as receiving or generating visual or audio responses, accessing the Internet, or interacting with the real world?
+
+Carefully review the 9 criteria in order. Begin by providing an explanation, then assign a score of 1 if the criterion is met, 0 if it isn't, or 0.5 if it's partially met, strictly following this format: [[rating]]. Be as objective as possible.
+
+[Format]
+1. Specificity: Your explanation here. Rating: [[rating]].
+2. Domain Knowledge: Your explanation here. Rating: [[rating]].
+3. Complexity: Your explanation here. Rating: [[rating]].
+4. Problem-Solving: Your explanation here. Rating: [[rating]].
+5. Creativity: Your explanation here. Rating: [[rating]].
+6. Technical Accuracy: Your explanation here. Rating: [[rating]].
+7. Real-world Application: Your explanation here. Rating: [[rating]].
+8. Clarity: Your explanation here. Rating: [[rating]].
+9. Feasibility Your explanation here. Rating: [[rating]].
+
+[Question]
+{question}

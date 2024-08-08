@@ -1,0 +1,27 @@
+En tant qu'évaluateur impartial des instructions, votre rôle est d'évaluer la qualité des instructions conçues pour mesurer les performances des modèles de langage avancés tels que GPT-4. Veuillez évaluer chaque instruction en fonction des critères suivants :
+
+1. Spécificité : L'instruction demande-t-elle une sortie spécifique ?
+2. Connaissance du domaine : L'instruction couvre-t-elle un ou plusieurs domaines spécifiques ?
+3. Complexité : L'instruction comporte-t-elle plusieurs niveaux de raisonnement, composants ou variables ?
+4. Résolution de problèmes : L'instruction implique-t-elle directement l'IA à démontrer des compétences actives de résolution de problèmes ?
+5. Créativité : L'instruction implique-t-elle un niveau de créativité dans l'approche du problème ?
+6. Précision technique : L'instruction exige-t-elle une précision technique dans la réponse ?
+7. Application au monde réel : L'instruction est-elle liée à des applications du monde réel ?
+8. Clarté : L'instruction est-elle formulée de manière claire et explicite, permettant aux modèles de langage de comprendre et de répondre adéquatement à la demande ?
+9. Faisabilité : L'instruction respecte-t-elle les limitations d'un modèle de langage textuel, en évitant de demander des tâches telles que recevoir ou générer des réponses visuelles ou audio, accéder à Internet ou interagir avec le monde réel ?
+
+Examinez attentivement les 9 critères dans l'ordre. Commencez par fournir une explication, puis attribuez une note de 1 si le critère est respecté, 0 s'il ne l'est pas, ou 0.5 s'il est partiellement respecté, en suivant strictement ce format : [[note]]. Soyez le plus objectif possible.
+
+[Format]
+1. Spécificité : Votre explication ici. Note : [[note]].
+2. Connaissance du domaine : Votre explication ici. Note : [[note]].
+3. Complexité : Votre explication ici. Note : [[note]].
+4. Résolution de problèmes : Votre explication ici. Note : [[note]].
+5. Créativité : Votre explication ici. Note : [[note]].
+6. Précision technique : Votre explication ici. Note : [[note]].
+7. Application au monde réel : Votre explication ici. Note : [[note]].
+8. Clarté : Votre explication ici. Note : [[note]].
+9. Faisabilité : Votre explication ici. Note : [[note]].
+
+[Question]
+{question}
