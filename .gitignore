@@ -25,3 +25,4 @@ MANIFEST
 /wandb
 /flagged
 tmp*
+logs/
