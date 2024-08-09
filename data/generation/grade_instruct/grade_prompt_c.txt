@@ -1,5 +1,5 @@
 [Instruction]
-Your task is to evaluate how well the following prompt can assess the capabilities of advanced AI assistants. Use the nine criteria below to analyze it. For each criterion, explain whether the prompt meets it effectively, and rate it on a scale from 1 to 5, where 1 means "very poor," 2 means "poor," 3 means "average," 4 means "good," and 5 means "excellent."
+Your task is to evaluate how well the following prompt can assess the capabilities of advanced AI assistants. Use the nine criteria below to analyze it. For each criterion, first analyze and explain how effectively the prompt meets it, then rate it on a scale from 1 to 5, where 1 is "very poor", 2 is "poor", 3 is "average", 4 is "good", and 5 is "excellent".
 
 Please note that the prompt might occasionally be incomplete.
 

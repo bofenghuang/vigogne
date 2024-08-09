@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=magpie-extract
+#SBATCH --job-name=magpie-grade
 #SBATCH --output=logs/%x/%j.out      # output file (%j = job ID)
 #SBATCH --error=logs/%x/%j.err       # error file (%j = job ID)
 #SBATCH --nodes=1
@@ -91,8 +91,8 @@ python scripts/data_generation/generate_response_b.py \
     --tensor_parallel_size $tp_size \
     --gpu_memory_utilization 0.95 \
     --batch_size 1024 \
-    --max_tokens 2048 \
-    --max_model_len 2048 \
+    --max_tokens 3072 \
+    --max_model_len 3072 \
     --temperature 0 \
     --top_p 1.0
 
