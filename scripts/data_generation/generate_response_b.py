@@ -65,7 +65,7 @@ def get_args():
 
     return parser.parse_args()
 
-# # API Setups
+# API Setups
 # if args.engine == "together":
 #     # Change name for API (Together Naming Convention)
 #     if MODEL_NAME == "meta-llama/Meta-Llama-3-8B-Instruct":
@@ -162,10 +162,12 @@ def process_batch(batch, llm, params, tokenizer=None, args=None):
     user_instructions = [item[args.instruct_column_name] for item in batch]
 
     # tmp: format instruction for extraction/grading/..
-    with open(args.prompt_file, encoding="utf-8") as f:
-        prompt_template = f.read()
+    # wrap instruction by higher-level prompts
+    if args.prompt_file is not None:
+        with open(args.prompt_file, encoding="utf-8") as f:
+            prompt_template = f.read()
 
-    user_instructions = [prompt_template.format(text=user_inst) for user_inst in user_instructions]
+        user_instructions = [prompt_template.format(text=user_inst) for user_inst in user_instructions]
 
     prompts = []
     for instruction in user_instructions:
