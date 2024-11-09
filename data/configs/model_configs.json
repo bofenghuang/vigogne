@@ -52,8 +52,8 @@
       "assistant"
     ]
   },
-  "mistralai/Mistral-7B-Instruct-v0.3": {
-    "model_name": "mistralai/Mistral-7B-Instruct-v0.3",
+  "mistralai/Mistral-Large-Instruct-2407": {
+    "model_name": "mistralai/Mistral-Large-Instruct-2407",
     "stop_tokens": [
       "<s>",
       "</s>",
