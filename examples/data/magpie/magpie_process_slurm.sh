@@ -76,5 +76,5 @@ input_file="${input_file%.*}_extracted-${model_name}_graded-${model_name}.jsonl"
 # if [ $stage -eq 4 ]; then
 #     echo -e "Step 6: merge...\n"
 #     # merge
-#     ./scripts/data_processing/merge_files.sh $input_file "graded-${model_name}"
+#     ./scripts/data_processing/merge_files.sh $input_file "responded-${model_name}"
 # fi
