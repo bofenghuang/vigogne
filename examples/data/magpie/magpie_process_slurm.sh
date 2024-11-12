@@ -23,7 +23,7 @@ fi
 if [ $stage -eq 0 ]; then
     echo -e "Step 1.2: extract...\n"
     # extract instruct
-    sbatch examples/data/magpie_extract_instruct.slurm $input_file $model_path
+    sbatch examples/data/magpie/magpie_extract_instruct.slurm $input_file $model_path
 fi
 
 # Step 2. merge, resplit, and grade
@@ -45,7 +45,7 @@ fi
 if [ $stage -eq 1 ]; then
     echo -e "Step 2.3: grade...\n"
     # grade instruct
-    sbatch examples/data/magpie_grade_instruct.slurm $input_file $model_path
+    sbatch examples/data/magpie/magpie_grade_instruct.slurm $input_file $model_path
 fi
 
 # Step 3. merge
@@ -69,7 +69,7 @@ input_file="${input_file%.*}_extracted-${model_name}_graded-${model_name}.jsonl"
 # if [ $stage -eq 3 ]; then
 #     echo -e "Step 5.2: respond...\n"
 #     # grade instruct
-#     sbatch examples/data/magpie_gen_response.slurm $input_file $model_path
+#     sbatch examples/data/magpie/magpie_gen_response.slurm $input_file $model_path
 # fi
 
 # # Step 3. merge
