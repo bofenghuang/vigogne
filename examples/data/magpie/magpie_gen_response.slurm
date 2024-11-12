@@ -1,6 +1,6 @@
 #!/bin/bash
 
-#SBATCH --job-name=magpie-grade
+#SBATCH --job-name=magpie-resp
 #SBATCH --output=logs/%x/%j.out      # output file (%j = job ID)
 #SBATCH --error=logs/%x/%j.err       # error file (%j = job ID)
 #SBATCH --nodes=1
