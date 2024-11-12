@@ -12,7 +12,8 @@ from datasets import load_dataset
 def main(input_files, output_file):
     # jsonl_dump(jload(input_file), output_file, mode="w")
 
-    dataset = load_dataset("json", input_files=input_files, split="train")
+    dataset = load_dataset("json", data_files=input_files, split="train")
+    print(dataset)
     dataset.to_json(output_file, orient="records", lines=True, force_ascii=False)
 
 

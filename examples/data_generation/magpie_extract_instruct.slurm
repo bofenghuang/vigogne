@@ -4,12 +4,14 @@
 #SBATCH --output=logs/%x/%j.out      # output file (%j = job ID)
 #SBATCH --error=logs/%x/%j.err       # error file (%j = job ID)
 #SBATCH --nodes=1
+#SBATCH --exclusive
 #SBATCH --ntasks-per-node=1          # crucial - only 1 task per dist per node!
 #SBATCH --cpus-per-task=96           # number of cores per tasks
 #SBATCH --gres=gpu:4                 # reserve number of GPUs per node
 #SBATCH --time=20:00:00              # maximum execution time (HH:MM:SS)
 #SBATCH --hint=nomultithread         # we get physical cores not logical
 #SBATCH --constraint=h100
+#SBATCH --account=gkb@h100           # account to use, with xyz the 3 letter code of your project
 #SBATCH --array=1-8
 
 # Magpie instruction extraction
@@ -20,6 +22,7 @@ echo "START TIME: $(date)"
 
 # set up environment
 module purge
+module load arch/h100
 module load git-lfs
 # module load unrar
 module load anaconda-py3/2024.06
