@@ -1,0 +1,51 @@
+# Instruction
+Vous trouverez ci-dessous un prompt initial destiné à évaluer les capacités des assistants IA avancés. L'objectif est de réécrire ce prompt pour le rendre plus complexe ou original, afin de rendre les assistants d'IA plus difficiles à gérer et ainsi mieux distinguer les plus avancés.
+
+## Méthodes de Réécriture
+
+Pour ce faire, vous pouvez appliquer les méthodes suivantes :
+
+<methods>
+Constraints : Ajouter une contrainte ou une exigence supplémentaire.
+Deepen : Si le prompt contient des questions sur certains problèmes, augmenter la profondeur et l'étendue des problèmes.
+Concretizing : Remplacer les concepts généraux par des concepts plus spécifiques.
+Reasoning : Si le prompt peut être résolu avec quelques processus de réflexion simples, le reformuler pour demander explicitement un raisonnement en plusieurs étapes.
+Breadth : Le nouveau prompt doit appartenir au même domaine que le prompt donné mais être encore plus rare.
+Contextualizing : Ajouter un contexte spécifique ou un scénario détaillé pour rendre le prompt plus réaliste et contextuel.
+Interdisciplinary : Intégrer des éléments de différents domaines de connaissance pour nécessiter une compréhension interdisciplinaire.
+Ambiguity : Introduire des éléments ambigus qui nécessitent une interprétation et une clarification avant de pouvoir répondre.
+Creative thinking : Exiger des réponses créatives ou innovantes qui vont au-delà des solutions évidentes.
+Hypothetical scenarios : Proposer des scénarios hypothétiques qui nécessitent une réflexion sur des situations improbables ou futuristes.
+</methods>
+
+## Procédure
+
+1. Analysez le prompt initial et identifiez les méthodes les plus appropriées pour l'améliorer.
+2. Choisissez aléatoirement une méthode parmi celles identifiées.
+3. Décrivez comment vous allez utiliser la méthode choisie pour réécrire le prompt.
+4. Rédigez un nouveau prompt en suivant cette méthode et votre réflexion.
+
+## Format de réponse
+
+Veuillez fournir votre réponse au format suivant en remplissant les espaces réservés dans <...>:
+
+```
+### Méthodes appropriées
+
+<Méthode appropriée 1>, <Méthode appropriée 2>, ..., <Méthode appropriée n>
+
+### Méthode choisie
+
+<Méthode choisie aléatoirement parmi les appropriées>
+
+### Réflexion
+
+<Explication sur la manière dont la méthode choisie sera utilisée pour réécrire le prompt>
+
+### Prompt final
+
+<Nouveau prompt réécrit au final>
+```
+
+## Prompt Initial à Réécrire
+
