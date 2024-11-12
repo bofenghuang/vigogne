@@ -55,6 +55,7 @@ def get_args():
     parser.add_argument("--gpu_memory_utilization", type=float, default=0.95)
     parser.add_argument("--max_tokens", type=int, default=4096)
     parser.add_argument("--max_model_len", type=int, default=4096)
+    parser.add_argument("--max_num_seqs", type=int, default=256)
     parser.add_argument("--temperature", type=float, default=0)
     parser.add_argument("--top_p", type=float, default=1.0)
     parser.add_argument("--repetition_penalty", type=float, default=1.0)
@@ -167,6 +168,7 @@ def process_batch(batch, llm, params, tokenizer=None, args=None):
         with open(args.prompt_file, encoding="utf-8") as f:
             prompt_template = f.read()
 
+        # instruction extraction & grading
         user_instructions = [prompt_template.format(text=user_inst) for user_inst in user_instructions]
 
     prompts = []
@@ -311,6 +313,7 @@ def main():
             dtype=args.dtype,
             trust_remote_code=True,
             max_model_len=args.max_model_len,  # limited by kv-cache
+            max_num_seqs=args.max_num_seqs,
             tensor_parallel_size=args.tensor_parallel_size,
             gpu_memory_utilization=args.gpu_memory_utilization,
         )

@@ -20,12 +20,15 @@ export HF_HOME="/projects/bhuang/.cache/huggingface"
 tp_size=8
 # tp_size=4
 
-model_path="/projects/bhuang/models/llm/pretrained/meta-llama/Meta-Llama-3.1-70B-Instruct"
+# model_path="/projects/bhuang/models/llm/pretrained/meta-llama/Meta-Llama-3.1-70B-Instruct"
+# model_path="/rd_storage2/bhuang/models/llm/pretrained/meta-llama/Meta-Llama-3.1-70B-Instruct"
+model_path="/projects/bhuang/models/llm/pretrained/meta-llama/Llama-3.1-70B-Instruct"
 
 # input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie-inst_l31_405b_fp8.jsonl"
 # input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie-inst_l31_70b_500k.json"
 # input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Meta-Llama-3.1-405B-Instruct-FP8-1000000-240803.jsonl"
 input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Meta-Llama-3.1-405B-Instruct-FP8-1.6m.jsonl"
+# input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Mistral-Large-Instruct-2407-300000-240812.json"
 
 output_file="${input_file%.*}_extracted-${model_path##*/}.jsonl"
 
@@ -72,14 +75,27 @@ output_file="${input_file%.*}_graded-${model_path##*/}.jsonl"
 #     --temperature 0 \
 #     --top_p 1.0
 
-model_path="/projects/bhuang/models/llm/pretrained/meta-llama/Meta-Llama-3.1-405B-Instruct-FP8"
+# model_path="/projects/bhuang/models/llm/pretrained/meta-llama/Meta-Llama-3.1-405B-Instruct-FP8"
+# model_path="/projects/bhuang/models/llm/pretrained/mistralai/Mistral-Large-Instruct-2407"
 
 # input_file="$output_file"
-input_file="${output_file%.*}_processed09.jsonl"
+# input_file="${output_file%.*}_processed09.jsonl"
+# input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Mistral-Large-Instruct-2407-300000-240812_extracted-Meta-Llama-3.1-70B-Instruct_graded_filtered.jsonl"
+input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Meta-Llama-3.1-70B-Instruct-1m_extracted-Meta-Llama-3.1-70B-Instruct_graded-Meta-Llama-3.1-70B-Instruct_processed09.jsonl"
+
 output_file="${input_file%.*}_responded-${model_path##*/}.jsonl"
 
 # generate response
 # todo: hyperparams by model
+# todo: max_num_seqs vs max_num_batched_tokens
+# preemption error https://docs.vllm.ai/en/latest/models/performance.html
+    # l3.1-405b
+    # --max_num_seqs 64 \
+    # --temperature 0.6 \
+    # --top_p 0.9
+    # mistral
+    # --temperature 0.7 \
+    # --top_p 1.0
 python scripts/data_generation/generate_response_b.py \
     --input_file $input_file \
     --output_file $output_file \
@@ -96,5 +112,6 @@ python scripts/data_generation/generate_response_b.py \
     --max_model_len 4096 \
     --temperature 0.6 \
     --top_p 0.9
+
 
 echo "END TIME: $(date)"
