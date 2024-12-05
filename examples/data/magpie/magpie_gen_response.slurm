@@ -78,7 +78,9 @@ tmp_dir=${input_file%/*}/splitted_files
 filename=${input_file##*/}
 filename=${filename%.*}
 # append SLURM_ARRAY_TASK_ID
-input_file="${tmp_dir}/${filename}_0${SLURM_ARRAY_TASK_ID}.jsonl"
+# input_file="${tmp_dir}/${filename}_0${SLURM_ARRAY_TASK_ID}.jsonl"
+# input_file="${tmp_dir}/${filename}_$(printf "%02d" ${SLURM_ARRAY_TASK_ID}).json"
+input_file="${tmp_dir}/${filename}_$(printf "%02d" ${SLURM_ARRAY_TASK_ID}).${input_file##*.}"
 
 output_file="${input_file%.*}_responded-${model_path##*/}.jsonl"
 
@@ -99,6 +101,7 @@ python scripts/data_generation/generate_response_b.py \
     --input_file $input_file \
     --output_file $output_file \
     --id_column_name instruction \
+    --system_prompt_column_name task_prompt \
     --instruct_column_name instruction \
     --output_column_name response \
     --model_configs_file data/configs/model_configs.json \

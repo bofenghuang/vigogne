@@ -8,7 +8,7 @@ stage=${1:-0}
 # input_file="/lustre/fswork/projects/rech/gkb/commun/corpus/text/llm_instruct/magpie-fr/magpie_inst-Meta-Llama-3.1-70B-Instruct-1m.jsonl"
 input_file=$2
 
-model_path="/lustre/fswork/projects/rech/gkb/commun/models/pretrained/meta-llama/Meta-Llama-3.1-70B-Instruct"
+model_path="/lustre/fswork/projects/rech/gkb/commun/models/pretrained/meta-llama/Llama-3.1-70B-Instruct"
 # model_path="/lustre/fswork/projects/rech/gkb/commun/models/pretrained/mistralai/Mistral-Large-Instruct-2407"
 
 model_name=${model_path##*/}
@@ -17,7 +17,7 @@ model_name=${model_path##*/}
 if [ $stage -eq 0 ]; then
     echo -e "Step 1.1: split...\n"
     # split
-    ./scripts/data_processing/split_file.sh $input_file
+    ./scripts/data_processing/split_file.sh $input_file 16
 fi
 
 if [ $stage -eq 0 ]; then
@@ -39,7 +39,7 @@ input_file="${input_file%.*}_extracted-${model_name}.jsonl"
 if [ $stage -eq 1 ]; then
     echo -e "Step 2.2: split...\n"
     # split
-    ./scripts/data_processing/split_file.sh $input_file
+    ./scripts/data_processing/split_file.sh $input_file 16
 fi
 
 if [ $stage -eq 1 ]; then

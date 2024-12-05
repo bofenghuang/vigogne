@@ -12,7 +12,7 @@
 #SBATCH --hint=nomultithread         # we get physical cores not logical
 #SBATCH --constraint=h100
 #SBATCH --account=gkb@h100           # account to use, with xyz the 3 letter code of your project
-#SBATCH --array=1-8
+#SBATCH --array=1-16
 
 # Magpie instruction extraction
 
@@ -74,7 +74,9 @@ tmp_dir=${input_file%/*}/splitted_files
 filename=${input_file##*/}
 filename=${filename%.*}
 # append SLURM_ARRAY_TASK_ID
-input_file="${tmp_dir}/${filename}_0${SLURM_ARRAY_TASK_ID}.jsonl"
+# input_file="${tmp_dir}/${filename}_0${SLURM_ARRAY_TASK_ID}.jsonl"
+# input_file="${tmp_dir}/${filename}_$(printf "%02d" ${SLURM_ARRAY_TASK_ID}).json"
+input_file="${tmp_dir}/${filename}_$(printf "%02d" ${SLURM_ARRAY_TASK_ID}).${input_file##*.}"
 
 # output_file="${input_file%.*}_extracted-l31-70b.jsonl"
 output_file="${input_file%.*}_extracted-${model_path##*/}.jsonl"
