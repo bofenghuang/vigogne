@@ -32,6 +32,7 @@ from peft import PeftModel
 from transformers import (
     AutoModelForCausalLM,
     AutoTokenizer,
+    BitsAndBytesConfig,
     GenerationConfig,
     StoppingCriteriaList,
     TextIteratorStreamer,
@@ -95,7 +96,8 @@ def user(message, history):
 def main(
     base_model_name_or_path: str = "bofenghuang/vigogne-2-7b-chat",
     lora_model_name_or_path: Optional[str] = None,
-    load_8bit: bool = False,
+    load_in_8bit: bool = False,
+    load_in_4bit: bool = False,
     server_name: Optional[str] = "0.0.0.0",
     server_port: Optional[str] = None,
     share: bool = True,
@@ -104,12 +106,26 @@ def main(
     tokenizer.pad_token = tokenizer.eos_token
 
     if device == "cuda":
+        model_kwargs = {}
+        if load_in_8bit:
+            model_kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_8bit=True,
+                # llm_int8_threshold=6.0,
+                # llm_int8_has_fp16_weight=False,
+            )
+        if load_in_4bit:
+            model_kwargs["quantization_config"] = BitsAndBytesConfig(
+                load_in_4bit=True,
+                bnb_4bit_compute_dtype=torch.float16,
+                bnb_4bit_quant_type="nf4",
+                bnb_4bit_use_double_quant=True,
+            )
         model = AutoModelForCausalLM.from_pretrained(
             base_model_name_or_path,
             torch_dtype=torch.float16,
             device_map="auto",
-            load_in_8bit=load_8bit,
             trust_remote_code=True,
+            **model_kwargs,
         )
     elif device == "mps":
         model = AutoModelForCausalLM.from_pretrained(
@@ -146,7 +162,7 @@ def main(
         system_message: Optional[str] = None,
         # conversation_id: Optional[str] = None,
     ):
-        # logger.info(f"History: {json.dumps(history, indent=4, ensure_ascii=False)}")
+        logger.info(f"History: {json.dumps(history, indent=4, ensure_ascii=False)}")
 
         # Construct the input message string for the model by concatenating the current system message and conversation history
         # system_message = None if not system_message else system_message
@@ -156,7 +172,7 @@ def main(
         )
         conversation = sum(
             [
-                [{"role": "user", "content": speaking_turn[0]}, {"role": "user", "content": speaking_turn[1]}]
+                [{"role": "user", "content": speaking_turn[0]}, {"role": "assistant", "content": speaking_turn[1]}]
                 for speaking_turn in history
             ],
             system_utterance,
@@ -165,7 +181,7 @@ def main(
         del conversation[-1]
         # Apply the chat template
         messages = tokenizer.apply_chat_template(conversation, add_generation_prompt=True, tokenize=False)
-        logger.info(messages)
+        logger.info(f"Formatted prompt: {messages}")
 
         # Tokenize the messages string
         input_ids = tokenizer(messages, return_tensors="pt")["input_ids"].to(device)
@@ -387,7 +403,7 @@ def main(
         clear.click(lambda: None, None, chatbot, queue=False)
 
     demo.queue(max_size=128, concurrency_count=2)
-    demo.launch(enable_queue=True, share=share, server_name=server_name, server_port=server_port)
+    demo.launch(enable_queue=True, share=share, server_name=server_name, server_port=server_port, ssl_verify=False)
 
 
 if __name__ == "__main__":

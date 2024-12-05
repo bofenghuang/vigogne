@@ -32,6 +32,7 @@ def get_args():
     parser.add_argument("--prompt_file", type=str, default=None, help="")
     parser.add_argument("--input_file", type=str, default=None, help="Input dataset file name")
     parser.add_argument("--id_column_name", type=str, default="id", help="")
+    parser.add_argument("--system_column_name", type=str, default="system_prompt", help="")
     parser.add_argument("--instruct_column_name", type=str, default="instruction", help="")
     parser.add_argument("--output_column_name", type=str, default="output", help="")
     parser.add_argument("--max_samples", type=int, default=None, help="")
@@ -160,19 +161,24 @@ def deduplicate_dataset(ds: Dataset, field_name: str, shuffle: bool = True):
 
 # Process a batch of data using local vllm engine
 def process_batch(batch, llm, params, tokenizer=None, args=None):
-    user_instructions = [item[args.instruct_column_name] for item in batch]
+    # user_instructions = [item[args.instruct_column_name] for item in batch]
 
     # tmp: format instruction for extraction/grading/..
     # wrap instruction by higher-level prompts
+    prompt_template = None
     if args.prompt_file is not None:
         with open(args.prompt_file, encoding="utf-8") as f:
             prompt_template = f.read()
 
-        # instruction extraction & grading
-        user_instructions = [prompt_template.format(text=user_inst) for user_inst in user_instructions]
+    user_inputs = [
+        {
+            "system_prompt": item.get(args.system_column_name),
+            "instruction": prompt_template.format(text=item[args.instruct_column_name]) if prompt_template is not None else item[args.instruct_column_name],
+        } for item in batch
+    ]
 
     prompts = []
-    for instruction in user_instructions:
+    for user_input in user_inputs:
         # if not args.tokenizer_template:
         #     conv = get_conversation_template(MODEL_NAME)
         #     conv.append_message(conv.roles[0], instruction)
@@ -181,7 +187,11 @@ def process_batch(batch, llm, params, tokenizer=None, args=None):
         # else:
         #     chat = [{"role": "user", "content": instruction}]
         #     template = tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
-        chat = [{"role": "user", "content": instruction}]
+        # chat = [{"role": "user", "content": instruction}]
+        chat = [{"role": "user", "content": user_input["instruction"]}]
+        # not None or not empty
+        if user_input["system_prompt"]:
+            chat.insert(0, {"role": "system", "content": user_input["system_prompt"]})
         template = tokenizer.apply_chat_template(chat, tokenize=False, add_generation_prompt=True)
         prompts.append(template)
     if args.engine == "vllm":

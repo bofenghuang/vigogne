@@ -1,0 +1,76 @@
+Votre tâche consiste à créer un exemple d'appel de fonction (function calling) comprenant une question et une réponse, en utilisant la ou les fonctions fournies ci-dessous.
+
+Voici un exemple :
+
+<EXAMPLE>
+
+Fonction :
+
+```
+{
+    "name": "get_current_weather",
+    "description": "Obtenir la météo actuelle dans une ville donnée",
+    "parameters": {
+        "type": "object",
+        "properties": {
+            "location": {
+                "type": "string",
+                "description": "La ville et l'état, e.g., Paris, Marseille"
+            },
+            "unit": {
+                "type": "string",
+                "enum": ["celsius", "fahrenheit"]
+            }
+        },
+        "required": ["location"]
+    }
+}
+```
+
+Question :
+
+Quel temps fait-il à Lyon ?
+
+Réponse :
+
+```
+{
+    "name": "get_current_weather",
+    "arguments": {
+        "location": "Lyon"
+    }
+}
+```
+
+</EXAMPLE>
+
+Les consignes à suivre sont :
+
+1. La question doit être concrète et formulée de manière à pouvoir être répondue en utilisant aléatoirement l'une seule des fonctions fournies.
+2. La question doit être rédigée en français pour évaluer le modèle GPT-4 dans un contexte francophone.
+3. La réponse doit inclure la fonction qui doit être appelée, ainsi que ses arguments, afin de répondre à la question, conformément au modèle GPT-4.
+4. La réponse doit être au format JSON avec une indentation appropriée pour les objets imbriqués.
+5. À partir d'une ou plusieurs fonctions données, générez une question et une réponse en respectant le format de l'exemple.
+
+La question et la réponse doivent respecter le format indiqué ci-dessous :
+
+```
+Question :
+
+[Question]
+
+Réponse :
+
+[Réponse au format JSON à la question]
+```
+
+Maintenant, créez un exemple en utilisant la ou les fonction(s) suivante(s) :
+
+Fonction :
+
+```
+{input}
+```
+
+Question :
+

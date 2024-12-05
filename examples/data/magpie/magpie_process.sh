@@ -75,13 +75,13 @@ output_file="${input_file%.*}_graded-${model_path##*/}.jsonl"
 #     --temperature 0 \
 #     --top_p 1.0
 
-# model_path="/projects/bhuang/models/llm/pretrained/meta-llama/Meta-Llama-3.1-405B-Instruct-FP8"
-# model_path="/projects/bhuang/models/llm/pretrained/mistralai/Mistral-Large-Instruct-2407"
+model_path="/projects/bhuang/models/llm/pretrained/meta-llama/Llama-3.1-405B-Instruct-FP8"
 
 # input_file="$output_file"
 # input_file="${output_file%.*}_processed09.jsonl"
 # input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Mistral-Large-Instruct-2407-300000-240812_extracted-Meta-Llama-3.1-70B-Instruct_graded_filtered.jsonl"
-input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Meta-Llama-3.1-70B-Instruct-1m_extracted-Meta-Llama-3.1-70B-Instruct_graded-Meta-Llama-3.1-70B-Instruct_processed09.jsonl"
+# input_file="/projects/bhuang/corpus/text/llm/generated/magpie/magpie_inst-Meta-Llama-3.1-70B-Instruct-1m_extracted-Meta-Llama-3.1-70B-Instruct_graded-Meta-Llama-3.1-70B-Instruct_processed09.jsonl"
+input_file="/projects/bhuang/corpus/text/llm/vigogne-alignment-data/magpie-fr-new/Llama-3.1-405B-Instruct-FP8/magpie_inst-Llama-3.1-405B-Instruct-FP8-241126_extracted-Llama-3.1-70B-Instruct_graded-Llama-3.1-70B-Instruct_processed.jsonl"
 
 output_file="${input_file%.*}_responded-${model_path##*/}.jsonl"
 
@@ -110,6 +110,7 @@ python scripts/data_generation/generate_response_b.py \
     --batch_size 1024 \
     --max_tokens 4096 \
     --max_model_len 4096 \
+    --max_num_seqs 64 \
     --temperature 0.6 \
     --top_p 0.9
 

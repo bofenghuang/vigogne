@@ -1,0 +1,26 @@
+Below is a conversation between a human user and the powerful AI assistant GPT-4. Write a follow-up question in French from the user to simulate a real-world interaction.
+
+<conversation>
+{conversation}
+</conversation>
+
+Users can follow up using one or more of these methods:
+
+<methods>
+Confusion: The user may misunderstand the topic or hold misconceptions, leading to confusion in their follow-up, which will require the assistant to correct and clarify further.
+Explanation: The user has a poor understanding of the topic and seeks further explanation after each of the assistant's responses.
+Clarification: The user is cautious about their understanding and tries to explain it in their own way, seeking verification from the assistant.
+Reasoning: The user struggles to grasp the topic. If a question can be solved through simple reasoning, they are likely to rewrite it to explicitly request multi-step reasoning.
+Constraint: The user has a solid grasp of the topic and follows up by adding constraints or requirements.
+Depth: The user understands the topic well and asks to explore it more deeply.
+Specificity: The user has a strong grasp of the topic and follows up by replacing general concepts with more specific ones.
+Breadth: The user has a deep understanding of the topic and connects it to related subjects or explores advanced concepts.
+</methods>
+
+First, evaluate all the methods and identify those appropriate for the conversation. Then, randomly select one method and generate a follow-up question based on it.
+
+<format>
+Appropriate methods: [List of appropriate methods separated by commas]
+Chosen method: [Chosen method]
+Question: [Follow-up question generated using the chosen method]
+</format>

@@ -1,0 +1,37 @@
+Votre mission consiste à agir comme un Écrivain de Prompts.
+
+Votre objectif est de créer des prompts pour les systèmes d'IA, tels que ChatGPT et GPT-4, afin d'évaluer leur capacité à les suivre.
+
+Les prompts générés ont pour but d'évaluer la dimension de "roleplay". Cela implique de demander à l'IA d'adopter un rôle, une profession ou une fonction particulière, qu'il utilisera pour accomplir plus efficacement la tâche qui lui est confiée.
+
+Les consignes à respecter sont les suivantes :
+
+1. Évitez de répéter le verbe pour chaque prompt afin de diversifier les demandes.
+2. Les prompts doivent rester claires et compréhensibles pour les humains, de manière à ce qu'ils puissent y répondre.
+3. Vous pouvez vous inspirer des exemples de prompts fournis ci-dessous.
+4. Veillez à ce que le modèle de langage GPT soit en mesure d'exécuter l'instruction. Par exemple, ne demandez pas de l'assistant de créer des réponses visuelles ou audio. Évitez également de lui demander de définir un rappel, de vous réveiller à 17 heures ou de rechercher des informations sur Internet, car il ne peut pas accomplir ces actions.
+5. Les prompts doivent être en français.
+
+Voici quelques exemples de prompts :
+
+<EXAMPLES>
+Exemple 1 : Imaginez que vous êtes Léonard de Vinci. Parlez de la signification de l'essai et de l'erreur dans votre processus créatif.
+Exemple 2 : Mets-toi dans la peau d'un historien et raconte à un enfant comment la France a obtenu son nom.
+Exemple 3 : Vous êtes un data scientist axé sur les détails, ce qui vous permet de repérer des motifs et des tendances dans des ensembles de données complexes. Comment abordez-vous le processus de débogage lorsque la courbe de losse de votre modèle d'entraînement présente des anomalies ?
+Exemple 4 : Écrivez un poème sur les baleines dans le style de Yoda de Star Wars.
+Exemple 5 : Quelle est la signification de la vie ? Répondez en utilisant les mots et le style de William Shakespeare.
+Exemple 6 : En tant que professionnel de la médecine, vous possédez une expertise approfondie en terminologie médicale et adoptez une approche professionnelle et empathique, plaçant le bien-être et la compréhension du patient au premier plan. Informez au patient que l'intervention chirurgicale est prévue pour demain matin.
+Exemple 7 : Incarne le personnage de Monkey D. Luffy de One Piece et partage avec nous ta vision du monde futur.
+Exemple 8 : Créez un script pour une interview sur The Tonight Show avec Elon Musk.
+Exemple 9 : Faites semblant d'être un hôte qui accueille chaleureusement des convives à une réception.
+Exemple 10: Tu es Jack, un jeune et naïf pirate du 18e siècle. Tu te vantes auprès des gens de ton voyage en Inde.
+</EXAMPLES>
+
+Générez un ensemble de {batch_size} instructions similaires.
+
+Format de réponse :
+Prompt 1 : [instruction 1]
+Prompt 2 : [instruction 2]
+...
+
+Générez en respectant le format fourni, sans ajouter d'autres éléments.

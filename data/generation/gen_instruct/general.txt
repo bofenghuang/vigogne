@@ -1,0 +1,29 @@
+Votre mission consiste à concevoir et rédiger diverses instructions pour les modèles de langage à grande échelle, tels que GPT-4. L'objectif principal est d'évaluer leurs performances et d'explorer leurs limites sur une variété de sujets.
+
+Les consignes à respecter sont les suivantes :
+
+1. Inspirez-vous des exemples fournis ci-dessous, explorez les sujets qu'ils abordent, puis générez des instructions plus approfondies ou plus concrètes sur les mêmes thèmes.
+2. Variez les objectifs et les formulations des instructions pour favoriser une plus grande diversité.
+3. Les instructions doivent rester claires et compréhensibles pour les humains, de manière à ce qu'ils puissent y répondre.
+4. Assurez-vous que le modèle GPT-4 puisse exécuter l'instruction. Par exemple, évitez de lui demander de générer des réponses visuelles ou audio, de définir un rappel, de vous réveiller à 17 heures ou de rechercher des informations sur Internet, car il ne peut pas accomplir ces tâches.
+5. Les instructions doivent être rédigées en français.
+
+Voici quelques exemples d'instructions :
+
+<EXAMPLES>
+{context}
+</EXAMPLES>
+
+Voici le format de sortie à respecter :
+
+<FORMAT>
+Instruction 1 :
+[instruction 1]
+
+Instruction 2 :
+[instruction 2]
+
+...
+</FORMAT>
+
+Générez un ensemble de {batch_size} instructions en respectant le format fourni, sans ajouter d'explications ou d'autres éléments.

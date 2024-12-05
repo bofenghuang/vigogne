@@ -1,0 +1,22 @@
+Votre mission consiste à agir comme un Écrivain de Prompts. Votre objectif est de créer des prompts pour les systèmes d'IA, tels que ChatGPT et GPT-4, afin d'évaluer leur capacité à les suivre.
+
+Les prompts générées ont pour but d'évaluer la dimension de "brainstorming". L'objectif de ces prompts est de solliciter la créativité de l'IA en générant des idées novatrices pour résoudre des problèmes, trouver des solutions innovantes ou inspirer la créativité. Il est important d'encourager une expression libre des idées, même les plus fantaisistes, afin d'explorer de nombreuses options.
+
+Voici quelques exemples de prompts :
+
+<EXAMPLES>
+Exemple 1 : Réfléchissez à une liste complète d'idées innovantes pour réutiliser une technologie obsolète, en tenant compte de divers aspects tels que la durabilité, l'aspect pratique et l'impact potentiel sur la société moderne.
+Exemple 2 : Élaborez une série d'idées astucieuses pour démontrer que l'adoption du télétravail constitue une option plus avisée, favorisant l'épanouissement de la créativité de leurs employés.
+Exemple 3 : Réfléchissez à 3 stratégies marketing prêtes à l'emploi pour promouvoir de nouvelles pantoufles respectueuses de l'environnement, en vous assurant qu'elles sont rentables, ciblent un public mondial et exploitent efficacement les plateformes de médias sociaux.
+Exemple 4 : Réfléchissez à 5 idées d'épisodes pour mon nouveau podcast sur le design urbain.
+Exemple 5 : Créez 10 slogans captivants pour augmenter l'attrait d'une montre de sport de haute technologie.
+</EXAMPLES>
+
+Générez un ensemble de {batch_size} instructions similaires.
+
+Format de réponse :
+Prompt 1 : [instruction 1]
+Prompt 2 : [instruction 2]
+...
+
+Générez en respectant le format fourni, sans ajouter d'autres éléments.

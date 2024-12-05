@@ -11,7 +11,7 @@ from typing import Any, Union
 
 import numpy as np
 import transformers
-from datasets import Dataset, DatasetDict, load_dataset
+from datasets import Dataset, DatasetDict, load_dataset, load_from_disk
 
 from ..data_utils import IGNORE_INDEX
 from ..processors import SUPPORTED_PROCESSORS
@@ -21,42 +21,53 @@ logger = logging.getLogger(__name__)
 
 
 def prepare_datasets(cfg: Any, tokenizer: transformers.PreTrainedTokenizerBase):
-    # load datasets
-    dataset = load_datasets(cfg)
-    # process datasets
-    processed_dataset = process_datasets(cfg, dataset, tokenizer)
-    # filter datasets
-    filtered_dataset = filter_datasets(cfg, processed_dataset)
-    # Count tokens
-    final_dataset = get_num_tokens(cfg, filtered_dataset)
+    if cfg.prepared_dataset_path is not None and any(Path(cfg.prepared_dataset_path).glob("*")):
+        logger.info(f"Loading prepared dataset from disk at {cfg.prepared_dataset_path}...")
+        dataset = load_from_disk(cfg.prepared_dataset_path)
+    else:
+        # load datasets
+        dataset = load_datasets(cfg)
+        # process datasets
+        dataset = process_datasets(cfg, dataset, tokenizer)
+        # filter datasets
+        dataset = filter_datasets(cfg, dataset)
+        # Count tokens
+        dataset = get_num_tokens(cfg, dataset)
 
-    train_dataset = final_dataset["train"]
+        # todo
+        # pack (group) examples in training set
+        if cfg.pack_into_block:
+            block_size = min(cfg.block_size, tokenizer.model_max_length)
+            with cfg.main_process_first(desc="packing samples together"):
+                # shuffle examples before packing
+                dataset["train"] = (
+                    dataset["train"]
+                    .shuffle(seed=cfg.seed)
+                    .map(
+                        ModerateConcatenator(block_size=block_size),
+                        batched=True,
+                        load_from_cache_file=not cfg.overwrite_cache,
+                        desc=f"packing texts in blocks of {block_size}",
+                    )
+                )
+
+        if cfg.prepared_dataset_path is not None:
+            logger.info(f"Saving prepared dataset to disk {cfg.prepared_dataset_path}...")
+            dataset.save_to_disk(cfg.prepared_dataset_path)
+
+    if cfg.preprocessing_only:
+        logger.info(f"Data processing finished. Files cached at {dataset.cache_files}")
+        sys.exit()
+
+    train_dataset = dataset["train"]
     if cfg.max_train_samples is not None:
         max_train_samples = min(len(train_dataset), cfg.max_train_samples)
         train_dataset = train_dataset.select(range(max_train_samples))
 
-    # todo
-    # pack (group) examples
-    # only pack training set
-    if cfg.pack_into_block:
-        block_size = min(cfg.block_size, tokenizer.model_max_length)
-        with cfg.main_process_first(desc="packing samples together"):
-            # shuffle examples before packing
-            train_dataset = train_dataset.shuffle(seed=cfg.seed).map(
-                ModerateConcatenator(block_size=block_size),
-                batched=True,
-                load_from_cache_file=not cfg.overwrite_cache,
-                desc=f"packing texts in blocks of {block_size}",
-            )
-
-    eval_dataset = final_dataset.get("eval")
+    eval_dataset = dataset.get("eval")
     if eval_dataset is not None and cfg.max_eval_samples is not None:
         max_eval_samples = min(len(eval_dataset), cfg.max_eval_samples)
         eval_dataset = eval_dataset.select(range(max_eval_samples))
-
-    if cfg.preprocessing_only:
-        logger.info(f"Data processing finished. Files cached at {final_dataset.cache_files}")
-        sys.exit()
 
     return train_dataset, eval_dataset
 

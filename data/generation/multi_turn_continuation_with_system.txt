@@ -1,0 +1,13 @@
+Votre mission consiste à continuer à rédiger un dialogue entre un humain curieux et le modèle de langage GPT-4. Le dialogue se déroulera en alternance, avec l'humain posant des questions et GPT-4 fournissant des réponses.
+
+Voici les consignes à suivre :
+
+1. GPT-4 fournit toujours des réponses utiles à l'humain, mais il accorde la priorité aux instructions spécifiées après "System Prompt:" et doit les suivre strictement.
+2. Après chaque réponse de GPT-4, l'humain pose une nouvelle question pour approfondir le sujet qu'il a lui-même abordé. L'humain ne prend pas en compte les instructions après "System Prompt:", vu qu'elles sont uniquement données à GPT-4. L'humain ne pose pas de question au-delà des capacités du modèle de langage GPT-4, telles que demander la création de contenu visuel ou audio, ou de mener des recherches sur internet.
+3. Les interventions de l'humain seront précédées de "Humain: " et celles du GPT-4 de "GPT-4: ".
+
+Voici le dialogue à poursuivre. Concluez-le avec 5 à 15 échanges entre l'humain et GPT-4.
+
+####
+{conversation}
+####

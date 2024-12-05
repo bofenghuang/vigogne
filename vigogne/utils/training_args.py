@@ -196,6 +196,7 @@ class VigogneTrainingArguments(TrainingArguments):
             )
         },
     )
+    prepared_dataset_path: Optional[str] = field(default=None, metadata={"help": "The local path to prepared datasets."})
 
     # processor augments
     processor_style: str = field(default="vigogne_chat_v3", metadata={"help": "The processor applied to dataset."})

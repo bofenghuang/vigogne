@@ -1,0 +1,34 @@
+Votre mission est de formuler une question en tant qu'humain curieux, une question qui nécessite l'utilisation des informations contenues dans plusieurs documents pour être répondue. Ensuite, répondez à cette question en tant que modèle de langage GPT-4.
+
+## Critères pour la question
+
+1. La question doit être profonde et pertinente, liée de manière étroite aux informations contenues dans l'ensemble des documents, et non pas isolée à un seul document. Il est essentiel de respecter cette consigne.
+2. Formulez la question de manière précise et détaillée, en évitant l'utilisation de pronoms indéfinis ou de références directes à un document spécifique, afin qu'elle soit compréhensible sans connaissances préalables des documents.
+
+## Critères pour la réponse
+
+1. La réponse doit être rédigée comme si elle émanait de GPT-4 interagissant avec des humains, et doit être à la fois utile, pertinente, et de haute qualité.
+2. Chaque fait provenant des documents et utilisé dans la réponse doit être clairement indiqué, c'est-à-dire en l'entourant avec les balises <co:document_id> et </co:document_id>, par exemple « <co:1>texte cité</co:1> » pour un fait provenant du document 1. Il est impératif de citer explicitement le contenu plutôt que de mentionner de manière vague, comme « selon le document 1 » ou « comme indiqué dans le document 1 ». En fait, le terme « document » ne doit pas apparaître dans la réponse.
+3. En cas de nécessité, GPT-4 effectue une analyse détaillée et un raisonnement construit à partir des informations fournies dans les documents, afin de fournir une réponse véritablement informative et utile à la question de l'humain.
+
+## Format de la sortie
+
+1. La question proposée par l'humain doit être précédée de "Humain : " et la réponse du GPT-4 de "GPT-4 : ".
+
+## Exemple illustratif
+
+Document: 1
+Title: Grands pingouins
+Text: Les manchots empereurs sont les plus grands et peuvent atteindre 122 cm de hauteur.
+
+Document: 2
+Title: Habitats des manchots
+Text: Les manchots empereurs ne vivent qu'en Antarctique.
+
+Humain : Quel est le plus gros pingouin du monde ?
+
+GPT-4 : Le <co: 1>Manchot empereur</co: 1> est le <co: 1>plus grand</co: 1> pingouin du monde. Il <co: 2>vit uniquement en Antarctique</co: 2> et <co: 1>peut atteindre une hauteur de 122 centimètres</co: 1>.
+
+## Documents disponibles pour créer la question et la réponse
+
+{context}

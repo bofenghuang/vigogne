@@ -7,9 +7,13 @@ Modified from https://github.com/LAION-AI/Open-Assistant/blob/main/model/model_t
 
 # 1. Download oasst conversation tree file
 wget https://huggingface.co/datasets/OpenAssistant/oasst1/resolve/main/2023-04-12_oasst_ready.trees.jsonl.gz
+wget https://huggingface.co/datasets/OpenAssistant/oasst2/resolve/main/2023-11-05_oasst2_ready.trees.jsonl.gz
 
 # 2. Convert to chat
 # Requirement: Python 3.10, oasst-data (See https://github.com/LAION-AI/Open-Assistant/tree/main/oasst-data)
+
+# For "TypeError: issubclass() arg 1 must be a class" errors
+# https://stackoverflow.com/questions/76313592/import-langchain-error-typeerror-issubclass-arg-1-must-be-a-class
 
 python scripts/data_processing/prep_oasst.py \
     --input_file path/to/2023-04-12_oasst_ready.trees.jsonl \
@@ -23,6 +27,7 @@ from pathlib import Path
 from typing import Iterable, Literal, Optional
 
 import fire
+from datasets import Dataset as HFDataset
 
 # from model_training.custom_datasets.formatting import DatasetEntrySft, Role, Utterance
 from oasst_data import ExportMessageNode, read_dataset_message_trees, read_message_trees, visit_threads_depth_first
@@ -31,8 +36,8 @@ from torch import Generator
 from torch.utils.data import Dataset, random_split
 from tqdm import tqdm
 
-from vigogne.file_utils import jsonl_dump
-from vigogne.preprocess import CONVERSATION_SYSTEM_MESSAGE_EN, CONVERSATION_SYSTEM_MESSAGE_FR
+# from vigogne.file_utils import jsonl_dump
+# from vigogne.preprocess import CONVERSATION_SYSTEM_MESSAGE_EN, CONVERSATION_SYSTEM_MESSAGE_FR
 
 
 class ListDataset(Dataset):
@@ -150,7 +155,6 @@ def load_oasst_export(
         if mode == "sft":
             # ensure roles are strictly alternating between prompter and assistant
             assert all(m.role == "prompter" for m in thread[0::2]) and all(m.role == "assistant" for m in thread[1::2])
-            return [m.text for m in thread]
             # conversation: list[Utterance] = [
             #     Utterance(
             #         text=m.text,
@@ -163,6 +167,24 @@ def load_oasst_export(
             #     for m in thread
             # ]
             # return DatasetEntrySft(conversation=conversation)
+            # return [m.text for m in thread]
+            return {
+                "message_tree_id": thread[0].message_id,
+                "lang": thread[0].lang,  # presume lang
+                "messages": [
+                    {
+                        "role": "user" if m.role == "prompter" else "assistant",
+                        "content": m.text,
+                        "message_id": m.message_id,
+                        "lang": m.lang,
+                        "quality": m.get_label_value("quality"),
+                        "humor": m.get_label_value("humor"),
+                        "creativity": m.get_label_value("creativity"),
+                    }
+                    for m in thread
+                ],
+                "num_messages": len(thread),
+            }
         elif mode == "rm":
             prefix = [m.text for m in thread]
             replies = [r for r in thread[-1].replies if r.role == "assistant" and r.rank is not None]
@@ -192,34 +214,45 @@ def load_oasst_export(
     return train, val
 
 
-def convert_to_chat(example_input, task_id_prefix):
-    example_idx, example = example_input
+# def convert_to_chat(example_input, task_id_prefix):
+#     example_idx, example = example_input
 
-    new_example = dict(id=f"{task_id_prefix}-{example_idx:08d}", messages=[])
+#     new_example = dict(id=f"{task_id_prefix}-{example_idx:08d}", messages=[])
 
-    for idx in range(0, len(example), 2):
-        new_example["messages"].append(dict(role="user", content=example[idx]))
-        new_example["messages"].append(dict(role="assistant", content=example[idx + 1]))
+#     for idx in range(0, len(example), 2):
+#         new_example["messages"].append(dict(role="user", content=example[idx]))
+#         new_example["messages"].append(dict(role="assistant", content=example[idx + 1]))
 
-    return new_example
+#     return new_example
 
 
-def main(
-    input_file, output_file, hf_dataset_name=None, val_split=0, lang="fr", top_k=None, task_id_prefix="oasst-20230412-fr"
-):
+def main(input_file, output_file, hf_dataset_name=None, val_split=0, lang="fr", top_k=None, task_id_prefix="oasst2_20231105"):
     train_data, _ = load_oasst_export(
         input_file_path=input_file, hf_dataset_name=hf_dataset_name, val_split=val_split, lang=lang, top_k=top_k, mode="sft"
     )
+    # print(train_data[0])
+    # quit()
 
-    convert_to_chat_p = partial(convert_to_chat, task_id_prefix=task_id_prefix)
-    processed_data = list(map(convert_to_chat_p, enumerate(tqdm(train_data))))
+    # convert_to_chat_p = partial(convert_to_chat, task_id_prefix=task_id_prefix)
+    # processed_data = list(map(convert_to_chat_p, enumerate(tqdm(train_data))))
 
-    # tmp
-    for example in tqdm(processed_data, desc="add system message"):
-        example["system"] = CONVERSATION_SYSTEM_MESSAGE_EN if lang == "en" else CONVERSATION_SYSTEM_MESSAGE_FR
+    # # tmp
+    # for example in tqdm(processed_data, desc="add system message"):
+    #     example["system"] = CONVERSATION_SYSTEM_MESSAGE_EN if lang == "en" else CONVERSATION_SYSTEM_MESSAGE_FR
 
-    jsonl_dump(processed_data, output_file, mode="w")
-    print(f"Saved {len(processed_data)} examples into {output_file}")
+    # jsonl_dump(processed_data, output_file, mode="w")
+    # print(f"Saved {len(processed_data)} examples into {output_file}")
+
+    train_ds = HFDataset.from_list(train_data)
+    train_ds = train_ds.map(lambda _: {"category": task_id_prefix}, num_proc=8)
+    print(train_ds)
+
+    train_df = train_ds.to_pandas()
+    print(train_df["lang"].value_counts().to_dict())
+    print(train_df["num_messages"].value_counts().to_dict())
+
+    train_ds.to_json(output_file, orient="records", lines=True, force_ascii=False)
+    print(f"Saved {train_ds.num_rows} examples into {output_file}")
 
 
 if __name__ == "__main__":

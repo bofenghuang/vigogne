@@ -202,7 +202,7 @@ class VigogneChatV2Processor(VigogneChatV2Template):
         ]
 
         # NB: might be incorrect for other tokenizers than llama depending on config
-        # tmp fix for llama-2
+        # hardcoded for the LLaMA tokenizer to make the offset correct
         # tokenizer.tokenize("hello\n<user>:") -> ['▁hello', '<0x0A>', '<', 'user', '>:']
         # tokenizer.tokenize("\n<user>:") -> ['▁', '<0x0A>', '<', 'user', '>:']
         # Remove '▁' token to ensure consistant behaviour when tokenizing the entire prompt

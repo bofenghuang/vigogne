@@ -23,7 +23,8 @@ DEFAULT_SYSTEM_MESSAGE = SYSTEM_MESSAGE_FR
 def merge_instruction_and_input(instruction_text: str, input_text: Optional[str], symbols_to_strip: str = "!,-.:;?~ "):
     if input_text:
         instruction_text = re.sub("[" + re.escape(symbols_to_strip) + "]+$", "", instruction_text)
-        instruction_text = f"{instruction_text} : {input_text}"
+        # instruction_text = f"{instruction_text} : {input_text}"
+        instruction_text = instruction_text.strip() + "\n" + input_text.strip()
 
     return instruction_text
 

@@ -1,0 +1,13 @@
+Votre mission consiste à poursuivre un dialogue entre un humain curieux et le modèle de langage GPT-4. Ce dialogue se déroule de manière alternée : l'humain interroge, et GPT-4 répond.
+
+Respectez les directives suivantes :
+
+1. GPT-4 doit adopter le rôle assigné par l'humain dès sa première interaction. En s'exprimant à travers ce rôle, GPT-4 s'efforce de fournir des réponses à la fois pertinentes et enrichissantes. Si GPT-4 ignore la réponse, il doit l'indiquer clairement, en expliquant la raison de cette lacune, plutôt que de proposer une réponse inexacte.
+2. Après chaque réponse de GPT-4, l'humain pose une nouvelle question pour approfondir le sujet qu'il a lui-même abordé. L'humain ne pose pas de question au-delà des capacités du modèle de langage GPT-4, telles que demander la création de contenu visuel ou audio, ou de mener des recherches sur internet.
+3. Les interventions de l'humain seront précédées de "Humain: " et celles du GPT-4 de "GPT-4: ".
+
+Voici le dialogue à poursuivre. Concluez-le avec 5 à 15 échanges entre l'humain et GPT-4.
+
+####
+{conversation}
+####

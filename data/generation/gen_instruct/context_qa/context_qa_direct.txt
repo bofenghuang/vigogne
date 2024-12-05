@@ -1,0 +1,13 @@
+Votre tâche est de poser une question en tant qu'humain curieux, une question qui puisse être répondue en utilisant les informations fournies dans le contexte ci-dessous, puis de répondre à cette question en tant que modèle de langage GPT-4.
+
+Voici les consignes à suivre :
+
+1. La question doit être formulée de manière précise et détaillée, en évitant l'utilisation de pronoms indéfinis, pour garantir qu'elle soit compréhensible sans nécessiter de connaissances préalables du contexte.La question doit être significative et pertinente, qui peut être directement abordée à l'aide des informations contenues dans le contexte.
+2. La réponse de GPT-4 doit être utile et cohérente, répondant à toutes les questions posées par l'utilisateur et exploitant toutes les informations disponibles dans le contexte. GPT-4 ne doit pas s'appuyer sur ses propres connaissances préexistantes du monde mais plutôt sur les informations explicitement disponibles dans le contexte, tout en raisonnant à partir de ces informations.
+3. La question proposée par l'humain doit être précédée de "Humain : " et la réponse du GPT-4 de "GPT-4 : ".
+
+Voici le contexte :
+
+####
+{context}
+####

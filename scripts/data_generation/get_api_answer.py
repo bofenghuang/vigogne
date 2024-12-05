@@ -7,7 +7,7 @@ from typing import Any, Dict, List, Optional
 
 from mistralai.client import MistralClient
 from mistralai.models.chat_completion import ChatMessage
-from openai import OpenAI
+from openai import OpenAI, AzureOpenAI
 from tenacity import retry, stop_after_attempt, wait_random_exponential
 
 client = None
@@ -15,25 +15,31 @@ client = None
 
 # def set_global_api(api_name: str = "openai"):
 def set_global_api(model_name: str = "gpt"):
-    # if api_name == "openai":
-    if "gpt" in model_name:
+    if "mistral" in model_name:
+        return generate_api_messages_mistral, chat_completion_mistral, process_api_response_mistral
+    # if "gpt" in model_name:
+    else:
         global client
         # check https://github.com/openai/openai-python
-        client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])  # this is also the default, it can be omitted
+        # client = OpenAI(api_key=os.environ["OPENAI_API_KEY"])  # this is also the default, it can be omitted
+        client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"), base_url=os.environ.get("OPENAI_API_BASE"))
+        # client = AzureOpenAI(
+        #     azure_endpoint=os.getenv("AZURE_OPENAI_ENDPOINT"),
+        #     api_key=os.getenv("AZURE_OPENAI_API_KEY"),
+        #     api_version="2024-02-01",
+        # )
 
         return generate_api_messages_openai, chat_completion_openai, process_api_response_openai
-    # elif api_name == "mistral":
-    elif "mistral" in model_name:
-        return generate_api_messages_mistral, chat_completion_mistral, process_api_response_mistral
-    else:
-        raise ValueError(f"Invalid model name: {model_name}")
+    # else:
+    #     raise ValueError(f"Invalid model name: {model_name}")
 
-def generate_api_messages_openai(prompt: str, system_message: str = "You are a helpful assistant."):
-    return [
-        {"role": "system", "content": system_message},
-        {"role": "user", "content": prompt},
-    ]
 
+def generate_api_messages_openai(prompt: str, system_message: Optional[str] = None):
+    messages = []
+    if system_message is not None:
+        messages.append({"role": "system", "content": system_message})
+    messages.append({"role": "user", "content": prompt})
+    return messages
 
 # Add exponential backoff to mitigate openai.error.RateLimitError
 # See: https://platform.openai.com/docs/guides/rate-limits/error-mitigation
@@ -41,9 +47,10 @@ def generate_api_messages_openai(prompt: str, system_message: str = "You are a h
 def chat_completion_openai(
     messages: List[Dict],
     model: str = "gpt-4",
-    max_tokens: int = 1024,
-    temperature: float = 0.7,
+    # max_tokens: int = 1024,
+    # temperature: float = 0.7,
     # api_dict=None,
+    **kwargs,
 ):
     # print(locals())
     # quit()
@@ -55,9 +62,10 @@ def chat_completion_openai(
         model=model,
         messages=messages,
         n=1,
-        max_tokens=max_tokens,
-        temperature=temperature,
+        # max_tokens=max_tokens,
+        # temperature=temperature,
         # logit_bias={"50256": -100},  # prevent the <|endoftext|> token from being generated
+        **kwargs,
     )
 
 
@@ -87,15 +95,17 @@ def generate_api_messages_mistral(prompt: str):
 def chat_completion_mistral(
     messages: List[Dict],
     model: str = "mistral-medium",
-    max_tokens: int = 1024,
-    temperature: float = 0.7,
+    # max_tokens: int = 1024,
+    # temperature: float = 0.7,
+    **kwargs,
 ):
     c = MistralClient(api_key=os.environ["MISTRAL_API_KEY"])
     return c.chat(
         model=model,
         messages=messages,
-        temperature=temperature,
-        max_tokens=max_tokens,
+        # temperature=temperature,
+        # max_tokens=max_tokens,
+        **kwargs,
     )
 
 

@@ -41,15 +41,15 @@ from polyglot.detect.base import logger as polyglot_logger
 from tqdm import tqdm
 from uncensor_data import filter_function as uncensor_filter_function
 
-from vigogne.data_utils import Conversation, Role, Utterance
+# from vigogne.data_utils import Conversation, Role, Utterance
 from vigogne.file_utils import jload, jsonl_dump
-from vigogne.preprocess import CONVERSATION_SYSTEM_MESSAGE_EN_SHORT, CONVERSATION_SYSTEM_MESSAGE_FR_SHORT
+# from vigogne.preprocess import CONVERSATION_SYSTEM_MESSAGE_EN_SHORT, CONVERSATION_SYSTEM_MESSAGE_FR_SHORT
 
 polyglot_logger.setLevel("ERROR")
 
 role_mappings = {
-    "human": Role.user,
-    "gpt": Role.assistant,
+    "human": "user",
+    "gpt": "assistant",
 }
 
 
@@ -67,20 +67,20 @@ def detect_language(example):
 
 
 def convert_format(example):
-    # example[MESSAGES] = [
-    #     {ROLE: role_mappings[turn["from"]], CONTENT: turn["value"]}
-    #     for turn in example.pop("conversations")
-    #     # if turn["from"] not in ["system"]
-    # ]
-    # return example
-    conversation = Conversation(
-        id=example.get("id"),
-        # system=
-        messages=[
-            Utterance(role=role_mappings[turn["from"]], content=turn["value"]) for turn in example["conversations"]
-        ],
-    )
-    return conversation.fully_model_dump()
+    example["messages"] = [
+        {"role": role_mappings[turn["from"]], "content": turn["value"]}
+        for turn in example["conversations"]
+        # if turn["from"] not in ["system"]
+    ]
+    return example
+    # conversation = Conversation(
+    #     id=example.get("id"),
+    #     # system=
+    #     messages=[
+    #         Utterance(role=role_mappings[turn["from"]], content=turn["value"]) for turn in example["conversations"]
+    #     ],
+    # )
+    # return conversation.fully_model_dump()
 
 
 def process_function(example):
@@ -114,12 +114,22 @@ def filter_function(example, validated_languages, only_first_split=False, only_u
     return True
 
 
-def main(input_file, validated_languages=["en", "fr"], only_first_split=False, only_uncensored=False):
-    # raw_dataset = load_dataset("RyokoAI/ShareGPT52K")
-    # raw_dataset = load_dataset("json", data_files=f"{input_dir}/sg_90k_part*.json")
+def main(
+    input_file,
+    output_file,
+    validated_languages=["en", "fr"],
+    only_first_split=False,
+    only_uncensored=False,
+    num_workers=8,
+    task_id_prefix="sharegpt_90k",
+):
+    # dataset = load_dataset("RyokoAI/ShareGPT52K")
+    # dataset = load_dataset("json", data_files=f"{input_dir}/sg_90k_part*.json")
     data = jload(input_file)
     print(f"Loaded {len(data):,d} examples")
-    # raw_dataset = Dataset.from_list(data)
+    # dataset = Dataset.from_list(data)
+    # dataset = load_dataset("json", data_files=input_file, split="train")
+    # print(f"Loaded {dataset.num_rows:,d} examples")
 
     # debug
     # data = data[:10]
@@ -133,28 +143,50 @@ def main(input_file, validated_languages=["en", "fr"], only_first_split=False, o
         )
     ]
     print(f"Filtered to {len(processed_data):,d} examples")
+    quit()
+
+    # processed_dataset = dataset.map(process_function, num_proc=num_workers, desc="process data")
+    # processed_dataset = processed_dataset.filter(
+    #     filter_function,
+    #     fn_kwargs={
+    #         "validated_languages": validated_languages,
+    #         "only_first_split": only_first_split,
+    #         "only_uncensored": only_uncensored,
+    #     },
+    #     num_proc=num_workers,
+    #     desc="filter data",
+    # )
+    # print(f"Filtered to {processed_dataset.num_rows:,d} examples")
 
     # tmp
-    for example in tqdm(processed_data, desc="add system message"):
-        example["system"] = (
-            CONVERSATION_SYSTEM_MESSAGE_EN_SHORT if example["lang"] == "en" else CONVERSATION_SYSTEM_MESSAGE_FR_SHORT
-        )
+    # for example in tqdm(processed_data, desc="add system message"):
+    #     example["system"] = (
+    #         CONVERSATION_SYSTEM_MESSAGE_EN_SHORT if example["lang"] == "en" else CONVERSATION_SYSTEM_MESSAGE_FR_SHORT
+    #     )
 
-    processed_data_by_lang = collections.defaultdict(list)
-    for example in processed_data:
-        processed_data_by_lang[example["lang"]].append(example)
+    # processed_data_by_lang = collections.defaultdict(list)
+    # for example in processed_data:
+    #     processed_data_by_lang[example["lang"]].append(example)
 
-    for lang_, data_ in processed_data_by_lang.items():
-        # output_file = f"{output_dir}/sharegpt90k_{lang_}.jsonl"
-        output_file = f"{input_file.rsplit('.', 1)[0]}_{lang_}.jsonl"
-        jsonl_dump(data_, output_file, mode="w")
-        # output_file = f"{input_file.rsplit('.', 1)[0]}_{lang_}.json"
-        # jdump(data_, output_file, mode="w")
-        print(f"Saved {len(data_):,d} examples into {output_file}")
+    # for lang_, data_ in processed_data_by_lang.items():
+    #     # output_file = f"{output_dir}/sharegpt90k_{lang_}.jsonl"
+    #     output_file = f"{input_file.rsplit('.', 1)[0]}_{lang_}.jsonl"
+    #     jsonl_dump(data_, output_file, mode="w")
+    #     # output_file = f"{input_file.rsplit('.', 1)[0]}_{lang_}.json"
+    #     # jdump(data_, output_file, mode="w")
+    #     print(f"Saved {len(data_):,d} examples into {output_file}")
 
     # print(Counter([example["lang"] for example in processed_data]))
     # jsonl_dump(processed_data, output_file, mode="w")
     # print(f"Saved {len(processed_data)} examples into {output_file}")
+
+    processed_dataset = processed_dataset.map(lambda _: {"category": task_id_prefix}, num_proc=num_workers)
+
+    processed_data_df = processed_dataset.to_pandas()
+    print(processed_data_df["lang"].value_counts().to_dict())
+
+    processed_dataset.to_json(output_file, orient="records", lines=True, force_ascii=False)
+    print(f"Saved {processed_dataset.num_rows} examples into {output_file}")
 
 
 if __name__ == "__main__":

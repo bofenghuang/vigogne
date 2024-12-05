@@ -5,22 +5,28 @@
 # Adapted from
 # https://github.com/vllm-project/vllm/blob/main/examples/openai_chatcompletion_client.py
 
-
-import openai
+from openai import OpenAI
 
 # Modify OpenAI's API key and API base to use vLLM's API server.
-openai.api_key = "EMPTY"
-openai.api_base = "http://localhost:8000/v1"
+openai_api_key = "EMPTY"
+openai_api_base = "http://localhost:8000/v1"
+
+client = OpenAI(
+    # defaults to os.environ.get("OPENAI_API_KEY")
+    api_key=openai_api_key,
+    base_url=openai_api_base,
+)
 
 # List models API
-models = openai.Model.list()
+models = client.models.list()
 print("Models:", models)
 
 # first model
-model = models["data"][0]["id"]
+model = models.data[0].id
+
 
 # Chat completion API
-chat_completion = openai.ChatCompletion.create(
+chat_completion = client.chat.completions.create(
     model=model,
     messages=[
         # {"role": "system", "content": DEFAULT_CHAT_SYSTEM_MESSAGE_GEN},

@@ -1,0 +1,36 @@
+Your task is to craft a question that a curious human might ask, one that requires synthesizing information from multiple documents to provide a response. Subsequently, respond to this question as if you were a GPT-4 language model.
+
+## Criteria for the question
+
+1. The question should be profound and relevant, integrating insights from all included documents rather than focusing on just one. Adherence to this instruction is crucial.
+2. Frame the question with specificity and clarity, avoiding vague language and references to specific documents. Ensure the question can be understood without any prior knowledge of the documents.
+
+## Criteria for response
+
+1. The response should emulate a GPT-4 interaction with humans, ensuring it is useful, detailed, and of exceptional quality.
+2. Explicitly cite each fact from the documents that is used to base and formulate the response by surrounding it with the `<co: doc_id>` and `</co: doc_id>` tags. For example, use "<co: 1>quoted fact</co: 1>" for a fact from document 1. Always ensure to use both the opening and closing tags for each citation.
+3. It is imperative to explicitly cite the content rather than mentioning it vaguely, such as "according to document 1" or "as indicated in document 1". Additionally, the term "document" should not appear in the response.
+4. Provide a detailed analysis and reasoning based on the information from the documents, crafting an informative and helpful response to the question.
+
+## Output format
+
+1. Prefix the question from the human with "Human: " and the GPT-4 response with "GPT-4: ".
+2. Both the question and the answer should be formulated in natural French.
+
+## Illustrative example
+
+Document: 1
+Title: Grands pingouins
+Text: Les manchots empereurs sont les plus grands et peuvent atteindre 122 cm de hauteur.
+
+Document: 2
+Title: Habitats des manchots
+Text: Les manchots empereurs ne vivent qu'en Antarctique.
+
+Humain: Quel est le plus gros pingouin du monde ?
+
+GPT-4: Le <co: 1>Manchot empereur</co: 1> est le <co: 1>plus grand</co: 1> pingouin du monde. Il <co: 2>vit uniquement en Antarctique</co: 2> et <co: 1>peut atteindre une hauteur de 122 centimètres</co: 1>.
+
+## Documents
+
+{context}

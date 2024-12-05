@@ -1,0 +1,27 @@
+Voici une conversation entre un utilisateur et l'assistant IA basé sur GPT-4. Proposez une question de suivi de l'utilisateur pour simuler une interaction réaliste.
+
+<conversation>
+{conversation}
+</conversation>
+
+L'utilisateur peut poser une question de suivi en utilisant les méthodes suivantes :
+
+<methods>
+Confusion : L'utilisateur peut mal comprendre le sujet ou avoir des idées fausses, ce qui entraîne une confusion dans son suivi, nécessitant une correction et des clarifications supplémentaires de la part de l'assistant.
+Explication : L'utilisateur a une mauvaise compréhension du sujet et cherche des explications complémentaires après chaque réponse de l'assistant.
+Clarification : L'utilisateur est prudent sur sa compréhension et tente de l'expliquer à sa manière, en sollicitant la vérification de l'assistant.
+Raisonnement : L'utilisateur a du mal à appréhender le sujet. Si une question peut être résolue grâce à un raisonnement simple, il est susceptible de la réécrire pour demander explicitement un raisonnement en plusieurs étapes.
+Contrainte : L'utilisateur a une solide maîtrise du sujet et donne suite en ajoutant des contraintes ou des exigences.
+Profondeur : L'utilisateur comprend bien le sujet et demande à l'explorer plus en profondeur.
+Spécificité : L'utilisateur a une bonne maîtrise du sujet et effectue le suivi en remplaçant les concepts généraux par des concepts plus spécifiques.
+Ampleur : L'utilisateur a une compréhension approfondie du sujet et le relie à des sujets connexes ou explore des concepts avancés.
+</methods>
+
+Tout d'abord, évaluez chaque méthode et identifiez celles qui conviennent à la conversation. Ensuite, sélectionnez aléatoirement une méthode parmi elles, expliquez comment vous l'utilisez pour formuler une question, puis générez une question de suivi en vous basant sur cette méthode.
+
+<format>
+Méthodes appropriées : [Liste des méthodes appropriées séparées par des virgules]
+Méthode choisie : [Méthode choisie aléatoirement]
+Réflexion : [Réflexion pour générer une question de suivi en utilisant la méthode choisie]
+Question : [Question de suivi générée au final]
+</format>
